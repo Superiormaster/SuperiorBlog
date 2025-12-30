@@ -4,6 +4,7 @@ from sqlalchemy import JSON
 from slugify import slugify
 from flask_login import UserMixin
 from sqlalchemy import event
+from werkzeug.security import check_password_hash, generate_password_hash
 
 def generate_slug(target, value, oldvalue, initiator):
     if not value:
