@@ -29,7 +29,7 @@ def login():
         username = request.form.get("username")
         password = request.form.get("password")
         admin = Admin.query.filter_by(username=username).first()
-        if admin and check_password_hash(admin.password, password):
+        if admin and admin.check_password_hash(admin.password, password):
             login_user(admin)
             return redirect(url_for("admin.dashboard"))
         else:
