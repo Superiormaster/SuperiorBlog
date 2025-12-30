@@ -22,18 +22,23 @@ admin_bp = Blueprint(
     template_folder="../templates/admin"
 )
 
-#Admin login
+# Admin login
 @admin_bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username")
+        identifier = request.form.get("identifier")  # can be username or email
         password = request.form.get("password")
-        admin = Admin.query.filter_by(username=username).first()
-        if admin and admin.check_password_hash(admin.password, password):
+        
+        # Check both username and email
+        admin = Admin.query.filter(
+            (Admin.username == identifier) | (Admin.email == identifier)
+        ).first()
+        
+        if admin and admin.check_password(password):
             login_user(admin)
             return redirect(url_for("admin.dashboard"))
         else:
-            flash("Invalid username or password")
+            flash("Invalid username/email or password")
     return render_template("admin/login.html")
 
 @admin_bp.route("/change-password", methods=["GET", "POST"])
