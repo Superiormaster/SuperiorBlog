@@ -11,18 +11,12 @@ import os
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    
-    import os
-
-def create_app():
-    app = Flask(__name__)
-    app.config.from_object(Config)
 
     database_url = os.getenv("DATABASE_URL")
     if database_url:
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     else:
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///demo.db'
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
 
     # detect environment
     env = os.getenv("FLASK_ENV", "development")
@@ -48,6 +42,22 @@ def create_app():
 
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp)
+
+    # SAFE context processors (no crash)
+    @app.context_processor
+    def inject_globals():
+        try:
+            return {
+                "nav_categories": Category.query.order_by(Category.name).all(),
+                "breaking": Post.query.filter_by(
+                    is_published=True
+                ).order_by(Post.created_at.desc()).first()
+            }
+        except Exception:
+            return {
+                "nav_categories": [],
+                "breaking": None
+            }
 
     @app.context_processor
     def inject_settings():

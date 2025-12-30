@@ -1,5 +1,21 @@
 # Ignore environment files
-.env
-instance/
-*.pyc
+# Python
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+.env
+
+# Flask
+instance/
+*.db
+*.sqlite3
+
+# Migrations cache
+migrations/__pycache__/
+
+# OS
+.DS_Store

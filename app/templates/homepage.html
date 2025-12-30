@@ -97,6 +97,7 @@
         <li><a href="{{ url_for('admin.change_password') }}" class="text-blue-500 hover:underline"><i class="fa fa-eraser" aria-hidden="true"></i>Change Password</a></li>
         <li><a href="{{ url_for('admin.logout') }}"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a></li>
         {% endif %}
+        
           <a href="{{ url_for('public.contact') }}"><i class="fa fa-envelope" aria-hidden="true"></i>Contact Us</a>
           {% set settings = AppSettings.query.first() %}
           {% if settings %}
