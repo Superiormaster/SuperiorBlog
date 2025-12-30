@@ -16,7 +16,7 @@ Flask-Caching==2.3.1
 Flask-Mail==0.10.0
 Flask-WTF==1.2.2
 gunicorn==23.0.0
-psycopg2-binary==2.9.7
+psycopg[binary]
 redis==7.1.0
 alembic==1.17.2
 Jinja2==3.1.6
