@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category }} News | Profnet{% endblock %}
+
+{% block title %}
+{{ category.meta_title or category.name ~ " News | ProfNet News" }}
+{% endblock %}
+
+{% block meta_description %}
+{{ category.meta_description or "Latest " ~ category.name ~ " news, analysis, and updates." }}
+{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-6">{{ category }} News</h1>
+
+<aside class="bg-gray-800 p-4 rounded">
+  <h3 class="text-xl font-bold mb-4">Trending in {{ category.name }}</h3>
+  {% for post in trending_posts %}
+    <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
+       class="block mb-2 hover:text-yellow-400">
+      {{ post.title }}
+    </a>
+  {% endfor %}
+</aside>
+<aside class="bg-white/5 p-4 rounded-lg">
+  <h3 class="text-xl font-semibold mb-3">Trending in {{ category.name }}</h3>
+
+  {% for post in trending %}
+    <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
+       class="block mb-2 hover:underline">
+       {{ post.title }}
+    </a>
+  {% endfor %}
+</aside>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+  <!-- Posts -->
+  <div class="md:col-span-2 space-y-6">
+    {% for post in posts %}
+    <article class="bg-gray-800 rounded p-4">
+      <h2 class="text-2xl font-bold hover:text-yellow-400">
+        <a href="{{ url_for('public.post_detail', slug=post.slug) }}">
+          {{ post.title }}
+        </a>
+      </h2>
+      <p class="text-gray-400 mt-2">
+        {{ post.content[:150] }}...
+      </p>
+    </article>
+    {% endfor %}
+  </div>
+
+  <!-- Sidebar -->
+  {% include "partials/category_sidebar.html" %}
+
+</div>
+
+{% if posts %}
+  <div class="grid md:grid-cols-2 gap-6">
+    {% for post in posts %}
+      <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
+         class="block bg-gray-800 rounded-lg overflow-hidden hover:shadow-lg transition">
+        
+        {% if post.featured_image %}
+        <img src="{{ url_for('static', filename='uploads/' ~ post.featured_image) }}"
+             class="w-full h-48 object-cover">
+        {% endif %}
+
+        <div class="p-4">
+          <h2 class="text-xl font-semibold text-white">{{ post.title }}</h2>
+          <p class="text-gray-400 mt-2">{{ post.content[:120] }}...</p>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-gray-400">No {{ category }} news yet.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tag.name }} News | ProfNet News{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-6">#{{ tag.name }}</h1>
+
+{% for post in posts %}
+  <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
+     class="block mb-4 text-xl hover:underline">
+     {{ post.title }}
+  </a>
+{% else %}
+  <p>No posts found.</p>
+{% endfor %}
+{% endblock %}

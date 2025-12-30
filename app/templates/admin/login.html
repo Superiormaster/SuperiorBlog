@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="flex justify-center py-10 min-h-screen">
+  <div class="w- p-8 rounded-lg shadow-lg">
+    <form method="POST" class="space-y-4 p-4 border border-rose-100">
+      <h2 class="font-bold mb-6 text-center text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-400">Login</h2>
+      <div>
+        <label class="block text-sm font-medium text-gray-100">Username:</label>
+        <input type="text" name="username" class="w-full mb-2 py-3 px-4 border-white/10 bg-white/10 border rounded text-white transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-100">Email:</label>
+        <input type="email" name="email" required class="w-full focus:ring-blue-500 focus:border-blue-500 mb-2 py-3 px-4 border-white/10 bg-white/10 border rounded text-white transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-100">Password:</label>
+        <input type="password" id="password" name="password" required class="w-full focus:ring-blue-500 focus:border-blue-500 mb-2 py-3 px-4 border-white/10 bg-white/10 border rounded text-white transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500">
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="exampleCheck1" onclick="show_pass()">
+            <label class="form-check-label" for="show_password">Show Password</label>
+        </div>
+      </div>
+      <button type="submit" class="w-full text-white px-8 py-3 bg-blue-600 rounded-xl shadow-lg hover:bg-blue-700 transition relative font-medium overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_0_15px_rgba(50,130,246,0.4)]">Login</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function show_pass() {
+  const password = document.getElementById("password");
+  password.type = password.type === "password" ? "text" : "password";
+}
+</script>
+
+{% endblock %}
