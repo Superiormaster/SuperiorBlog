@@ -18,22 +18,10 @@ def create_app():
     else:
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
 
-    # detect environment
-    env = os.getenv("FLASK_ENV", "development")
-
-    if env == "production":
-        # Redis ONLY in production
-        app.config.update(
-            CACHE_TYPE="RedisCache",
-            CACHE_REDIS_URL=os.getenv("REDIS_URL"),
-            CACHE_DEFAULT_TIMEOUT=300
-        )
-    else:
-        # Safe cache for Termux / local dev
-        app.config.update(
-            CACHE_TYPE="SimpleCache",
-            CACHE_DEFAULT_TIMEOUT=300
-        )
+    app.config.update(
+      CACHE_TYPE="SimpleCache",
+      CACHE_DEFAULT_TIMEOUT=300
+    )
 
     db.init_app(app)
     login_manager.init_app(app)

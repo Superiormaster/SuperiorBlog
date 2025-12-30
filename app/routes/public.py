@@ -265,6 +265,7 @@ def terms():
 
 # Sitemap for Google News
 @public_bp.route("/sitemap.xml")
+@cache.cached(timeout=300)
 def sitemap():
     pages = []
     ten_days_ago = datetime.datetime.now() - datetime.timedelta(days=10)
