@@ -59,25 +59,13 @@ def create_app():
                 "breaking": None
             }
 
+        return dict(
+            breaking=breaking,
+            nav_categories=nav_categories
+        )
+
     @app.context_processor
     def inject_settings():
         return dict(AppSettings=AppSettings)
-
-    @app.context_processor
-    def inject_categories():
-        return {
-            "nav_categories": Category.query.order_by(Category.name).all()
-        }
-
-    @app.context_processor
-    def inject_globals():
-        breaking = Post.query.filter_by(
-            is_published=True
-        ).order_by(Post.created_at.desc()).first()
-    
-        return dict(
-            breaking=breaking,
-            nav_categories=Category.query.order_by(Category.name).all()
-        )
 
     return app
