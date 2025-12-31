@@ -3,11 +3,11 @@
 
 {% block content %}
 
-<h2 class="text-3xl font-bold mb-6">
+<h2 class="text-3xl text-center font-bold mb-6 mt-12">
   Search results for "{{ query }}"
 </h2>
 
-<div class="space-y-6">
+<div class="space-y-6 border text-gray-700 rounded-xl text-center mx-2">
   {% for post in results %}
     <a href="{{ url_for('public.post_detail', slug=post.slug) }}" class="block">
       <h3 class="text-2xl font-semibold hover:underline">
