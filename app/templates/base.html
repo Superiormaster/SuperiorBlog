@@ -27,8 +27,6 @@
     <!-- Your custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='Style.css') }}">
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
-
 </head>
 <body class="bg-gray-900 w-full transition-opacity duration-700 min-h-screen text-gray-500">
     <div class="xl:max-w-[1280px] w-full">
@@ -204,7 +202,6 @@
 </div>
   
     <script src="{{ url_for('static', filename='Script.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <script>
 document.addEventListener("DOMContentLoaded", () => {
   const banner = document.getElementById("cookieBanner");

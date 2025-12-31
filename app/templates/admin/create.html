@@ -8,7 +8,7 @@
     {{ 'Edit' if post else 'Create' }} Post
   </h1>
 
-  <form method="POST" enctype="multipart/form-data">
+  <form method="POST" id="post-form" enctype="multipart/form-data">
       <div class="relative">
         <select name="category" required
                 class="w-full px-3 py-2 rounded bg-gray-800 text-white focus:outline-none appearance-none">
@@ -78,8 +78,8 @@
       </div>
         
     <div class="flex justify-end gap-2 mt-4">
-      <button type="submit" value="1" class="bg-blue-200 px-4 py-2 rounded text-blue-600">Save Draft</button>
-      <button type="submit" name="is_published" value="1" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">{{ 'Update' if post else 'Create' }}</button>
+      <button type="submit" id="save-draft" value="1" class="bg-blue-200 px-4 py-2 rounded text-blue-600">Save Draft</button>
+      <button type="submit" name="is_published" id="publish" value="1" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">{{ 'Update' if post else 'Create' }}</button>
     </div>
   </form>
 </div>
@@ -93,10 +93,25 @@ const editor = new EasyMDE({
   element: document.getElementById("editor"),
   autosave: {
     enabled: true,
-    uniqueId: "blog-editor",
+    uniqueId: "{{ post.id if post else 'new-post' }}",
     delay: 1000,
   },
 });
+
+const form = document.getElementById("post-form");
+
+function syncEditor() {
+  if (window.editor) {
+    editor.codemirror.save();   // 🔥 FORCE markdown → textarea
+  }
+}
+
+// Desktop + Mobile safe
+form.addEventListener("submit", syncEditor);
+
+// Extra safety for mobile tap
+document.getElementById("save-draft").addEventListener("click", syncEditor);
+document.getElementById("publish").addEventListener("click", syncEditor);
 </script>
 
 <script>
