@@ -166,16 +166,18 @@ def category(slug):
 def add_comment(slug):
     post = Post.query.filter_by(slug=slug).first_or_404()
 
-    comment = Comment(
-        author=request.form.get("author", "Anonymous"),
-        content=request.form["content"],
-        post_id=post.id
-    )
+    author = request.form.get("author", "Anonymous")
+    content = request.form["content"]
 
+    comment = Comment(author=author, content=content, post_id=post.id)
     db.session.add(comment)
     db.session.commit()
 
-    return redirect(url_for("public.post_detail", slug=slug))
+    # Return JSON for AJAX
+    return jsonify({
+        "author": author,
+        "content": content
+    })
 
 @public_bp.route("/post/<int:id>/like", methods=["POST"])
 def like_post(id):

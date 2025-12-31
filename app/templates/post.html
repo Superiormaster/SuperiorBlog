@@ -7,6 +7,7 @@
   <div class="overflow-hidden bg-gray-800 py-3">
     <div id="latest-slider" class="flex transition-transform duration-700">
       {% for p in latest_posts %}
+      <div class="min-w-full px-4 text-center">
         <a href="{{ url_for('public.post_detail', slug=p.slug) }}"
            class="min-w-full text-center text-xl md:text-2xl font-semibold hover:underline px-4">
           {{ p.title }}
@@ -15,6 +16,7 @@
         <img src="{{ url_for('static', filename='uploads/' ~ p.featured_image) }}"
            class="rounded mt-2 w-full h-40 object-cover">
         {% endif %}
+      </div>
       {% endfor %}
     </div>
   </div>
@@ -48,40 +50,38 @@
     {% endfor %}
   </div>
 
-  <div class="flex items-center text-sm text-gray-600 mt-2">
-    <div>
-      <p class="text-gray-500 text-xl text-sm">
-        {{ post.views }} views ·
-        {{ (post.content|length // 1000) + 1 }} min read
-      </p>
-    </div>
-    <div class="">
-      <span class="w-4 h-4 ml-4 mr-1"><!-- Comment icon --><i class=" text-2xl fa fa-comment" aria-hidden="true"></i></span>
+  <div class="flex text-sm text-gray-600 mt-3 flex-wrap items-center gap-4">
+    <p class="text-gray-500 md:text-xl">
+      {{ post.views }} views ·
+      {{ (post.content|length // 1000) + 1 }} min read
+    </p>
+    <div class="flex items-center gap-1">
+      <span class="w-4 h-4 ml-4 mr-1"><!-- Comment icon --><i class=" text-2xl text-base fa fa-comment" aria-hidden="true"></i></span>
       <span class="text-xl">{{ post.comments|length }}</span>
     </div>
   </div>
-    
-  <div class="social-bar px-4 py-3 border-gray-200">
+
+  <div class="social-bar py-3 border-gray-200 border-t mt-4">
     <!-- Bottom row: Action buttons -->
-    <div class="flex justify-around border-t border-gray-200 pt-2">
-      <button class="flex items-center justify-center flex-1 text-gray-500 hover:text-blue-600 text-sm font-medium" id="like-btn" data-id="{{ post.id }}" onclick="likePost({{ post.id }})">
-        <i class="text-2xl far fa-thumbs-up mr-2"></i>
-        <span id="like-count" class="ml-2 text-xl">{{ post.likes.count() }}</span>
+    <div class="flex">
+      <button class="flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" id="like-btn-{{ post.id }}" onclick="likePost({{ post.id }})">
+        <i class="md:text-2xl text-xl far fa-thumbs-up mr-2"></i>
+        <span id="like-count-{{ post.id }}" class="ml-1 md:text-xl text-sm">{{ post.likes.count() }}</span>
       </button>
       
-      <button class="flex items-center justify-center flex-1 text-gray-500 hover:text-blue-600 text-sm font-medium" onclick="toggleComments()">
-        <i class="text-2xl far fa-comment mr-2"></i>
-        <span class="text-xl">Comment</span>
+      <button class="flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" onclick="toggleComments()">
+        <i class="md:text-2xl far fa-comment text-xl mr-2"></i>
+        <span class="md:text-xl text-sm">Comment</span>
       </button>
-      <button class="flex items-center justify-center flex-1 text-gray-500 hover:text-blue-600 text-sm font-medium" onclick="sharePost('{{ post.title }}')">
-        <i class="text-2xl fas fa-share mr-2"></i>
-        <span class="text-xl">Share</span>
+      <button class="flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" onclick="sharePost('{{ post.title }}')">
+        <i class="md:text-2xl text-xl fas fa-share mr-2"></i>
+        <span class="md:text-xl text-sm mt-1">Share</span>
       </button>
     </div>
   </div>
   
 <div id="comment-section" class="mt-6 hidden">
-  <form method="POST" action="{{ url_for('public.add_comment', slug=post.slug) }}">
+  <form method="POST" action="{{ url_for('public.add_comment', slug=post.slug) }}" id="comment-form">
     <input
     name="author"
     placeholder="Your name"
@@ -91,25 +91,24 @@
     <textarea name="content" placeholder="Write a comment..."
               class="w-full border rounded text-xl px-3 py-2 mb-2" required></textarea>
 
-    <button class="bg-blue-600 text-white px-4 py-2 rounded text-xl">
+    <button class="bg-blue-600 text-white px-4 py-2 rounded text-xl" type="submit">
       Post Comment
     </button>
   </form>
-  
+
   <section class="mt-10 mx-6">
     <h3 class="text-xl font-bold mb-4">Comments</h3>
-  
-    {% for comment in post.comments %}
-    <div class="mb-4 border-b pb-2">
-      <p class="font-semibold text-2xl">{{ comment.author }}</p>
-      <p class="text-gray-400 text-xl">{{ comment.content }}</p>
-      <p class="text-xs text-gray-500">
-        {{ comment.created_at.strftime('%b %d, %Y') }}
-      </p>
-    </div>
-    {% else %}
-    <p class="text-gray-500 text-xl">No comments yet.</p>
-    {% endfor %}
+    <ul id="comment-list">
+      {% for comment in post.comments %}
+      <li class="mb-4 border-b pb-2">
+        <p class="font-semibold text-xl md:text-2xl">{{ comment.author }}</p>
+        <p class="text-gray-400 text-sm md:text-xl">{{ comment.content }}</p>
+        <p class="text-xs text-gray-500">{{ comment.created_at.strftime('%b %d, %Y') }}</p>
+      </li>
+      {% else %}
+      <li class="text-gray-500 text-xl">No comments yet.</li>
+      {% endfor %}
+    </ul>
   </section>
 </div>
 
@@ -148,23 +147,20 @@
             <button class="px-4 bg-[#c89a1a] text-white py-2 rounded-r-lg">Subscribe</button>
           </form>
 
-      <ul class="flex items-center justify-between gap-2 border rounded-xl px-4 py-2 mb-4">
+      <ul class="homepage_down_nav border py-3 px-4 rounded-xl mb-4">
         {% if current_user.is_authenticated %}
-        <li><a href="{{ url_for('admin.dashboard') }}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-        <li><a href="{{ url_for('admin.settings') }}"><i class="fa fa-cogs" aria-hidden="true"></i> Settings</a></li>
-        <li><a href="{{ url_for('admin.change_password') }}" class="text-blue-500 hover:underline"><i class="fa fa-eraser" aria-hidden="true"></i>Change Password</a></li>
-        <li><a href="{{ url_for('admin.logout') }}"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a></li>
+        <li><a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2"><i class="fa fa-dashboard"></i> Dashboard</a></li>
         {% endif %}
 
-          <a href="{{ url_for('public.contact') }}"><i class="fa fa-envelope" aria-hidden="true"></i>Contact Us</a>
+          <li><a href="{{ url_for('public.contact') }}" class="flex items-center gap-2"><i class="fa fa-envelope" aria-hidden="true"></i>Contact Us</a></li>
           {% set settings = AppSettings.query.first() %}
           {% if settings %}
-          <a href="{{ url_for('public.privacy') }}">
+          <li><a href="{{ url_for('public.privacy') }}" class="flex items-center gap-2">
             <i class="fa fa-shield-alt" aria-hidden="true"></i> 
-          Privacy Policy</a>
-            <a href="{{ url_for('public.terms') }}" class="mr-6">
+          Privacy Policy</a></li>
+            <li><a href="{{ url_for('public.terms') }}" class="mr-6 flex items-center gap-2">
               <i class="fa fa-file-alt" aria-hidden="true"></i> Terms & Conditions
-            </a>
+            </a></li>
           {% endif %}
       </ul>
  
@@ -193,5 +189,4 @@
         </div>
       </footer>
 </div>
-
 {% endblock %}

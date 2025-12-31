@@ -74,16 +74,36 @@ window.addEventListener("scroll", () => {
 // Like Post
 const likedPosts = new Set();
 
-function likePost(id) {
-  if (likedPosts.has(id)) return;
+function likePost(postId) {
+  // Prevent multiple clicks
+  if (likedPosts.has(postId)) return;
 
-  fetch(`/post/${id}/like`, { method: "POST" })
+  const likeBtn = document.getElementById(`like-btn-${postId}`);
+  const likeCount = document.getElementById(`like-count-${postId}`);
+
+  // Optimistic UI: increment immediately
+  likeCount.textContent = parseInt(likeCount.textContent) + 1;
+  likedPosts.add(postId);
+
+  // Animate button
+  likeBtn.classList.add('animate-bounce');
+  setTimeout(() => likeBtn.classList.remove('animate-bounce'), 500);
+
+  // Send like to server
+  fetch(`/post/${postId}/like`, { method: 'POST' })
     .then(res => res.json())
     .then(data => {
-      if (data.liked) {
-        document.getElementById(`like-count-${id}`).textContent = data.count;
-        likedPosts.add(id);
+      // Ensure server count is synced
+      likeCount.textContent = data.count;
+      if (!data.liked) {
+        // If already liked on server, don't allow multiple
+        likedPosts.delete(postId);
       }
+    })
+    .catch(() => {
+      // Revert in case of network error
+      likeCount.textContent = parseInt(likeCount.textContent) - 1;
+      likedPosts.delete(postId);
     });
 }
 
@@ -93,6 +113,42 @@ function toggleComments() {
   section.classList.toggle("hidden");
   section.scrollIntoView({ behavior: "smooth" });
 }
+
+const form = document.getElementById("comment-form");
+const commentList = document.getElementById("comment-list");
+
+form.addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  const formData = new FormData(form);
+  const slug = "{{ post.slug }}"; // Flask template variable
+
+  fetch(`/post/${slug}/comment`, {
+    method: "POST",
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    const li = document.createElement("li");
+    li.classList.add("mb-4", "border-b", "pb-2");
+    li.innerHTML = `
+      <p class="font-semibold text-xl md:text-2xl">${data.author}</p>
+      <p class="text-gray-400 text-sm md:text-xl">${data.content}</p>
+      <p class="text-xs text-gray-500">Just now</p>
+    `;
+    commentList.appendChild(li);
+
+    // Show section if hidden
+    const section = document.getElementById("comment-section");
+    if (section.classList.contains("hidden")) {
+      section.classList.remove("hidden");
+    }
+
+    form.reset();
+    li.scrollIntoView({ behavior: "smooth" });
+  })
+  .catch(err => console.error(err));
+});
 
 // Share
 function sharePost(title) {

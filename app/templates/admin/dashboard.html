@@ -13,36 +13,31 @@
   </div>
   
     <!-- Search & Filters -->
-  <form method="GET" class="flex gap-4 py-11">
+  <form method="GET" class="flex flex-col md:flex-row gap-3 md:gap-4 sm:items-center py-11">
     <input type="text"
            name="q"
            value="{{ q }}"
            placeholder="Search posts..."
-           class="flex-1 border rounded px-3 py-2">
+           class="w-full sm:flex-1 border rounded px-3 py-2 text-sm">
 
-    <select name="status" class="border rounded px-3 py-2">
+    <select name="status" class="w-full border sm:w-40 rounded px-3 py-2 text-sm">
       <option value="all" {{ 'selected' if status == 'all' }}>All</option>
       <option value="published" {{ 'selected' if status == 'published' }}>Published</option>
       <option value="draft" {{ 'selected' if status == 'draft' }}>Drafts</option>
     </select>
 
-    <button class="bg-gray-800 text-white px-4 py-2 rounded">
+    <button class="w-full sm:w-auto bg-yellow-600 text-white px-4 py-2 border rounded text-sm">
       Filter
     </button>
   </form>
   
   <!-- Sidebar -->
-  <div class="flex h-fit">
+  <div class="flex h-fit hidden md:block bg-gray-700 shadow rounded-lg overflow-hidden">
     <aside class="bg-gray-700 w-full shadow rounded-lg p-4 h-fit border">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl font-semibold">Posts</h2>
       </div>
-      
-      <div class="flex gap-2 mb-4">
-        <span class="px-2 py-1 text-xs rounded bg-green-100 text-green-700">Published</span>
-        <span class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">Drafts</span>
-      </div>
-      
+
     <section class="flex-1">
 
     <div class="bg-gray-700 shadow rounded-lg overflow-hidden">
@@ -71,7 +66,7 @@
             </span>
           </td>
 
-            <td class="px-4 py-3 text-gray-500">
+            <td class="px-4 py-3 text-gray-400">
               {{ post.created_at.strftime('%B %d, %Y') }}
             </td>
 
@@ -107,6 +102,48 @@
   </aside>
   </div>
   
+  <div class="md:hidden space-y-4">
+    {% for post in posts %}
+    <div class="bg-gray-700 rounded-lg p-4 shadow">
+      
+      <h3 class="font-semibold text-lg mb-2">
+        {{ post.title }}
+      </h3>
+  
+      <div class="flex justify-between text-sm mb-2">
+        <span class="px-2 py-1 rounded text-xs
+        {{ 'bg-green-100 text-green-700' if post.is_published else 'bg-gray-100 text-gray-600' }}">
+          {{ 'Published' if post.is_published else 'Draft' }}
+        </span>
+  
+        <span class="text-gray-400">
+          {{ post.created_at.strftime('%b %d, %Y') }}
+        </span>
+      </div>
+  
+      <div class="flex justify-end gap-4 text-sm">
+        <form action="{{ url_for('admin.toggle_publish', id=post.id) }}"
+          method="POST"
+          class="inline">
+          <button class="text-sm text-gray-60 hover:underline">
+          {{ 'Unpublish' if post.is_published else 'Publish' }}
+          </button>
+        </form>
+        <a href="{{ url_for('admin.edit', id=post.id) }}" class="text-blue-400">Edit</a>
+  
+        <form action="{{ url_for('admin.delete', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+            <button type="submit" class="text-sm text-red-500 hover:underline">Delete</button>
+        </form>
+      </div>
+  
+    </div>
+    {% else %}
+      <div class="text-center py-6 text-gray-500">
+        No posts found.
+      </div>
+    {% endfor %}
+  </div>
+  
   <!-- Pagination -->
   <div class="flex justify-center gap-2">
     {% if posts.has_prev %}
@@ -124,12 +161,12 @@
     {% endif %}
   </div>
 
-  <ul class="flex items-center justify-between gap-2 text-xl border rounded-xl py-2 px-4" id="drawerNav">
+  <ul class="homepage_down_nav border py-3 px-4 rounded-xl mb-4" id="drawerNav">
   {% if current_user.is_authenticated %}
-  <li><a href="{{ url_for('admin.dashboard') }}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-  <li><a href="{{ url_for('admin.settings') }}"><i class="fa fa-cogs" aria-hidden="true"></i> Settings</a></li>
-  <li><a href="{{ url_for('admin.change_password') }}" class="text-blue-500 hover:underline"><i class="fa fa-eraser" aria-hidden="true"></i>Change Password</a></li>
-  <li><a href="{{ url_for('admin.logout') }}"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a></li>
+  <li><a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+  <li><a href="{{ url_for('admin.settings') }}" class="flex items-center gap-2"><i class="fa fa-cogs" aria-hidden="true"></i> Settings</a></li>
+  <li><a href="{{ url_for('admin.change_password') }}" class="text-blue-500 hover:underline flex items-center gap-2"><i class="fa fa-eraser" aria-hidden="true"></i>Change Password</a></li>
+  <li><a href="{{ url_for('admin.logout') }}" class="flex items-center gap-2"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a></li>
   {% endif %}
   </ul>
 </div>

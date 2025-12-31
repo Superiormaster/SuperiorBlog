@@ -253,6 +253,12 @@ textarea {
   resize: none;
 }
 
+.homepage_down_nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 @media (max-width: 599px) {
   .drawer{
     width: calc(300px);
@@ -265,5 +271,11 @@ textarea {
     align-items: center;
     border-bottom: 1px solid #efefef;
     background: linear-gradient(180deg, rgba(0,0,0,0.03), transparent);
+  }
+  
+  .homepage_down_nav {
+    flex-direction: column;
+    text-align: left;
+    border: none;
   }
 }

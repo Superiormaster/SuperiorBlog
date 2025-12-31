@@ -79,6 +79,7 @@
             </div>
           {% endif %}
         {% endwith %}
+        <button class="fixed right-10 bottom-10 text-2xl border rounded-xl py-2 px-1 text-white z-50" id="btn">↑</button>
         {% block content %}{% endblock %}
     </main>
   </div>
@@ -109,8 +110,8 @@
       </form>
       </div>
     
-      <div class="">
-        <div class="text-center">Navigation</div>
+      <div class="drawer__body">
+        <div class="section-title">Navigation</div>
         <ul class="nav-list" id="drawerNav">
           <a href="{{ url_for('public.index') }}" class="mr-6"><i class="fa fa-home" aria-hidden="true"></i>Home</a>
         {% if current_user.is_authenticated %}
@@ -170,58 +171,6 @@
             <button class="px-4 bg-[#c89a1a] text-white py-2 rounded-r-lg">Subscribe</button>
           </form>
 
-      <div class="drawer__body">
-        <div class="section-title">Navigation</div>
-        <ul class="nav-list" id="drawerNav">
-          <a href="{{ url_for('public.index') }}" class="mr-6"><i class="fa fa-home" aria-hidden="true"></i>Home</a>
-        {% if current_user.is_authenticated %}
-        <li><a href="{{ url_for('admin.dashboard') }}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-        <li><a href="{{ url_for('admin.settings') }}"><i class="fa fa-cogs" aria-hidden="true"></i> Settings</a></li>
-        <li><a href="{{ url_for('admin.change_password') }}" class="text-blue-500 hover:underline"><i class="fa fa-eraser" aria-hidden="true"></i>Change Password</a></li>
-        <li><a href="{{ url_for('admin.logout') }}"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a></li>
-        {% else %}
-        <li><a href="{{ url_for('admin.login') }}"><i class="fa fa-sign-in" aria-hidden="true"></i>Login</a></li>
-        {% endif %}
-
-        <div class="section-title">Category</div>
-          <a href="{{ url_for('public.category', slug='world') }}" ><i class="fa fa-globe" aria-hidden="true"></i>World</a>
-          <a href="{{ url_for('public.category', slug='politics') }}">
-            <svg
-              viewBox="0 0 512 512"
-              class="w-6 h-6 text-yellow-500"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M419.404 130.723h-78.979V86.007c12.558-3.567 21.787-15.13 21.787-28.816V29.957C362.213 13.438 348.773 0 332.255 0s-29.957 13.438-29.957 29.957v27.234c0 13.686 9.229 25.249 21.787 28.816v44.716H264.17V86.007c12.558-3.567 21.787-15.13 21.787-28.816V29.957C285.957 13.438 272.518 0 256 0s-29.957 13.438-29.957 29.957v27.234c0 13.686 9.229 25.249 21.787 28.816v44.716h-59.915V86.007c12.558-3.567 21.787-15.13 21.787-28.816V29.957C209.702 13.438 196.263 0 179.745 0s-29.957 13.438-29.957 29.957v27.234c0 13.686 9.229 25.249 21.787 28.816v44.716H92.596c-4.513 0-8.17 3.658-8.17 8.17v32.681c0 4.512 3.657 8.17 8.17 8.17h24.511v57.191c0 4.512 3.657 8.17 8.17 8.17H128v217.872h-2.723c-4.513 0-8.17 3.658-8.17 8.17v24.511h-2.723c-4.513 0-8.17 3.658-8.17 8.17s3.657 8.17 8.17 8.17h283.234c4.513 0 8.17-3.658 8.17-8.17s-3.657-8.17-8.17-8.17h-2.723v-24.511c0-4.512-3.657-8.17-8.17-8.17H384V245.106h2.723c4.513 0 8.17-3.658 8.17-8.17v-57.191h24.511c4.513 0 8.17-3.658 8.17-8.17v-32.681c0-4.512-3.657-8.17-8.17-8.17z"/>
-            </svg>
-            Politics</a>
-          <a href="{{ url_for('public.category', slug='business') }}">
-            <svg
-              viewBox="0 0 512 512"
-              class="w-6 h-6 text-yellow-500"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M470.537 137.504H41.471C18.565 137.504 0 156.077 0 178.976v56.797l211.507 44.607V252.1h87.772v28.28L512 235.489v-56.513c0-22.899-18.565-41.472-41.463-41.472z"/>
-              <path d="M299.279 369.129h-87.772v-57.017L14.633 273.012V439.81c0 22.898 18.557 41.47 41.455 41.47h399.824c22.898 0 41.463-18.572 41.463-41.47V272.721l-198.096 39.39v56.018z"/>
-              <rect x="233.452" y="274.044" width="43.882" height="73.132"/>
-              <path d="M193.786 72.206c.008-1.703.638-3.057 1.75-4.208 1.127-1.103 2.49-1.718 4.176-1.734h112.577c1.686.016 3.058.631 4.185 1.734 1.103 1.151 1.726 2.505 1.733 4.208v29.627h35.546V72.206c.008-11.41-4.665-21.875-12.143-29.329-7.446-7.485-17.934-12.166-29.321-12.158H199.712c-11.394-.008-21.875 4.673-29.32 12.158-7.47 7.454-12.158 17.918-12.135 29.329v29.627h35.529V72.206z"/>
-            </svg>
-            Business</a>
-
-          <a href="{{ url_for('public.contact') }}"><i class="fa fa-envelope" aria-hidden="true"></i>Contact Us</a>
-          {% set settings = AppSettings.query.first() %}
-          {% if settings %}
-          <a href="{{ url_for('public.privacy') }}">
-            <i class="fa fa-shield-alt" aria-hidden="true"></i> 
-          Privacy Policy</a>
-            <a href="{{ url_for('public.terms') }}" class="mr-6">
-              <i class="fa fa-file-alt" aria-hidden="true"></i> Terms & Conditions
-            </a>
-          {% endif %}
-        </ul>
-      </div>
-
         <h2 class="text-center text-2xl">Follow us on:</h2>
         <!-- Social Icons -->
         <div class="flex space-x-4 justify-center mt-3 text-2xl">
@@ -254,7 +203,6 @@
   <button id="acceptCookies" class="bg-yellow-500 text-black px-4 py-1 rounded">Accept</button>
 </div>
   
-    <button id="btn">↑</button>
     <script src="{{ url_for('static', filename='Script.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <script>
