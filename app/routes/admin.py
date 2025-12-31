@@ -7,7 +7,7 @@ from flask_login import (
     login_required
 )
 from app.models import Post, Admin, AppSettings, Category, Label
-from app.extensions import db
+from app.extensions import db, cache
 from flask_login import current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.utils import allowed_file
@@ -66,6 +66,7 @@ def change_password():
 
 @admin_bp.route("/dashboard")
 @login_required
+@cache.cached(timeout=120)
 def dashboard():
     page = request.args.get("page", 1, type=int)
     q = request.args.get("q", "")

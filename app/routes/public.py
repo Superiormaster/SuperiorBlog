@@ -14,7 +14,6 @@ public_bp = Blueprint(
 )
 
 @public_bp.route("/")
-@cache.cached(timeout=300)
 def index():
     posts = (
         Post.query
