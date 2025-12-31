@@ -1,7 +1,5 @@
 {% extends "base.html" %}
 
-{% block title %}{{ category }} News | Profnet{% endblock %}
-
 {% block title %}
 {{ category.meta_title or category.name ~ " News | ProfNet News" }}
 {% endblock %}
@@ -11,54 +9,40 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-6">{{ category }} News</h1>
-
-<aside class="bg-gray-800 p-4 rounded">
-  <h3 class="text-xl font-bold mb-4">Trending in {{ category.name }}</h3>
-  {% for post in trending_posts %}
-    <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
-       class="block mb-2 hover:text-yellow-400">
-      {{ post.title }}
-    </a>
-  {% endfor %}
-</aside>
+<div class="flex home py-10">
+  <h1 class="text-3xl text-center font-bold mb-6 mt-12">{{ category.name }} News</h1>
+  <form action="{{ url_for('public.search') }}" method="get" class="flex mb-6 mt-4 mx-2">
+    <input
+      type="text"
+      name="q"
+      placeholder="Search news..."
+      class="w-full px-4 py-2 rounded-l flex-1 p-2 border border-[#c89a1a] focus:outline-none rounded-l-lg text-white"
+    >
+    <button class="px-4 rounded-r bg-[#c89a1a] text-white py-2 rounded-r-lg"><i class="fa fa-search" aria-hidden="true"></i></button>
+  </form>
+  
 <aside class="bg-white/5 p-4 rounded-lg">
-  <h3 class="text-xl font-semibold mb-3">Trending in {{ category.name }}</h3>
+  <h3 class="text-xl text-center font-semibold mb-4 bg-red-600 text-white px-2 py-1 uppercase">Trending in {{ category.name }} News</h3>
 
-  {% for post in trending %}
-    <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
-       class="block mb-2 hover:underline">
-       {{ post.title }}
-    </a>
-  {% endfor %}
-</aside>
-
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-  <!-- Posts -->
-  <div class="md:col-span-2 space-y-6">
-    {% for post in posts %}
-    <article class="bg-gray-800 rounded p-4">
-      <h2 class="text-2xl font-bold hover:text-yellow-400">
-        <a href="{{ url_for('public.post_detail', slug=post.slug) }}">
-          {{ post.title }}
-        </a>
-      </h2>
-      <p class="text-gray-400 mt-2">
-        {{ post.content[:150] }}...
-      </p>
-    </article>
+  <div class="overflow-x-auto flex space-x-4 py-4" id="trending-slider">
+    {% for t in trending_posts %}
+    <div class="min-w-[200px] lg:min-h-[250px] bg-gray-700 p-4 rounded flex-shrink-0">
+      <a href="{{ url_for('public.post_detail', slug=t.slug) }}" class="text-lg font-semibold hover:underline">
+        {{ t.title }}
+      </a>
+      {% if t.featured_image %}
+      <img src="{{ url_for('static', filename='uploads/' ~ t.featured_image) }}"
+           class="rounded mt-2 w-full h-40 object-cover">
+      {% endif %}
+      <p class="text-sm text-gray-400 mt-2">{{ t.comments|length }} 💬</p>
+    </div>
     {% endfor %}
   </div>
-
-  <!-- Sidebar -->
-  {% include "partials/category_sidebar.html" %}
-
-</div>
+</aside>
 
 {% if posts %}
   <div class="grid md:grid-cols-2 gap-6">
-    {% for post in posts %}
+    {% for post in trending_posts %}
       <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
          class="block bg-gray-800 rounded-lg overflow-hidden hover:shadow-lg transition">
         
@@ -68,13 +52,66 @@
         {% endif %}
 
         <div class="p-4">
-          <h2 class="text-xl font-semibold text-white">{{ post.title }}</h2>
+          <h2 class="text-xl font-semibold text-yellow-600">{{ post.title }}</h2>
           <p class="text-gray-400 mt-2">{{ post.content[:120] }}...</p>
         </div>
       </a>
     {% endfor %}
   </div>
 {% else %}
-  <p class="text-gray-400">No {{ category }} news yet.</p>
+  <p class="text-gray-400">No {{ category.name }} news yet.</p>
 {% endif %}
+
+    <footer class="drawer_footer bg-gray-700 text-gray-300">
+          <h3 class="font-bold text-xl py-4 text-center">Get Daily News</h3>
+          <form action="{{ url_for('public.subscribe') }}" method="post"
+                class="flex mb-6 mt-2 mx-2 text-xl">
+            <input name="email" type="email" placeholder="youremail@gmail.com" required
+                   class="w-full px-4 py-2 flex-1 border border-[#c89a1a] focus:outline-none rounded-l-lg text-white">
+            <button class="px-4 bg-[#c89a1a] text-white py-2 rounded-r-lg">Subscribe</button>
+          </form>
+
+        <ul class="homepage_down_nav border py-3 px-4 rounded-xl mb-4" id="drawerNav">
+        {% if current_user.is_authenticated %}
+        <li><a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+        {% endif %}
+        
+          <li><a href="{{ url_for('public.contact') }}" class="flex items-center gap-2"><i class="fa fa-envelope" aria-hidden="true"></i>Contact Us</a></li>
+          {% set settings = AppSettings.query.first() %}
+          {% if settings %}
+          <li><a href="{{ url_for('public.privacy') }}" class="flex items-center gap-2">
+            <i class="fa fa-shield-alt" aria-hidden="true"></i> 
+          Privacy Policy</a></li>
+            <li><a href="{{ url_for('public.terms') }}" class="mr-6 flex items-center gap-2">
+              <i class="fa fa-file-alt" aria-hidden="true"></i> Terms & Conditions
+            </a></li>
+          {% endif %}
+        </ul>
+
+        <h2 class="text-center text-2xl">Follow us on:</h2>
+        <!-- Social Icons -->
+        <div class="flex space-x-4 justify-center mt-3 text-2xl">
+          <a href="https://facebook.com/YourPage" target="_blank" class="transition-transform transform hover:scale-110">
+            <i class="fab fa-facebook-f" style="color:#1877F2;"></i>
+          </a>
+          <a href="https://twitter.com/YourProfile" target="_blank" class="transition-transform transform hover:scale-110">
+            <i class="fab fa-x-twitter" style="color:#1DA1F2;"></i>
+          </a>
+          <a href="https://instagram.com/YourProfile" target="_blank" class="transition-transform transform hover:scale-110">
+            <i class="fab fa-instagram" style="color:#E4405F;"></i>
+          </a>
+          <a href="https://youtube.com/YourChannel" target="_blank" class="transition-transform transform hover:scale-110">
+            <i class="fab fa-youtube" style="color:#FF0000;"></i>
+          </a>
+          <a href="https://linkedin.com/in/YourProfile" target="_blank" class="transition-transform transform hover:scale-110">
+            <i class="fab fa-linkedin-in" style="color:#0A66C2;"></i>
+          </a>
+        </div>
+    
+        <div class="max-w-7xl mx-auto px-4 py-4 text-center text-xl text-sm">
+          © {{ year }} Profnet. All rights reserved.
+        </div>
+      </footer>
+</div>
+
 {% endblock %}

@@ -163,7 +163,6 @@
 
   <ul class="homepage_down_nav border py-3 px-4 rounded-xl mb-4" id="drawerNav">
   {% if current_user.is_authenticated %}
-  <li><a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2"><i class="fa fa-dashboard"></i> Dashboard</a></li>
   <li><a href="{{ url_for('admin.settings') }}" class="flex items-center gap-2"><i class="fa fa-cogs" aria-hidden="true"></i> Settings</a></li>
   <li><a href="{{ url_for('admin.change_password') }}" class="text-blue-500 hover:underline flex items-center gap-2"><i class="fa fa-eraser" aria-hidden="true"></i>Change Password</a></li>
   <li><a href="{{ url_for('admin.logout') }}" class="flex items-center gap-2"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a></li>

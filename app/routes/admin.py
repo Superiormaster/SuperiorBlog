@@ -201,9 +201,7 @@ def toggle_publish(id):
     post = Post.query.get_or_404(id)
     post.is_published = not post.is_published
     db.session.commit()
-    return jsonify({
-        "status": "published" if post.is_published else "draft"
-    })
+
     flash(f"Post {'published' if post.is_published else 'unpublished'}", "success")
     return redirect(url_for("admin.dashboard"))
 

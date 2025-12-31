@@ -150,7 +150,6 @@ def category(slug):
         .all()
     )
 
-    post.views += 1
     category.views += 1
     db.session.commit()
 
