@@ -9,77 +9,98 @@
   </h1>
 
   <form method="POST" id="post-form" enctype="multipart/form-data">
+      {{ form.hidden_tag() }} 
+
       <div class="relative">
-        <select name="category" required
-                class="w-full px-3 py-2 rounded bg-gray-800 text-white focus:outline-none appearance-none">
-            <option value="">Select Category </option>
-            {% for category in categories %}
-                <option value="{{ category.id }}"
-                    {% if post and post.category_id == category.id %}
-                        selected
-                    {% endif %}
-                >{{ category.name }}</option>
-            {% endfor %}
-        </select>
-        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
+      {{ form.category.label(class="block font-medium mb-2") }}
+      {{ form.category(class="w-full px-3 py-2 rounded bg-gray-800 text-white focus:outline-none appearance-none") }}
+      {% for error in form.category.errors %}
+        <p class="text-red-500 text-sm">{{ error }}</p>
+      {% endfor %}
+
+        <div class="pointer-events-none absolute inset-y-12 right-0 flex items-center px-2 text-white">
             ▼
         </div>
       </div>
 
       <div class="relative">
-      <!-- Labels -->
-      <label class="block mb-2 font-medium">Labels</label>
-      <select name="labels" multiple class="w-full px-3 py-2 mb-4 rounded bg-gray-800 text-white focus:outline-none appearance-none">
-        {% for label in labels %}
-          <option value="{{ label.id }}"
-            {% if post and label.id in post.labels|map(attribute='id')|list %}selected{% endif %}>
-            {{ label.name }}
-          </option>
-        {% endfor %}
-      </select>
+      {{ form.labels.label(class="block font-medium mb-2") }}
+      {{ form.labels(class="w-full px-3 py-2 mb-4 rounded bg-gray-800 text-white focus:outline-none appearance-none", multiple=True) }}
+    </div>
+    <div class="grid justify-center">
+    
+      {{ form.image.label(
+          class="block my-3 border border-blue-700 py-3 rounded-2xl text-center font-medium"
+      ) }}
+    
+      {{ form.image(
+          class="mb-4 block px-4 py-3 rounded border border-gray-600",
+          id="imageInput",
+          accept="image/*"
+      ) }}
+    
+      <div class="flex justify-center items-center">
+        <img
+          id="preview"
+          src="{{
+            url_for('static', filename='images/uploads/' ~ post.featured_image)
+            if post and post.featured_image else ''
+          }}"
+          class="mb-4 w-70 h-50 object-cover rounded border border-gray-300"
+          style="{{ 'display:block;' if post and post.featured_image else 'display:none;' }}"
+        >
+      </div>
+    
     </div>
 
-    <div class="grid justify-center">
-      <label class="block my-3 border border-blue-700 py-3 rounded-2xl text-center font-medium">Featured Image</label>
-      <input type="file" name="image" accept="image/*" 
-             id="imageInput" class="mb-4 block items-center px-4 py-3 rounded border border-gray-600">
-      
-      <div class="flex justify-center items-center">
-        <img id="preview" src="{{ url_for('static', filename='images/uploads/' ~ post.image) if post and post.image else '' }}"
-             class="mb-4 w-70 h-50 object-cover rounded border border-gray-300"
-             style="{{ 'display:block;' if post and post.image else 'display:none;' }}">
-        </div>
-      </div>
-
     <div class="bg-gray-700 p-4 rounded">
-    <label class="block mb-2 font-medium">Title</label>
-    <input type="text"
-           name="title"
-           value="{{ post.title if post else '' }}"
-           placeholder="Post title"
-           class="w-full mb-4 py-3 px-4 border-white/10 bg-white/10 border rounded text-white transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500"
-           required>
+    <div>
+        {{ form.title.label(class_="block font-medium mb-2") }}
+        {{ form.title(class_="w-full py-3 px-4 mb-2 bg-white/10 rounded text-white border focus:outline-none border-white/10 bg-white/10 transition focus:bg-blue-500/5 focus:border-blue-500", placeholder="Post Title") }}
+      {% for error in form.title.errors %}
+        <p class="text-red-500 text-sm">{{ error }}</p>
+      {% endfor %}
+    </div>
 
-    <label class="block mb-2 font-medium">Label</label>
-    <input
-      type="text"
-      name="label"
-      placeholder="Image label (Short write-up on the content)"
-      class="w-full mb-3 py-3 px-4 border-white/10 bg-white/10 border rounded text-white transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500"
-    >
+    <div class="relative mt-4">
+      <label class="block font-medium mb-2">Tags</label>
+      <input
+        type="text"
+        id="tag-input"
+        class="w-full mb-2 py-3 px-4 border-white/10 bg-white/10 border rounded text-white transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500"
+        placeholder="Type and press Enter(e.g Messi, viral)"
+        autocomplete="off"
+      />
 
-    <label class="block mb-2 font-medium">Content</label>
-    <textarea id="editor"
-              name="content"
-              rows="10"
-              placeholder="Write your content here..."
-              class="w-full h-64 mb-2 py-3 px-4 border-white/10 bg-white/10 border rounded text-white transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500"
-              required>{{ post.content if post else '' }}</textarea>
+      <div id="tag-suggestions"
+           class="absolute z-50 bg-gray-900 border border-gray-700 w-full rounded mt-1 hidden"></div>
+
+      <div id="selected-tags" class="flex flex-wrap gap-2 mt-2"></div>
+    
+      <input type="hidden" name="tags" id="tags-hidden" />
+    </div>
+
+      <div>
+        {{ form.content.label(class_="block font-medium mb-2") }}
+        {{ form.content(rows="10", id="editor", placeholder="Write your content here...",
+              class_="w-full h-64 mb-2 py-3 px-4 border-white/10 bg-white/10 border rounded text-white transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500") }}
+      {% for error in form.content.errors %}
+        <p class="text-red-500 text-sm">{{ error }}</p>
+      {% endfor %}
+    </div>
       </div>
-        
     <div class="flex justify-end gap-2 mt-4">
-      <button type="submit" id="save-draft" value="1" class="bg-blue-200 px-4 py-2 rounded text-blue-600">Save Draft</button>
-      <button type="submit" name="is_published" id="publish" value="1" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">{{ 'Update' if post else 'Create' }}</button>
+      <!-- Save as draft -->
+      <button type="submit" name="submit_type" id="save-draft" value="draft"
+              class="bg-blue-200 px-4 py-2 rounded text-blue-600">
+          Save Draft
+      </button>
+      
+      <!-- Regular create/update -->
+      <button type="submit" name="submit_type" id="publish" value="publish"
+              class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 shadow-lg transition relative font-medium overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_0_15px_rgba(50,130,246,0.4)]">
+          {{ 'Update' if post else 'Create' }}
+      </button>
     </div>
   </form>
 </div>
@@ -98,17 +119,15 @@ const editor = new EasyMDE({
   },
 });
 
-const form = document.getElementById("post-form");
 
 function syncEditor() {
-  if (window.editor) {
-    editor.codemirror.save();   // 🔥 FORCE markdown → textarea
+  if (editor && editor.codemirror) {
+    editor.codemirror.save();
   }
 }
 
 // Desktop + Mobile safe
 form.addEventListener("submit", syncEditor);
-
 // Extra safety for mobile tap
 document.getElementById("save-draft").addEventListener("click", syncEditor);
 document.getElementById("publish").addEventListener("click", syncEditor);
@@ -134,6 +153,15 @@ imageInput.addEventListener("change", function() {
         preview.style.display = "none";
     }
 });
+</script>
+
+<script>
+  // Preload tags from server
+  {% if post %}
+  window.existingTags = {{ post.tags|map(attribute='name')|list|tojson }};
+  {% else %}
+  window.existingTags = [];
+  {% endif %}
 </script>
 
 {% endblock %}

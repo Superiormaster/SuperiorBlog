@@ -3,12 +3,17 @@
 {% block title %}{{ tag.name }} News | ProfNet News{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-6">#{{ tag.name }}</h1>
+<h1 class="text-3xl font-bold mb-6 text-center mt-10 text-gray-700">#{{ tag.name }}</h1>
 
 {% for post in posts %}
   <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
-     class="block mb-4 text-xl hover:underline">
+     class="block mb-4 text-center text-xl hover:underline">
      {{ post.title }}
+
+      {% if post.featured_image %}
+      <img src="{{ url_for('static', filename='uploads/' ~ post.featured_image) }}"
+           class="rounded mt-2 w-full h-40 object-cover">
+      {% endif %}
   </a>
 {% else %}
   <p>No posts found.</p>

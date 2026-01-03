@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from config import Config
 from app.routes.public import public_bp
 from app.routes.admin import admin_bp
-from app.extensions import db, login_manager, cache
+from app.extensions import db, login_manager, cache, csrf
 from flask_migrate import Migrate
 from app.models import AppSettings, Category, Post
 import os
@@ -26,6 +26,7 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     migrate = Migrate(app, db)
+    csrf.init_app(app)
     cache.init_app(app) 
 
     app.register_blueprint(public_bp)

@@ -6,7 +6,7 @@
   
   <div class="flex justify-between items-center">
     <h1 class="text-2xl font-bold">Dashboard</h1>
-    <a href="{{ url_for('admin.create') }}"
+    <a href="{{ url_for('admin.create_or_edit') }}"
        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
       New Post
     </a>
@@ -79,7 +79,7 @@
                 </button>
               </form>
 
-              <a href="{{ url_for('admin.edit', id=post.id) }}"
+              <a href="{{ url_for('admin.create_or_edit', id=post.id) }}"
                  class="text-sm text-blue-600 hover:underline">
                 Edit
               </a>
@@ -129,7 +129,7 @@
           {{ 'Unpublish' if post.is_published else 'Publish' }}
           </button>
         </form>
-        <a href="{{ url_for('admin.edit', id=post.id) }}" class="text-blue-400">Edit</a>
+        <a href="{{ url_for('admin.create_or_edit', id=post.id) }}" class="text-blue-400">Edit</a>
   
         <form action="{{ url_for('admin.delete', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
             <button type="submit" class="text-sm text-red-500 hover:underline">Delete</button>
@@ -145,7 +145,7 @@
   </div>
   
   <!-- Pagination -->
-  <div class="flex justify-center gap-2">
+  <div class="flex justify-center my-3 gap-2">
     {% if posts.has_prev %}
       <a href="{{ url_for('admin.dashboard', page=posts.prev_num, q=q, status=status) }}"
          class="px-3 py-1 border rounded">Prev</a>
@@ -164,6 +164,7 @@
   <ul class="homepage_down_nav border py-3 px-4 rounded-xl mb-4" id="drawerNav">
   {% if current_user.is_authenticated %}
   <li><a href="{{ url_for('admin.settings') }}" class="flex items-center gap-2"><i class="fa fa-cogs" aria-hidden="true"></i> Settings</a></li>
+  <li><a href="{{ url_for('admin.tags') }}">Manage Tags</a></li>
   <li><a href="{{ url_for('admin.change_password') }}" class="text-blue-500 hover:underline flex items-center gap-2"><i class="fa fa-eraser" aria-hidden="true"></i>Change Password</a></li>
   <li><a href="{{ url_for('admin.logout') }}" class="flex items-center gap-2"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a></li>
   {% endif %}

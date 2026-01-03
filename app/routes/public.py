@@ -1,15 +1,17 @@
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, flash, make_response
-from app.models import Post, Comment, Like, Subscriber, ContactMessage, Category, AppSettings, Tag
+from app.models import Post, Comment, Like, Subscriber, ContactMessage, Category, AppSettings, Tag, post_tags
 from markdown import markdown
 import os
 import traceback
-from flask_mail import Message
-from app.extensions import db, mail, cache
+from app.forms import ContactForm
+from app.utils.email_helper import send_mailgun_email
+from app.extensions import db, cache, csrf
 from sqlalchemy import func
 
 public_bp = Blueprint(
     "public",
-    __name__,
+    __name__, 
+    url_prefix="/public",
     template_folder="../templates/public"
 )
 
@@ -34,7 +36,18 @@ def index():
         .all()
     )
     
-    return render_template("homepage.html", posts=posts, trending_posts=trending_posts, Post=Post)
+    popular_tags = (
+        Tag.query
+        .join(post_tags)
+        .join(Post)
+        .filter(Post.is_published == True)
+        .group_by(Tag.id)
+        .order_by(func.count(Post.id).desc())
+        .limit(10)
+        .all()
+    )
+    
+    return render_template("homepage.html", posts=posts, trending_posts=trending_posts, popular_tags=popular_tags, Post=Post)
 
 @public_bp.route("/post/<slug>", endpoint='post_detail')
 def post_detail(slug):
@@ -68,7 +81,7 @@ def post_detail(slug):
     db.session.commit()
 
     return render_template("post.html", post=post, content_html=content_html, latest_posts=latest_posts, related_posts=related_posts)
-    
+
 @public_bp.route("/search")
 @cache.cached(timeout=300)
 def search():
@@ -87,15 +100,31 @@ def search():
 @public_bp.route("/load-more")
 @cache.cached(timeout=300)
 def load_more():
-    page = int(request.args.get("page", 1))
-    posts = Post.query.filter_by(is_published=True)\
-        .order_by(Post.created_at.desc())\
-        .paginate(page=page, per_page=5)
+    page = request.args.get("page", 1, type=int)
 
-    return render_template(
-        "partials/post_cards.html",
-        posts=posts.items
+    pagination = (
+        Post.query
+        .filter_by(is_published=True)
+        .order_by(Post.created_at.desc())
+        .paginate(page=page, per_page=5, error_out=False)
     )
+
+    # ✅ STOP when no posts
+    if not pagination.items:
+        return jsonify({
+            "html": "",
+            "has_more": False
+        })
+
+    html = render_template(
+        "post_cards.html",
+        posts=pagination.items
+    )
+
+    return jsonify({
+        "html": html,
+        "has_more": pagination.has_next
+    })
 
 @public_bp.route("/subscribe", methods=["POST"])
 def subscribe():
@@ -118,16 +147,14 @@ def subscribe():
     return redirect(url_for("public.index"))
 
 @public_bp.route("/tag/<string:slug>")
-@cache.cached(timeout=300)
 def tag(slug):
     tag = Tag.query.filter_by(slug=slug).first_or_404()
-    
-    posts = tag.posts
+
     posts = Post.query.filter(
         Post.tags.contains(tag),
         Post.is_published == True
     ).order_by(Post.created_at.desc()).all()
-    
+
     return render_template("tag.html", tag=tag, posts=posts)
 
 @public_bp.route("/category/<string:slug>")
@@ -165,7 +192,10 @@ def add_comment(slug):
     post = Post.query.filter_by(slug=slug).first_or_404()
 
     author = request.form.get("author", "Anonymous")
-    content = request.form["content"]
+    content = request.form.get("content", "").strip()
+
+    if not content:
+        return jsonify({"error": "Comment cannot be empty"}), 400
 
     comment = Comment(author=author, content=content, post_id=post.id)
     db.session.add(comment)
@@ -174,9 +204,11 @@ def add_comment(slug):
     # Return JSON for AJAX
     return jsonify({
         "author": author,
-        "content": content
+        "content": content,
+        "created_at": comment.created_at.strftime('%b %d, %Y %H:%M')
     })
 
+@csrf.exempt
 @public_bp.route("/post/<int:id>/like", methods=["POST"])
 def like_post(id):
     post = Post.query.get_or_404(id)
@@ -212,43 +244,34 @@ def like_post(id):
 # ----- CONTACT US -----
 @public_bp.route("/contact", methods=["GET", "POST"])
 def contact():
-    if request.method == "POST":
-        name = request.form.get("name")
-        email = request.form.get("email")
-        message = request.form.get("message")
+    form = ContactForm()
+    if form.validate_on_submit():
+        name = form.name.data
+        email = form.email.data
+        message = form.message.data
 
         if not email or not message:
             flash("Email and message are required.", "danger")
             return redirect(url_for("public.contact"))
-            
+
         # Save to DB
         msg = ContactMessage(name=name, email=email, message=message)
         db.session.add(msg)
         db.session.commit()
-        
-        # Send email
-        try:
-          msg = Message(
-              subject="New Contact Message",
-              recipients=["contact@profnetnews.co.site"],
-              body=f"""
-New message from your Resume app:
 
-Name: {name}
-Email: {email}
-
-Message:
-{message}
-              """
-          )
-          mail.send(msg)
-          flash("Message sent successfully!", "success")
-        except Exception as e:
-          traceback.print_exc()
-          flash("Message saved, but email failed.", "warning")
+        # Send email using Mailgun helper
+        if send_mailgun_email(
+            subject=f"New Contact Message from {name}",
+            text=f"Name: {name}\nEmail: {email}\nMessage:\n{message}"
+        ):
+            flash("Message sent successfully!", "success")
+        else:
+            traceback.print_exc()
+            flash("Message saved, but email failed.", "warning")
 
         return redirect(url_for("public.contact"))
-    return render_template("contact.html")
+
+    return render_template("contact.html", form=form)
 
 # ----- PRIVACY -----
 @public_bp.route("/privacy")

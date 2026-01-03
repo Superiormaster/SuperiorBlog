@@ -47,8 +47,6 @@
         {{ cat.name }}
         </a>
         {% endfor %}
-            
-            <button class="bg-transparent text-white px-3 md:px-1 py-1 rounded border"><a href="{{ url_for('admin.login') }}" class="text-2xl md:text-xl font-medium">Log In</a></button>
           </nav>
         </div>
     
@@ -117,8 +115,6 @@
         <li><a href="{{ url_for('admin.settings') }}"><i class="fa fa-cogs" aria-hidden="true"></i> Settings</a></li>
         <li><a href="{{ url_for('admin.change_password') }}" class="text-blue-500 hover:underline"><i class="fa fa-eraser" aria-hidden="true"></i>Change Password</a></li>
         <li><a href="{{ url_for('admin.logout') }}"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a></li>
-        {% else %}
-        <li><a href="{{ url_for('admin.login') }}"><i class="fa fa-sign-in" aria-hidden="true"></i>Login</a></li>
         {% endif %}
 
         <div class="section-title">Category</div>
@@ -202,6 +198,8 @@
 </div>
   
     <script src="{{ url_for('static', filename='Script.js') }}"></script>
+     <script src="{{ url_for('static', filename='tag.js') }}"></script>
+
     <script>
 document.addEventListener("DOMContentLoaded", () => {
   const banner = document.getElementById("cookieBanner");

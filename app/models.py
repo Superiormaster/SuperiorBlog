@@ -17,8 +17,8 @@ post_tags = db.Table('post_tags',
 )
 
 post_labels = db.Table('post_labels',
-    db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
-    db.Column('label_id', db.Integer, db.ForeignKey('label.id'))
+    db.Column('post_id', db.Integer, db.ForeignKey('post.id'), primary_key=True),
+    db.Column('label_id', db.Integer, db.ForeignKey('label.id'), primary_key=True)
 )
 
 class Admin(db.Model, UserMixin):
@@ -82,7 +82,6 @@ class Post(db.Model):
     )
     category = db.relationship('Category', back_populates='posts')
     tags = db.relationship("Tag", secondary=post_tags, back_populates="posts")
-    label = db.Column(db.String(50)) 
     labels = db.relationship("Label", secondary=post_labels, back_populates="posts")
     views = db.Column(db.Integer, default=0)
     featured_image = db.Column(db.String(255)) 

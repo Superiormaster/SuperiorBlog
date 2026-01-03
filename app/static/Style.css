@@ -245,12 +245,12 @@ strong{
   height: 100vh;
 }
 
-.markdown-editor {
-  height: 400px;
-}
-
 textarea {
   resize: none;
+}
+
+#tag-suggestions {
+  pointer-events: auto;
 }
 
 .homepage_down_nav {

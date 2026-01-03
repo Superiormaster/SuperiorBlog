@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="text-2xl font-bold mb-4">Tag Analysis</h1>
+
+<table class="w-full text-left mx-4">
+  <tr>
+    <th>Name</th>
+    <th>Slug</th>
+    <th>Posts</th>
+  </tr>
+
+  {% for tag, count in tags %}
+  <tr>
+    <td>{{ tag.name }}</td>
+    <td>{{ tag.slug }}</td>
+    <td>{{ count }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+{% endblock %}

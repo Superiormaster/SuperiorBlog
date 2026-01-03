@@ -6,14 +6,15 @@ from flask_login import (
     login_user, logout_user,
     login_required
 )
-from app.models import Post, Admin, AppSettings, Category, Label
-from app.extensions import db
+from app.models import Post, Admin, AppSettings, Category, Label, Tag
+from app.extensions import db, csrf
 from flask_login import current_user
 from werkzeug.security import check_password_hash, generate_password_hash
-from app.utils import allowed_file
+from app.utils.helper import allowed_file, process_tags
 from werkzeug.utils import secure_filename
 from slugify import slugify
 import os
+from app.forms import LoginForm, PostForm, ChangePasswordForm
 
 admin_bp = Blueprint(
     "admin",
@@ -25,10 +26,11 @@ admin_bp = Blueprint(
 # Admin login
 @admin_bp.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "POST":
-        identifier = request.form.get("identifier")  # can be username or email
-        password = request.form.get("password")
-        
+    form = LoginForm()
+    if form.validate_on_submit():  # This automatically checks POST and CSRF
+        identifier = form.identifier.data  # from the WTForms field
+        password = form.password.data
+
         # Check both username and email
         admin = Admin.query.filter(
             (Admin.username == identifier) | (Admin.email == identifier)
@@ -39,30 +41,33 @@ def login():
             return redirect(url_for("admin.dashboard"))
         else:
             flash("Invalid username/email or password")
-    return render_template("admin/login.html")
+    return render_template("admin/login.html", form=form)
 
 @admin_bp.route("/change-password", methods=["GET", "POST"])
 @login_required
 def change_password():
-    if request.method == "POST":
+    form = ChangePasswordForm()
+
+    if form.validate_on_submit():
         current_password = request.form.get("current_password").strip()
         new_password = request.form.get("new_password").strip()
         confirm_password = request.form.get("confirm_password").strip()
-
-        if not check_password_hash(current_user.password, current_password):
+        # Check current password
+        if not check_password_hash(current_user.password, form.current_password.data):
             flash("Current password is incorrect", "error")
             return redirect(url_for("admin.change_password"))
 
-        if new_password != confirm_password:
+        if form.new_password.data != form.confirm_password.data:
             flash("New passwords do not match", "error")
             return redirect(url_for("admin.change_password"))
 
-        current_user.password = generate_password_hash(new_password)
+        # Update password
+        current_user.password = generate_password_hash(form.new_password.data)
         db.session.commit()
         flash("Password updated successfully!", "success")
         return redirect(url_for("admin.dashboard"))
 
-    return render_template("admin/change_password.html")
+    return render_template("admin/change_password.html", form=form)
 
 @admin_bp.route("/dashboard")
 @login_required
@@ -89,96 +94,126 @@ def dashboard():
         q=q,
         status=status
     )
-    
+
 @admin_bp.route("/create", methods=["GET", "POST"])
-def create():
+@admin_bp.route("/post/<int:id>/edit", methods=["GET", "POST"])
+@login_required
+def create_or_edit(id=None):
+    post = Post.query.get(id) if id else None
     categories = Category.query.all()
     labels = Label.query.all()
-    
-    if request.method == "POST":
-        title = request.form.get("title")
-        content = request.form.get("content")
+    tags = Tag.query.order_by(Tag.name.asc()).all()
+
+    form = PostForm(obj=post)
+
+    # 🔹 IMPORTANT: choices MUST be set before validate
+    form.category.choices = [(c.id, c.name) for c in Category.query.all()]
+    form.labels.choices = [(l.id, l.name) for l in Label.query.all()]
+
+    # 🔹 Preselect relations on edit
+    if post and request.method == "GET":
+        form.category.data = post.category_id
+        form.labels.data = [l.id for l in post.labels]
+
+    if form.validate_on_submit():
+        submit_type = request.form.get("submit_type")
+
+        title = form.title.data
+        content = form.content.data
+        is_published = submit_type == "publish"
 
         if not title or not content:
             flash("Title and content are required", "error")
             return redirect(url_for("admin.create"))
 
-        is_published = bool(request.form.get('is_published'))
+        if not post:
+            post = Post()
 
-        slug = slugify(title)
+        post.title = form.title.data
+        post.slug = slugify(post.title)
+        post.content = form.content.data
+        post.is_published = is_published
 
-        # 🔹 CATEGORY
-        category_id = request.form.get("category")
-        category = Category.query.get(category_id)
-
+        category = Category.query.get(form.category.data)
         if not category:
             flash("Invalid category selected", "danger")
             return redirect(request.url)
+        post.category = category
 
-        # 🔹 LABELS
-        label_ids = request.form.getlist("labels")
-        post_labels = Label.query.filter(
-            Label.id.in_(label_ids)
+        # Labels
+        post.labels = Label.query.filter(
+            Label.id.in_(form.labels.data)
         ).all()
 
-        label = request.form.get("label")
+        # Tags
+        raw_tags = request.form.get("tags", "")
+        post.tags.clear()
+        post.tags.extend(process_tags(raw_tags))
 
-        # Create the post first
-        post = Post(title=title, slug=slug, content=content, is_published=is_published, category=category, label=label)
-
-        post.labels = post_labels   # ✅ list of model instances
-
-        for label_id in label_ids:
-            label = Label.query.get(label_id)
-            if label:
-                post.labels.append(label)
-
-        # Handle file upload
+        # Image upload
         file = request.files.get("image")
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
-            file.save(filepath)
-            post.featured_image = filename  # ✅ now post exists
+            file.save(os.path.join(current_app.config["UPLOAD_FOLDER"], filename))
+            post.featured_image = filename
 
         db.session.add(post)
         db.session.commit()
 
-        flash("Post created successfully", "success")
-        return redirect(url_for("public.index"))
+        flash(
+            "Post published successfully" if is_published else "Draft saved successfully",
+            "success"
+        )
 
-    return render_template("admin/create.html", categories=categories, labels=labels, post=None)
-
-@admin_bp.route("/edit/<int:id>", methods=["GET", "POST"])
-@login_required
-def edit(id):
-    post = Post.query.get_or_404(id)
-    categories = Category.query.all()
-    labels = Label.query.all()
-    
-    file = request.files.get("image")
-
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
-        file.save(filepath)
-        post.featured_image = filename
-
-    if request.method == "POST":
-        post.title = request.form.get("title")
-        post.content = request.form.get("content")
-        post.slug = slugify(post.title)
-        post.is_published = bool(request.form.get("is_published"))
-
-        db.session.commit()
-
-        flash("Post updated", "success")
         return redirect(url_for("admin.dashboard"))
 
-    return render_template("admin/create.html", post=post, categories=categories, labels=labels)
-    
+    return render_template(
+        "admin/create.html",
+        form=form,
+        post=post,
+        existing_tags=[t.name for t in post.tags] if post else []
+    )
+
+@admin_bp.route("/tags")
+@login_required
+def tags():
+    tags = (
+        db.session.query(
+            Tag,
+            db.func.count(Post.id).label("post_count")
+        )
+        .outerjoin(Tag.posts)
+        .group_by(Tag.id)
+        .order_by(Tag.name.asc())
+        .all()
+    )
+
+    return render_template("admin/tags.html", tags=tags)
+
+@admin_bp.route("/tags/search")
+@login_required
+def search_tags():
+    q = request.args.get("q", "").strip()
+
+    if not q or len(q) < 2:
+        return jsonify([])
+
+    tags = (
+        Tag.query
+        .filter(Tag.name.ilike(f"%{q}%"))
+        .order_by(Tag.name.asc())
+        .limit(10)
+        .all()
+    )
+
+    return jsonify([
+        {"id": tag.id, "name": tag.name}
+        for tag in tags
+    ])
+
 @admin_bp.route("/delete/<int:id>", methods=["POST"])
 @login_required
+@csrf.exempt
 def delete(id):
     post = Post.query.get_or_404(id)
 
@@ -197,6 +232,7 @@ def logout():
     
 @admin_bp.route("/toggle_publish/<int:id>", methods=["POST"])
 @login_required
+@csrf.exempt
 def toggle_publish(id):
     post = Post.query.get_or_404(id)
     post.is_published = not post.is_published

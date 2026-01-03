@@ -34,78 +34,78 @@ window.addEventListener('load', () => {
 /* Page Load-more */
 let page = 1;
 let loading = false;
+let hasMore = true;
 
 window.addEventListener("scroll", () => {
-  if (loading) return;
+  if (loading || !hasMore) return;
 
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
     loading = true;
     page++;
 
     fetch(`/load-more?page=${page}`)
-      .then(res => res.text())
-      .then(html => {
-        document
-          .getElementById("post-container")
-          ?.insertAdjacentHTML("beforeend", html);
+      .then(res => res.json())
+      .then(data => {
+        // ✅ STOP if no more posts
+        if (!data.has_more) {
+          hasMore = false;
+        }
+
+        // ✅ Append new posts
+        if (data.html.trim() !== "") {
+          document
+            .getElementById("post-container")
+            ?.insertAdjacentHTML("beforeend", data.html);
+        }
+
+        loading = false;
+      })
+      .catch(() => {
         loading = false;
       });
   }
 });
 
-  // Wait for the page to load
-  document.addEventListener("DOMContentLoaded", () => {
-    const messages = document.querySelectorAll('.fixed.top-5.right-5 .px-4');
-
-    messages.forEach((msg) => {
-      // Set a timeout to fade out
-      setTimeout(() => {
-        // Smoothly fade out
-        msg.style.transition = "opacity 0.5s ease, transform 0.5s ease";
-        msg.style.opacity = "0";
-        msg.style.transform = "translateY(-20px)";
-
-        // Remove the element from DOM after transition
-        setTimeout(() => msg.remove(), 500);
-      }, 3000); // <-- 3 seconds before disappearing
-    });
-  });
-
 // Like Post
 const likedPosts = new Set();
 
-function likePost(postId) {
-  // Prevent multiple clicks
-  if (likedPosts.has(postId)) return;
+// Event delegation: handle all like buttons dynamically
+document.addEventListener("click", function(e) {
+  const btn = e.target.closest(".like-btn");
+  if (!btn) return; // Ignore clicks outside buttons
 
-  const likeBtn = document.getElementById(`like-btn-${postId}`);
-  const likeCount = document.getElementById(`like-count-${postId}`);
+  const postId = btn.dataset.postId;
+  if (likedPosts.has(postId)) return; // Prevent multiple clicks
 
-  // Optimistic UI: increment immediately
-  likeCount.textContent = parseInt(likeCount.textContent) + 1;
+  const countSpan = btn.querySelector(".like-count");
+
+  // Optimistic UI: increment count immediately
+  countSpan.textContent = parseInt(countSpan.textContent) + 1;
   likedPosts.add(postId);
 
   // Animate button
-  likeBtn.classList.add('animate-bounce');
-  setTimeout(() => likeBtn.classList.remove('animate-bounce'), 500);
+  btn.classList.add("animate-bounce");
+  setTimeout(() => btn.classList.remove("animate-bounce"), 500);
 
-  // Send like to server
-  fetch(`/post/${postId}/like`, { method: 'POST' })
+  // Send POST to server
+  fetch(`/public/post/${postId}/like`, { method: "POST" })
     .then(res => res.json())
     .then(data => {
-      // Ensure server count is synced
-      likeCount.textContent = data.count;
+      // Sync server count
+      countSpan.textContent = data.count;
+
       if (!data.liked) {
-        // If already liked on server, don't allow multiple
+        // Already liked on server, revert Set
         likedPosts.delete(postId);
       }
     })
-    .catch(() => {
-      // Revert in case of network error
-      likeCount.textContent = parseInt(likeCount.textContent) - 1;
+    .catch(err => {
+      console.error("Like error:", err);
+      // Revert optimistic UI
+      countSpan.textContent = parseInt(countSpan.textContent) - 1;
       likedPosts.delete(postId);
     });
-}
+});
 
 // Comment 
 function toggleComments() {
@@ -114,34 +114,51 @@ function toggleComments() {
   section.scrollIntoView({ behavior: "smooth" });
 }
 
+const noComments = document.getElementById("no-comments");
 const form = document.getElementById("comment-form");
 const commentList = document.getElementById("comment-list");
+const commentCount = document.getElementById("comment-count");
 
 form.addEventListener("submit", function(e) {
   e.preventDefault();
 
-  const formData = new FormData(form);
+  const formData = new FormData(this);
   const slug = "{{ post.slug }}"; // Flask template variable
 
-  fetch(`/post/${slug}/comment`, {
-    method: "POST",
-    body: formData
+  fetch(this.action, {
+      method: "POST",
+      body: formData,
+      headers: {
+        "X-Requested-With": "XMLHttpRequest"
+      }
+    })
+  .then(res => {
+    console.log(res);
+    return res.json();
   })
-  .then(res => res.json())
   .then(data => {
+    console.log(data);
     const li = document.createElement("li");
     li.classList.add("mb-4", "border-b", "pb-2");
     li.innerHTML = `
       <p class="font-semibold text-xl md:text-2xl">${data.author}</p>
       <p class="text-gray-400 text-sm md:text-xl">${data.content}</p>
-      <p class="text-xs text-gray-500">Just now</p>
+      <p class="text-xs text-gray-500">${data.created_at}</p>
     `;
+    if (noComments) {
+      noComments.remove();
+    }
     commentList.appendChild(li);
 
     // Show section if hidden
     const section = document.getElementById("comment-section");
     if (section.classList.contains("hidden")) {
       section.classList.remove("hidden");
+    }
+
+    if (commentCount) {
+      let count = parseInt(commentCount.textContent);
+      commentCount.textContent = count + 1;
     }
 
     form.reset();
