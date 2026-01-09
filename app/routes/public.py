@@ -53,7 +53,7 @@ def index():
 def post_detail(slug):
     post = Post.query.filter_by(slug=slug, is_published=True).first_or_404()
     # Convert Markdown to HTML
-    content_html = markdown(post.content, extensions=['fenced_code', 'codehilite'])
+    content_html = markdown(post.content or "", extensions=['fenced_code', 'codehilite'])
     
     latest_posts = (
         Post.query

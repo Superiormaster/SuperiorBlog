@@ -59,8 +59,9 @@ header{
 }
   
 header img{
-  width: 30px;
+  width: 40px;
   margin-right: 5px;
+  border-radius: 50%;
 }
   
 .menu-btn{
@@ -258,6 +259,14 @@ textarea {
   align-items: center;
   justify-content: space-between;
 }
+
+.fade-message {
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .fade-message.hide {
+    opacity: 0;
+    transform: translateY(-20px); /* Optional: slide up a bit */
+  }
 
 @media (max-width: 599px) {
   .drawer{

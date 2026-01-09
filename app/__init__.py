@@ -4,6 +4,7 @@ from config import Config
 from app.routes.public import public_bp
 from app.routes.admin import admin_bp
 from app.extensions import db, login_manager, cache, csrf
+from markdown import markdown as md
 from flask_migrate import Migrate
 from app.models import AppSettings, Category, Post
 import os
@@ -56,5 +57,11 @@ def create_app():
     @app.context_processor
     def inject_settings():
         return dict(AppSettings=AppSettings)
+
+    @app.template_filter('markdown')
+    def markdown_filter(text):
+        if not text:
+            return ""
+        return md(text, extensions=['fenced_code', 'codehilite'])
 
     return app

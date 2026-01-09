@@ -32,8 +32,8 @@
     <div class="xl:max-w-[1280px] w-full">
     <header class="flex justify-between items-center navbar shadow-l bg-gray-900 border-b py-10 text-white shadow-lg fixed w-full transition-all duration-300 z-50">
         <div style="flex:1" class="sm:px-4 px-2 flex">
-          <img src="{{ url_for('static', filename='Img/Profnet.png') }}" alt="Profnet icon">
-          <strong style="color:#5b5b5b; border-radius:5px; padding:4px 6px;" class="text-2xl font-bold font-mono tracking-tight">Profnet
+          <img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior icon" class="border border-yellow-500">
+          <strong style="color:#5b5b5b; border-radius:5px; padding:4px 6px;" class="text-2xl font-bold font-mono tracking-tight">Superior
           </strong>
         </div>
         
@@ -60,7 +60,7 @@
     <main class="text-white w-full max-w-7xl mx-auto py-6">
       {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
-            <div class="fixed top-5 right-5 space-y-2 z-50">
+            <div class="fixed top-5 right-5 space-y-2 z-50" id="flash-messages">
               {% for category, message in messages %}
                 <div class="
                   px-4 py-2 rounded shadow text-white
@@ -84,11 +84,11 @@
 
 <aside class="drawer bg-gray-800" id="mainDrawer" role="dialog" aria-modal="true" aria-label="Main menu" aria-hidden="true">
     <div class="drawer__header w-full">
-        <div class="avatar" aria-hidden="true"><img src="{{ url_for('static', filename='Img/Profnet.png') }}" alt="Profnet logo">
+        <div class="avatar" aria-hidden="true"><img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior logo">
         </div>
         <div>
-            <div class="drawer__title text-xl">Profnet</div>
-            <div class="drawer__subtitle">Profnet Blog</div>
+            <div class="drawer__title text-xl">Superior</div>
+            <div class="drawer__subtitle">Superior Blog</div>
         </div>
     </div>
 
