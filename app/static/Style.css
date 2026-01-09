@@ -261,12 +261,33 @@ textarea {
 }
 
 .fade-message {
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  .fade-message.hide {
-    opacity: 0;
-    transform: translateY(-20px); /* Optional: slide up a bit */
-  }
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.fade-message.hide {
+  opacity: 0;
+  transform: translateY(-20px); /* Optional: slide up a bit */
+}
+
+.prose {
+    word-wrap: break-word; /* old-school fallback */
+    overflow-wrap: break-word;
+}
+
+.prose img {
+    max-width: 100%;  /* Images scale to container */
+    height: auto;
+}
+
+.prose pre {
+    white-space: pre-wrap; /* Wrap long code lines */
+    word-break: break-word;
+}
+
+.prose table {
+    width: 100%;  /* Tables fit inside container */
+    table-layout: fixed; /* Prevent overflow */
+}
 
 @media (max-width: 599px) {
   .drawer{

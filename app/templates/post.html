@@ -30,7 +30,7 @@
   
   <h1 class="text-3xl text-yellow-500 font-bold mb-4">{{ post.title }}</h1>
   <p class="text-gray-500 text-sm mb-6">{{ post.created_at.strftime('%B %d, %Y') }}</p>
-  <div class="prose text-gray-300 text-2xl md:text-3xl line-clamp-3">
+  <div class="prose max-w-3xl w-full mx-auto text-gray-300 md:text-2xl max-w-full sm:max-w-3xl px-1 break-words">
     {{ post.content | markdown | safe }}
   </div>
   

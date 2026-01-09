@@ -62,6 +62,6 @@ def create_app():
     def markdown_filter(text):
         if not text:
             return ""
-        return md(text, extensions=['fenced_code', 'codehilite'])
+        return md(text, extensions=['fenced_code', 'codehilite', 'tables', 'nl2br'])
 
     return app
