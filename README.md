@@ -1,1 +1,1 @@
-# profnetnews
+# Superior Blog App
