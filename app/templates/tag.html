@@ -11,8 +11,8 @@
      {{ post.title }}
 
       {% if post.featured_image %}
-      <img src="{{ url_for('static', filename='uploads/' ~ post.featured_image) }}"
-           class="rounded mt-2 w-full h-40 object-cover">
+        <img src="{{ post.featured_image }}"
+        class="rounded w-full object-cover mt-2 h-40">
       {% endif %}
   </a>
 {% else %}

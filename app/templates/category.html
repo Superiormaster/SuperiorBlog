@@ -30,10 +30,10 @@
       <a href="{{ url_for('public.post_detail', slug=t.slug) }}" class="text-lg font-semibold hover:underline">
         {{ t.title }}
       </a>
-      {% if t.featured_image %}
-      <img src="{{ url_for('static', filename='uploads/' ~ t.featured_image) }}"
-           class="rounded mt-2 w-full h-40 object-cover">
-      {% endif %}
+        {% if t.featured_image %}
+          <img src="{{ t.featured_image }}"
+               class="rounded w-full object-cover mt-2 h-40">
+        {% endif %}
       <p class="text-sm text-gray-400 mt-2">{{ t.comments|length }} 💬</p>
     </div>
     {% endfor %}
@@ -45,10 +45,9 @@
     {% for post in trending_posts %}
       <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
          class="block bg-gray-800 rounded-lg overflow-hidden hover:shadow-lg transition">
-        
         {% if post.featured_image %}
-        <img src="{{ url_for('static', filename='uploads/' ~ post.featured_image) }}"
-             class="w-full h-48 object-cover">
+          <img src="{{ post.featured_image }}"
+               class="rounded w-full object-cover mt-2 h-48">
         {% endif %}
 
         <div class="p-4">
@@ -64,7 +63,7 @@
     {% endfor %}
   </div>
 {% else %}
-  <p class="text-gray-400">No {{ category.name }} news yet.</p>
+  <p class="text-gray-400 text-center">No {{ category.name }} news yet.</p>
 {% endif %}
 
     <footer class="drawer_footer bg-gray-700 text-gray-300">
@@ -96,25 +95,25 @@
         <h2 class="text-center text-2xl">Follow us on:</h2>
         <!-- Social Icons -->
         <div class="flex space-x-4 justify-center mt-3 text-2xl">
-          <a href="https://facebook.com/YourPage" target="_blank" class="transition-transform transform hover:scale-110">
+          <a href="https://www.facebook.com/share/1MoaNAoJJZ/" target="_blank" class="transition-transform transform hover:scale-110">
             <i class="fab fa-facebook-f" style="color:#1877F2;"></i>
           </a>
-          <a href="https://twitter.com/YourProfile" target="_blank" class="transition-transform transform hover:scale-110">
+          <a href="https://twitter.com/@SMprogra" target="_blank" class="transition-transform transform hover:scale-110">
             <i class="fab fa-x-twitter" style="color:#1DA1F2;"></i>
           </a>
-          <a href="https://instagram.com/YourProfile" target="_blank" class="transition-transform transform hover:scale-110">
+          <a href="https://www.instagram.com/superiormastersdesign?igsh=MXFsbzJ1b2x4MjQxdw=="target="_blank" class="transition-transform transform hover:scale-110">
             <i class="fab fa-instagram" style="color:#E4405F;"></i>
           </a>
-          <a href="https://youtube.com/YourChannel" target="_blank" class="transition-transform transform hover:scale-110">
+          <a href="https://youtube.com/@lifootballmoments" target="_blank" class="transition-transform transform hover:scale-110">
             <i class="fab fa-youtube" style="color:#FF0000;"></i>
           </a>
-          <a href="https://linkedin.com/in/YourProfile" target="_blank" class="transition-transform transform hover:scale-110">
+          <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" class="transition-transform transform hover:scale-110">
             <i class="fab fa-linkedin-in" style="color:#0A66C2;"></i>
           </a>
         </div>
     
         <div class="max-w-7xl mx-auto px-4 py-4 text-center text-xl text-sm">
-          © {{ year }} Profnet. All rights reserved.
+          © {{ year }} Superior Blog. All rights reserved.
         </div>
       </footer>
 </div>

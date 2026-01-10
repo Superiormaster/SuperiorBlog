@@ -119,6 +119,7 @@
 
         <div class="section-title">Category</div>
           <a href="{{ url_for('public.category', slug='world') }}" ><i class="fa fa-globe" aria-hidden="true"></i>World</a>
+          <a href="{{ url_for('public.category', slug='sports') }}"><i class="fa-regular fa-futbol"></i>Sports</a>
           <a href="{{ url_for('public.category', slug='politics') }}">
             <svg
               viewBox="0 0 512 512"
@@ -168,33 +169,35 @@
         <h2 class="text-center text-2xl">Follow us on:</h2>
         <!-- Social Icons -->
         <div class="flex space-x-4 justify-center mt-3 text-2xl">
-          <a href="https://facebook.com/YourPage" target="_blank" class="transition-transform transform hover:scale-110">
+          <a href="https://www.facebook.com/share/1MoaNAoJJZ/" target="_blank" class="transition-transform transform hover:scale-110">
             <i class="fab fa-facebook-f" style="color:#1877F2;"></i>
           </a>
-          <a href="https://twitter.com/YourProfile" target="_blank" class="transition-transform transform hover:scale-110">
+          <a href="https://twitter.com/@SMprogra" target="_blank" class="transition-transform transform hover:scale-110">
             <i class="fab fa-x-twitter" style="color:#1DA1F2;"></i>
           </a>
-          <a href="https://instagram.com/YourProfile" target="_blank" class="transition-transform transform hover:scale-110">
+          <a href="https://www.instagram.com/superiormastersdesign?igsh=MXFsbzJ1b2x4MjQxdw=="target="_blank" class="transition-transform transform hover:scale-110">
             <i class="fab fa-instagram" style="color:#E4405F;"></i>
           </a>
-          <a href="https://youtube.com/YourChannel" target="_blank" class="transition-transform transform hover:scale-110">
+          <a href="https://youtube.com/@lifootballmoments" target="_blank" class="transition-transform transform hover:scale-110">
             <i class="fab fa-youtube" style="color:#FF0000;"></i>
           </a>
-          <a href="https://linkedin.com/in/YourProfile" target="_blank" class="transition-transform transform hover:scale-110">
+          <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" class="transition-transform transform hover:scale-110">
             <i class="fab fa-linkedin-in" style="color:#0A66C2;"></i>
           </a>
         </div>
     
         <div class="max-w-7xl mx-auto px-4 py-4 text-xl text-center text-sm">
-          © {{ year }} Profnet. All rights reserved.
+          © {{ year }} Superior Blog. All rights reserved.
         </div>
       </footer>
     </div>
 </aside>
-<div id="cookieBanner" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-4 z-50">
+<div id="cookieBanner" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-4 rounded-lg shadow-lg w-full justify-center space-x-4 z-50">
   <span>We use cookies to improve your experience on Profnetnews. By continuing, you agree to our Privacy Policy.</span>
-  <a href="{{ url_for('public.privacy') }}" class="underline">Learn More</a>
-  <button id="acceptCookies" class="bg-yellow-500 text-black px-4 py-1 rounded">Accept</button>
+  <div class="flex items-center justify-between">
+    <a href="{{ url_for('public.privacy') }}" class="underline">Learn More</a>
+    <button id="acceptCookies" class="bg-yellow-500 text-black px-4 py-1 rounded">Accept</button>
+  </div>
 </div>
   
     <script src="{{ url_for('static', filename='Script.js') }}"></script>

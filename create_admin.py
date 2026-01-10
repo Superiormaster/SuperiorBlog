@@ -4,9 +4,9 @@ from app.models import Admin
 
 app = create_app()
 
-USERNAME = "Profnet1"
-EMAIL = "profnet100@gmail.com"
-PASSWORD = "Profnet@2005"
+USERNAME = "Superior Master"
+EMAIL = "ejeziepaschal@gmail.com"
+PASSWORD = "Chidera@2006"
 
 with app.app_context():
     admin = Admin.query.filter(

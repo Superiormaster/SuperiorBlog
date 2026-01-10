@@ -6,7 +6,7 @@ from app.models import Category
 app = create_app()
 
 with app.app_context():
-    categories = ["World", "Politics", "Business"]
+    categories = ["World", "Politics", "Business", "Sports"]
     for name in categories:
         if not Category.query.filter_by(name=name).first():
             db.session.add(Category(name=name, slug=name.lower()))

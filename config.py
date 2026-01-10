@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import cloudinary
 
 load_dotenv()
 
@@ -10,5 +11,11 @@ class Config:
     WTF_CSRF_ENABLED = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, "app/static/uploads")
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2MB
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
+)

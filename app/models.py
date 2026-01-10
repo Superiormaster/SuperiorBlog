@@ -84,7 +84,7 @@ class Post(db.Model):
     tags = db.relationship("Tag", secondary=post_tags, back_populates="posts")
     labels = db.relationship("Label", secondary=post_labels, back_populates="posts")
     views = db.Column(db.Integer, default=0)
-    featured_image = db.Column(db.String(255)) 
+    featured_image = db.Column(db.String(500)) 
     is_published = db.Column(db.Boolean, default=False)
     is_breaking = db.Column(db.Boolean, default=False)
     is_editor_pick = db.Column(db.Boolean, default=False)

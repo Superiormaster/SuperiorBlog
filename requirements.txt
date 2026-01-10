@@ -25,3 +25,4 @@ itsdangerous==2.2.0
 WTForms==3.2.1
 requests
 email_validator
+cloudinary

@@ -10,7 +10,7 @@ from app.models import AppSettings, Category, Post
 import os
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__) 
     app.config.from_object(Config)
 
     database_url = os.getenv("DATABASE_URL")
@@ -48,11 +48,6 @@ def create_app():
                 "nav_categories": [],
                 "breaking": None
             }
-
-        return dict(
-            breaking=breaking,
-            nav_categories=nav_categories
-        )
 
     @app.context_processor
     def inject_settings():

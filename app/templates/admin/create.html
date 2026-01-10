@@ -42,15 +42,11 @@
       <div class="flex justify-center items-center">
         <img
           id="preview"
-          src="{{
-            url_for('static', filename='images/uploads/' ~ post.featured_image)
-            if post and post.featured_image else ''
-          }}"
+          src="{{ post.featured_image if post and post.featured_image else '' }}"
           class="mb-4 w-70 h-50 object-cover rounded border border-gray-300"
           style="{{ 'display:block;' if post and post.featured_image else 'display:none;' }}"
         >
       </div>
-    
     </div>
 
     <div class="bg-gray-700 p-4 rounded">

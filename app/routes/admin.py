@@ -10,7 +10,7 @@ from app.models import Post, Admin, AppSettings, Category, Label, Tag
 from app.extensions import db, csrf
 from flask_login import current_user
 from werkzeug.security import check_password_hash, generate_password_hash
-from app.utils.helper import allowed_file, process_tags
+from app.utils.helper import allowed_file, process_tags, upload_image
 from werkzeug.utils import secure_filename
 from slugify import slugify
 import os
@@ -128,6 +128,7 @@ def create_or_edit(id=None):
 
         if not post:
             post = Post()
+            db.session.add(post)
 
         post.title = form.title.data
         post.slug = slugify(post.title)
@@ -151,13 +152,16 @@ def create_or_edit(id=None):
         post.tags.extend(process_tags(raw_tags))
 
         # Image upload
-        file = request.files.get("image")
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(current_app.config["UPLOAD_FOLDER"], filename))
-            post.featured_image = filename
+        image_file = form.image.data
+        if image_file:
+          image_url = upload_image(image_file)
+          if image_url:
+            post.featured_image = image_url
+          else:
+            flash("Image upload failed. Post saved without image.", "error")
+            print("IMAGE FILE:", image_file)
+            print("FILENAME:", getattr(image_file, "filename", None))
 
-        db.session.add(post)
         db.session.commit()
 
         flash(
