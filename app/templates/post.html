@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "user/base.html" %}
 {% block title %}{{ post.title }} - My Blog{% endblock %}
 
 {% block content %}
@@ -9,13 +9,24 @@
       {% for p in latest_posts %}
       <div class="min-w-full px-4 text-center">
         <a href="{{ url_for('public.post_detail', slug=p.slug) }}"
-           class="min-w-full text-center text-xl md:text-2xl font-semibold hover:underline px-4">
+           data-safe data-redirect class="btn-primary btn-danger min-w-full text-center text-xl md:text-2xl line-clamp-1 font-semibold hover:underline px-4">
           {{ p.title }}
         </a>
+        <div class="flex justify-center">
         {% if p.featured_image %}
-          <img src="{{ p.featured_image }}"
-               class="rounded w-full object-cover mt-2 h-40">
+        <img
+          src="{{ p.featured_image }}"
+          loading="lazy"
+          decoding="async"
+          class="w-14 h-12 mt-2 object-cover rounded"
+          alt="{{ p.title }}"
+        >
+        {% else %}
+        <div class="fallback-thumbnail border h-14 w-16 rounded border-gray-800 flex items-center justify-center">
+          <div class="bg-neutral-800 mt-2 h-12 w-14"></div>
+        </div>
         {% endif %}
+        </div>
       </div>
       {% endfor %}
     </div>
@@ -23,14 +34,18 @@
 
 <div class="home flex">
 <article class="shadow-md rounded p-6">
-  {% if post.featured_image %}
+  {% if post.featured_image and post.featured_image not in post.content %}
     <img src="{{ post.featured_image }}"
-         class="rounded w-full mb-6 object-cover">
+         class="rounded w-full h-64 mb-6 object-cover">
   {% endif %}
-  <h1 class="text-3xl text-yellow-500 font-bold mb-4">{{ post.title }}</h1>
-  <p class="text-gray-500 text-sm mb-6">{{ post.created_at.strftime('%B %d, %Y') }}</p>
-  <div class="prose max-w-3xl w-full mx-auto text-gray-300 md:text-2xl max-w-full sm:max-w-3xl px-1 break-words">
-    {{ post.content | markdown | safe }}
+  <h1 class="text-4xl text-yellow-500 font-bold mb-2">{{ post.title }}</h1>
+  <p class="text-gray-500 text-sm">Pubished on {{ post.created_at.strftime('%B %d, %Y') }}</p>
+  <p class="text-sm text-gray-400">
+    By <b>{{ post.author.username }}</b>
+  </p>
+  <p class="mb-6 text-gray-500">{{ post.read_time }} min read</p>
+  <div class="prose post-content max-w-3xl w-full mx-auto text-gray-300 md:text-2xl max-w-full sm:max-w-3xl px-1 break-words">
+    {{ post.content | safe }}
   </div>
   
   <div class="flex gap-2 mt-4">
@@ -43,8 +58,7 @@
 
   <div class="flex text-sm text-gray-600 mt-3 flex-wrap items-center gap-4">
     <p class="text-gray-500 md:text-xl">
-      {{ post.views }} views ·
-      {{ (post.content|length // 1000) + 1 }} min read
+      {{ post.views }} views
     </p>
     <div class="flex items-center gap-1">
       <span class="w-4 h-4 ml-4 mr-1"><!-- Comment icon --><i class=" text-2xl text-base fa fa-comment" aria-hidden="true"></i></span>
@@ -55,79 +69,225 @@
   <div class="social-bar py-3 border-gray-200 border-t mt-4">
     <!-- Bottom row: Action buttons -->
     <div class="flex">
-      <button class="like-btn flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" data-post-id="{{ post.id }}">
+      <button class="btn-primary like-btn flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" data-post-id="{{ post.id }}">
         <i class="md:text-2xl text-xl far fa-thumbs-up mr-2"></i>
         <span class="like-count ml-1 md:text-xl text-sm">{{ post.likes.count() }}</span>
       </button>
       
-      <button class="flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" onclick="toggleComments()">
+      <button class="btn-primary flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" onclick="toggleComments()">
         <i class="md:text-2xl far fa-comment text-xl mr-2"></i>
         <span class="md:text-xl text-sm">Comment</span>
       </button>
-      <button class="flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" onclick="sharePost('{{ post.title }}')">
+      <button class="btn-primary flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" onclick="sharePost({{ post.id }}, '{{ post.title|escape }}')">
         <i class="md:text-2xl text-xl fas fa-share mr-2"></i>
         <span class="md:text-xl text-sm mt-1">Share</span>
       </button>
     </div>
   </div>
 
-<div id="comment-section" class="mt-6 hidden">
-  <form method="POST" action="{{ url_for('public.add_comment', slug=post.slug) }}" class="mx-2 w-full" id="comment-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input
-    name="author"
-    placeholder="Your name"
-    class="w-full border rounded px-3 py-2 mb-2 ml-3 text-xl"
-    required
-    >
-    <textarea name="content" placeholder="Write a comment..."
-              class="w-full border rounded ml-3 text-xl px-3 py-2 mb-2" required></textarea>
-
-    <button class="bg-blue-600 text-white px-4 py-2 ml-3 rounded text-xl" type="submit">
-      Post Comment
-    </button>
-  </form>
-
+<div id="comment-section" class="mt-6">
   <section class="mt-10 mx-6">
+
+    {% if not current_user.is_authenticated %}
+    <p class="text-gray-400 my-6 ">
+      You must
+      <a href="{{ url_for('public.user_login') }}" data-safe data-redirect class="btn-primary btn-danger text-blue-500 underline">
+        log in
+      </a>
+      to comment or reply.
+    </p>
+    {% endif %}
+
     <h3 class="text-xl font-bold mb-4">Comments</h3>
+
     <ul id="comment-list">
       {% for comment in post.comments %}
-      <li class="mb-4 border-b pb-2">
-        <p class="font-semibold text-xl md:text-2xl">{{ comment.author }}</p>
-        <p class="text-gray-400 text-sm md:text-xl">{{ comment.content }}</p>
-        <p class="text-xs text-gray-500">{{ comment.created_at.strftime('%b %d, %Y %H:%M') }}</p>
+      <li class="mb-4 border-b pb-3">
+
+        <!-- Comment content -->
+        <p class="font-semibold text-lg">{{ comment.user.username }}</p>
+        <p class="text-gray-400 text-sm mt-1">{{ comment.content }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ comment.created_at.strftime('%b %d, %Y %H:%M') }}</p>
+
+        <!-- Buttons for logged-in users -->
+        {% if current_user.is_authenticated %}
+        <div class="flex gap-3 mt-2">
+          <button class="btn-primary text-blue-500 text-sm"
+                  onclick="toggleReplyForm({{ comment.id }})">
+            Reply
+          </button>
+          {% if comment.replies|length > 0 %}
+          <button class="btn-primary text-gray-500 text-sm"
+                  onclick="toggleReplies({{ comment.id }})"
+                  id="toggle-replies-btn-{{ comment.id }}">
+            View Replies ({{ comment.replies|length }})
+          </button>
+          {% endif %}
+        </div>
+
+        <!-- Hidden reply form -->
+        <form id="reply-form-{{ comment.id }}"
+              action="{{ url_for('public.add_reply', comment_id=comment.id) }}"
+              method="POST"
+              class="mt-2 ml-4 hidden">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <textarea name="content"
+                    placeholder="Write a reply..."
+                    class="border rounded px-2 py-1 w-full text-sm"
+                    required></textarea>
+          <button type="submit"
+                 class="btn-primary bg-blue-600 text-white px-2 py-1 rounded text-sm mt-1">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </form>
+        {% endif %}
+
+        <!-- Hidden replies -->
+        <ul id="replies-{{ comment.id }}" class="ml-6 mt-3 hidden">
+          {% for reply in comment.replies %}
+          <li class="border-l-2 border-gray-600 pl-3 mb-2">
+            <p class="font-semibold text-sm">{{ reply.user.username }}</p>
+            <p class="text-gray-400 text-sm">{{ reply.content }}</p>
+            <p class="text-xs text-gray-500">{{ reply.created_at.strftime('%b %d, %Y %H:%M') }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+
       </li>
       {% else %}
-      <li id="no-comments" class="text-gray-500 text-xl">No comments yet.</li>
+      <li id="no-comment" class="text-gray-500 text-sm">No comments yet. Be the first to comment.</li>
       {% endfor %}
     </ul>
+
+    <!-- COMMENT BUTTON (Fixed at bottom on click) -->
+    {% if current_user.is_authenticated %}
+    <form method="POST" id="fixed-comment-form"
+          action="{{ url_for('public.add_comment', slug=post.slug) }}"
+          class="fixed text-gray-700 px-4 py-2 rounded shadow-lg w-full left-0 bottom-0 bg-gray-700 border-t h-15 shadow z-50">
+      <div class="flex justify-end mt-2 gap-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <textarea name="content" placeholder="Write a comment..." class="border border-gray-600 h-10 rounded px-3 py-2 w-full placeholder-gray-400 text-gray-400 focus:placeholder-gray-600 text-sm" required></textarea>
+        <button type="button" class="btn-primary bg-gray-400 text-white p-2 h-10 rounded" onclick="closeCommentForm()">
+          Cancel
+        </button>
+        <button type="submit" class="btn-primary bg-blue-600 text-white p-2 h-10 rounded">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </form>
+    {% endif %}
+
+  <!--{% if current_user.is_authenticated %}
+  <form id="commentForm">
+    <textarea id="commentInput" class="w-full border rounded p-2"></textarea>
+  
+    <button id="commentBtn"
+      class="mt-2 bg-blue-600 text-white px-4 py-2 rounded">
+      Comment
+    </button>
+  
+    <div id="commentError"></div>
+  </form>
+  {% endif %}
+  
+  <div id="comments"></div>
+
+  <button id="loadMoreComments"
+    class="mt-4 text-blue-600">
+    Load more comments
+  </button>
+  
+<div class="max-w-2xl mx-auto p-4">-->
+  <!-- Comment Form -->
+  <!--<form id="commentForm" class="mb-4">
+    <div class="flex items-start space-x-2">
+      <img src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full" alt="User Avatar">
+      <textarea id="commentInput" rows="2" placeholder="Write a comment..." 
+        class="flex-1 border rounded-lg p-2 focus:outline-none focus:ring focus:ring-blue-300"></textarea>
+    </div>
+    <div class="flex items-center mt-2 space-x-2">
+      <button type="submit" id="commentBtn" 
+        class="bg-blue-600 text-white px-4 py-1 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+        Comment
+      </button>
+      <div id="commentError" class="text-red-600 text-sm"></div>
+    </div>
+  </form>-->
+
+  <!-- Comments Section -->
+ <!-- <div id="comments" class="space-y-4"></div>-->
+
+  <!-- Load More Button -->
+  <!--<div class="text-center mt-4">
+    <button id="loadMoreComments" 
+      class="text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">
+      Load more comments
+    </button>
+  </div>
+</div>
+
+{% if c is defined %}
+<div class="flex space-x-2 mt-2 items-center text-sm">
+  <button class="reaction-btn px-2 py-1 rounded hover:bg-gray-200 text-gray-700" data-reaction="like" onclick="react(this, {{c.id}})">👍 Like</button>
+  <button class="reaction-btn px-2 py-1 rounded hover:bg-gray-200 text-gray-700" data-reaction="love" onclick="react(this, {{c.id}})">❤️ Love</button>
+  <button class="reaction-btn px-2 py-1 rounded hover:bg-gray-200 text-gray-700" data-reaction="haha" onclick="react(this, {{c.id}})">😂 Haha</button>
+  <span id="reaction-count-{{c.id}}" class="ml-2 text-gray-500 text-xs">{{c.reactions_count}} reactions</span>
+</div>
+{% endif %}
+-->
+
   </section>
 </div>
 
-<aside class="">
-  <div class="p-4 rounded-lg shadow-sm bg-gray-800">
+{% if related_posts %}
+<aside class="mt-8">
+  <div class="p-4 rounded-lg shadow-sm bg-gray-700">
+    
     <h3 class="text-center font-semibold text-2xl md:text-3xl mb-4">
-      Related Stories
+      {{ section_title }}
     </h3>
 
-    <ul class="space-y-3 flex flex-col md:flex-row justify-between">
-      {% for r in related_posts %}
-        <li>
+    <ul class="space-y-4">
+      {% for r in related_posts or [] %}
+      <li class="flex gap-3 items-start">
+        
+        {% if r.featured_image %}
+        <img
+          src="{{ r.featured_image }}"
+          loading="lazy"
+          decoding="async"
+          class="w-24 h-20 object-cover rounded"
+          alt="{{ r.title }}"
+        >
+        {% else %}
+        <div class="fallback-thumbnail border h-22 w-26 rounded border-gray-800 flex items-center justify-center">
+          <div class="bg-neutral-800 h-20 w-24"></div>
+        </div>
+        {% endif %}
+
+        <div class="flex-1">
+          <h3 class="text-xl md:text-2xl font-semibold leading-snug line-clamp-2">
           <a href="{{ url_for('public.post_detail', slug=r.slug) }}"
-             class="block text-xl hover:underline">
+             data-post-id="{{ r.id }}"
+             onclick="trackRelatedClick(this)"
+             data-redirect class="btn-primary min-w-full md:text-2xl btn-danger block text-lg font-semibold hover:underline">
             {{ r.title }}
           </a>
+          </h3>
+
           <p class="text-sm text-gray-400">
             {{ r.created_at.strftime('%b %d, %Y') }}
           </p>
-        </li>
+        </div>
+      </li>
       {% else %}
         <p class="text-gray-500 text-center">No related stories</p>
       {% endfor %}
     </ul>
+
   </div>
 </aside>
-
+{% endif %}
 </article>
 
       <footer class="drawer_footer bg-gray-700 text-gray-300">
@@ -136,12 +296,12 @@
                 class="flex mb-6 mt-2 mx-2 text-xl">
             <input name="email" type="email" placeholder="youremail@gmail.com" required
                    class="w-full px-4 py-2 flex-1 border border-[#c89a1a] focus:outline-none rounded-l-lg text-white">
-            <button class="px-4 bg-[#c89a1a] text-white py-2 rounded-r-lg">Subscribe</button>
+            <button data-safe class="btn-primary px-4 bg-[#c89a1a] text-white py-2 rounded-r-lg">Subscribe</button>
           </form>
 
       <ul class="homepage_down_nav border py-3 px-4 rounded-xl mb-4">
         {% if current_user.is_authenticated %}
-        <li><a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+        <li><a href="{{ url_for('public.user_dashboard') }}" class="flex items-center gap-2"><i class="fa fa-dashboard"></i> Dashboard</a></li>
         {% endif %}
 
           <li><a href="{{ url_for('public.contact') }}" class="flex items-center gap-2"><i class="fa fa-envelope" aria-hidden="true"></i>Contact Us</a></li>
@@ -181,4 +341,20 @@
         </div>
       </footer>
 </div>
+
+<script>
+function trackRelatedClick(el) {
+  fetch("/track-related-click", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": "{{ csrf_token() }}"
+    },
+    body: JSON.stringify({
+      post_id: el.dataset.postId
+    })
+  });
+}
+</script>
+
 {% endblock %}

@@ -1,18 +1,46 @@
-{% extends "base.html" %}
+{% extends "user/base.html" %}
 {% block title %}{{ 'Edit' if post else 'Create' }} Post - My Blog{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl py-14 mx-auto shadow rounded px-6 flex-1 bg-white/5 shadow-md">
+<div id="flash-messages" class="fixed top-4 right-4 z-50 space-y-2"></div>
+<div class="max-w-4xl py-14 mx-auto shadow rounded flex-1 bg-white/5 shadow-md">
 
-  <h1 class="text-2xl font-bold mb-4">
+  <h1 class="text-2xl px-2 font-bold mb-4">
     {{ 'Edit' if post else 'Create' }} Post
   </h1>
+  
+<button id="guidelinesBtn"
+  class="text-sm rounded py-1 text-blue-500 hover:underline px-2 mx-2 mb-4 bg-yellow-500">
+  Publishing Guidelines
+</button>
+
+<div id="guidelinesModal"
+ class="fixed inset-0 bg-black/60 hidden items-center flex justify-center z-50">
+  <div class="bg-gray-900 p-6 rounded-xl max-w-lg">
+    <h2 class="text-xl font-bold mb-4">Publishing Guidelines</h2>
+    <ul class="space-y-2 text-sm text-gray-300">
+      <li>✔ No plagiarism</li>
+      <li>✔ Proper grammar</li>
+      <li>✔ Use reputable sources</li>
+      <li>✔ Avoid clickbait</li>
+      <li>✔ Upload a single image for now. Avoid multiple images</li>
+      <li>✔ Paste your image first before the text</li>
+    </ul>
+    <ul class="list-disc my-2 bg-yellow-500 px-6 rounded text-sm text-gray-700">
+      <li>Minimum words: {{ rules.min_words }}</li>
+    </ul>
+    <button id="closeGuidelines"
+      class="mt-6 bg-blue-600 px-4 py-2 rounded">
+      Close
+    </button>
+  </div>
+</div>
 
   <form method="POST" id="post-form" enctype="multipart/form-data">
       {{ form.hidden_tag() }} 
 
       <div class="relative">
-      {{ form.category.label(class="block font-medium mb-2") }}
+      {{ form.category.label(class="block font-medium mb-2 px-2") }}
       {{ form.category(class="w-full px-3 py-2 rounded bg-gray-800 text-white focus:outline-none appearance-none") }}
       {% for error in form.category.errors %}
         <p class="text-red-500 text-sm">{{ error }}</p>
@@ -24,46 +52,25 @@
       </div>
 
       <div class="relative">
-      {{ form.labels.label(class="block font-medium mb-2") }}
+      {{ form.labels.label(class="block font-medium mb-2 px-2") }}
       {{ form.labels(class="w-full px-3 py-2 mb-4 rounded bg-gray-800 text-white focus:outline-none appearance-none", multiple=True) }}
     </div>
-    <div class="grid justify-center">
-    
-      {{ form.image.label(
-          class="block my-3 border border-blue-700 py-3 rounded-2xl text-center font-medium"
-      ) }}
-    
-      {{ form.image(
-          class="mb-4 block px-4 py-3 rounded border border-gray-600",
-          id="imageInput",
-          accept="image/*"
-      ) }}
-    
-      <div class="flex justify-center items-center">
-        <img
-          id="preview"
-          src="{{ post.featured_image if post and post.featured_image else '' }}"
-          class="mb-4 w-70 h-50 object-cover rounded border border-gray-300"
-          style="{{ 'display:block;' if post and post.featured_image else 'display:none;' }}"
-        >
-      </div>
-    </div>
 
-    <div class="bg-gray-700 p-4 rounded">
+    <div class="px-1">
     <div>
-        {{ form.title.label(class_="block font-medium mb-2") }}
-        {{ form.title(class_="w-full py-3 px-4 mb-2 bg-white/10 rounded text-white border focus:outline-none border-white/10 bg-white/10 transition focus:bg-blue-500/5 focus:border-blue-500", placeholder="Post Title") }}
+        {{ form.title.label(class_="block font-medium mb-2 px-2") }}
+        {{ form.title(class_="w-full py-3 px-4 mx-2 mb-2 bg-white/10 rounded text-white border focus:outline-none border-white/10 bg-white/10 transition focus:bg-blue-500/5 focus:border-blue-500", placeholder="Post Title") }}
       {% for error in form.title.errors %}
         <p class="text-red-500 text-sm">{{ error }}</p>
       {% endfor %}
     </div>
 
     <div class="relative mt-4">
-      <label class="block font-medium mb-2">Tags</label>
+      <label class="block font-medium mb-2 px-2">Hash Tags</label>
       <input
         type="text"
         id="tag-input"
-        class="w-full mb-2 py-3 px-4 border-white/10 bg-white/10 border rounded text-white transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500"
+        class="w-full mx-2 mb-2 py-3 px-4 border-white/10 bg-white/10 border rounded text-white transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500"
         placeholder="Type and press Enter(e.g Messi, viral)"
         autocomplete="off"
       />
@@ -76,89 +83,78 @@
       <input type="hidden" name="tags" id="tags-hidden" />
     </div>
 
-      <div>
-        {{ form.content.label(class_="block font-medium mb-2") }}
-        {{ form.content(rows="10", id="editor", placeholder="Write your content here...",
-              class_="w-full h-64 mb-2 py-3 px-4 border-white/10 bg-white/10 border rounded text-white transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500") }}
-      {% for error in form.content.errors %}
-        <p class="text-red-500 text-sm">{{ error }}</p>
-      {% endfor %}
-    </div>
+    {{ form.content.label(class_="block font-medium mb-2 px-2") }}
+    <div id="editor-container" class="border rounded bg-white/10 w-full mb-2 py-3 px-4 border-white/10 focus:outline-none h-[45rem] focus:bg-blue-500/5 focus:border-blue-500">
+      <div id="toolbar" class="editor-toolbar mb-2 flex gap-1 justify-between">
+        <button type="button" class="format-btn hover:bg-blue-500/20" data-cmd="h1">H1</button>
+        <button type="button" class="format-btn hover:bg-blue-500/20" data-cmd="h2">H2</button>
+        <button type="button" class="format-btn" data-cmd="bold"><b>B</b></button>
+        <button type="button" class="format-btn" data-cmd="italic"><i>I</i></button>
+        <button class="format-btn" type="button" id="insertImageBtn">🖼
+        </button>
+        <input type="file" id="imageUploader" accept="image/*" style="display:none">
+        <button type="button" class="format-btn" data-cmd="createLink"><i class="fa fa-link" aria-hidden="true"></i></button>
+        <button type="button" onclick="insertVideo()"><i class="fa fa-file-video-o" aria-hidden="true"></i></button>
+        <button type="button" class="format-btn" data-cmd="undo"><i class="fa fa-undo" aria-hidden="true"></i></button>
+        <button type="button" class="format-btn" data-cmd="redo"><i class="fa fa-redo" aria-hidden="true"></i></button>
       </div>
+      <div id="editor" contenteditable="true" class="editor-content h-[38rem] overflow-x-hidden overflow-y-auto border rounded bg-white/10 w-full mb-2 py-3 px-4 border-white/10 text-white break-words whitespace-pre-wrap transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500">{{ post.content|safe if post else '' }}</div>
+      <p id="word-count" class="text-sm text-gray-400 mt-1">Word count: 0</p>
+    </div>
+    <input type="hidden" name="content" id="content-hidden" value="{{ post.content|safe if post else '' }}">
+    <input type="hidden" name="featured_image" id="featured_image">
+    {% for error in form.content.errors %}
+      <p class="text-red-500 text-sm">{{ error }}</p>
+    {% endfor %}
+  </div>
+
+    <input type="hidden" name="status" id="post-status" value="draft">
+    
     <div class="flex justify-end gap-2 mt-4">
-      <!-- Save as draft -->
-      <button type="submit" name="submit_type" id="save-draft" value="draft"
+    
+      <button type="submit"
+              onclick="setStatus('draft')"
               class="bg-blue-200 px-4 py-2 rounded text-blue-600">
-          Save Draft
+        Save Draft
       </button>
-      
-      <!-- Regular create/update -->
-      <button type="submit" name="submit_type" id="publish" value="publish"
-              class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 shadow-lg transition relative font-medium overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_0_15px_rgba(50,130,246,0.4)]">
-          {{ 'Update' if post else 'Create' }}
+    
+      <button type="button"
+              id="scheduleBtn"
+              class="px-4 py-2 rounded text-gray-300 bg-blue-500">
+        Schedule
+      </button>
+    
+      <button type="submit"
+              onclick="setStatus('published')"
+              class="px-4 py-2 rounded text-gray-300 bg-blue-500">
+        Publish
+      </button>
+    
+    </div>
+
+    <div id="scheduleBox" class="hidden mt-4">
+      <label class="block text-sm mb-1">Publish date & time</label>
+      <input type="datetime-local"
+             name="scheduled_at"
+             class="w-full px-3 py-2 rounded bg-gray-800 text-white">
+    
+      <button type="submit"
+              onclick="setStatus('scheduled')"
+              class="mt-3 px-4 py-2 rounded bg-blue-500 text-white">
+        Confirm Schedule
       </button>
     </div>
   </form>
 </div>
 
-<link rel="stylesheet"
-      href="https://unpkg.com/easymde/dist/easymde.min.css">
-<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
-
 <script>
-const editor = new EasyMDE({
-  element: document.getElementById("editor"),
-  autosave: {
-    enabled: true,
-    uniqueId: "{{ post.id if post else 'new-post' }}",
-    delay: 1000,
-  },
-});
-
-
-function syncEditor() {
-  if (editor && editor.codemirror) {
-    editor.codemirror.save();
-  }
-}
-
-const form = document.getElementById("post-form");
-// Desktop + Mobile safe
-form.addEventListener("submit", syncEditor);
-// Extra safety for mobile tap
-document.getElementById("save-draft").addEventListener("click", syncEditor);
-document.getElementById("publish").addEventListener("click", syncEditor);
-</script>
-
-<script>
-const imageInput = document.getElementById("imageInput");
-const preview = document.getElementById("preview");
-
-imageInput.addEventListener("change", function() {
-    const file = this.files[0];
-    if (file) {
-        const reader = new FileReader();
-
-        reader.addEventListener("load", function() {
-            preview.setAttribute("src", this.result);
-            preview.style.display = "block";
-        });
-
-        reader.readAsDataURL(file);
-    } else {
-        preview.setAttribute("src", "");
-        preview.style.display = "none";
-    }
-});
-</script>
-
-<script>
-  // Preload tags from server
-  {% if post %}
-  window.existingTags = {{ post.tags|map(attribute='name')|list|tojson }};
-  {% else %}
-  window.existingTags = [];
-  {% endif %}
+  window.rules = {
+      min_words: {{ rules.min_words }},
+      avoid_words: {{ rules.avoid_words|tojson }},
+      goodGrammarScore: {{ rules.good_grammar_score }}
+  };
+  window.existingContent = {{ post.content|tojson if post else "null" }};
+  window.existingTags = {{ post.tags|map(attribute='name')|list|tojson if post else "[]" }};
 </script>
 
 {% endblock %}

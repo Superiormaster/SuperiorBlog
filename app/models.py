@@ -1,14 +1,17 @@
 from datetime import datetime 
 from app.extensions import db, login_manager
-from sqlalchemy import JSON
+from sqlalchemy import JSON, event
+from app.utils.read_time import calculate_read_time
 from slugify import slugify
 from flask_login import UserMixin
-from sqlalchemy import event
-from werkzeug.security import check_password_hash, generate_password_hash
+from itsdangerous import URLSafeTimedSerializer
+from flask import current_app
+from app.utils.decorators import generate_unique_slug
+from werkzeug.security import generate_password_hash, check_password_hash
 
 def generate_slug(target, value, oldvalue, initiator):
     if not value:
-        return slugify(target.name)
+        return generate_unique_slug(target.title)
     return value
 
 post_tags = db.Table('post_tags',
@@ -26,6 +29,8 @@ class Admin(db.Model, UserMixin):
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    is_admin = db.Column(db.Boolean, default=True)
+    role = db.Column(db.String(20), default="admin")
 
     def __repr__(self):
         return f"<User {self.username}>"
@@ -36,6 +41,74 @@ class Admin(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password, password)
 
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=True)
+    role = db.Column(
+        db.String(20),
+        default="author"
+    ) 
+    profile_visits = db.Column(db.Integer, default=0)
+    is_deleted = db.Column(db.Boolean, default=False)
+    deleted_at = db.Column(db.DateTime, nullable=True)
+    profile_completed = db.Column(db.Boolean, default=False)
+    full_name = db.Column(db.String(120))
+    location = db.Column(db.String(50))
+    description = db.Column(db.Text)
+    category = db.Column(db.String(80))
+    phone = db.Column(db.String(30))
+    id_number = db.Column(db.String(30))
+    id_type = db.Column(db.String(50))
+    bank_account = db.Column(db.String(50))
+    referral_link = db.Column(db.String(255))
+    oauth_provider = db.Column(db.String(50))
+    is_premium = db.Column(db.Boolean, default=False)
+    oauth_id = db.Column(db.String(255), unique=True)
+    trust_score = db.Column(db.Integer, default=0)
+    is_trusted = db.Column(db.Boolean, default=False)
+    scheduled_at = db.Column(db.DateTime, nullable=True)
+    approved_posts = db.Column(db.Integer, default=0)
+    rejected_posts = db.Column(db.Integer, default=0, nullable=False)
+    daily_limit = db.Column(db.Integer, default=5)  
+    _is_active = db.Column("is_active", db.Boolean, default=True)
+    is_blocked = db.Column(db.Boolean, default=False)
+    posts = db.relationship("Post", back_populates="author", lazy=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Optional: profile image, bio, etc.
+
+    def generate_reset_token(self, expires_sec=1800):
+        s = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+        return s.dumps(self.id, salt="password-reset")
+
+    @staticmethod
+    def verify_reset_token(token, expires_sec=1800):
+        s = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+        try:
+            user_id = s.loads(
+                token,
+                salt="password-reset",
+                max_age=expires_sec
+            )
+        except Exception:
+            return None
+        return User.query.get(user_id)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+  
+    @property
+    def is_active(self):
+        return True
+
+    @is_active.setter
+    def is_active(self, value):
+        self._is_active = value
+
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
@@ -45,6 +118,7 @@ class Category(db.Model):
     meta_description = db.Column(db.String(255))
     views = db.Column(db.Integer, default=0)
     posts = db.relationship('Post', back_populates='category', lazy="dynamic")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 @event.listens_for(Category.slug, "set", retval=True)
 def receive_category_slug_set(target, value, oldvalue, initiator):
@@ -70,9 +144,26 @@ class Label(db.Model):
         back_populates="labels"
     )
 
+class ProfileVisit(db.Model):
+    __tablename__ = 'profile_visits'
+
+    id = db.Column(db.Integer, primary_key=True)
+    visited_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    visitor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # nullable=True for anonymous visits
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships (optional, convenient)
+    visited_user = db.relationship("User", foreign_keys=[visited_user_id], backref="profile_visits_received")
+    visitor = db.relationship("User", foreign_keys=[visitor_id], backref="profile_visits_made")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<ProfileVisit {self.visitor_id} -> {self.visited_user_id} at {self.timestamp}>"
+
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     slug = db.Column(db.String(200), unique=True, nullable=False)
     content = db.Column(db.Text, nullable=False)
     category_id = db.Column(
@@ -80,12 +171,28 @@ class Post(db.Model):
         db.ForeignKey("category.id"),
         nullable=True
     )
+    shares = db.Column(db.Integer, default=0)
+    impressions = db.Column(db.Integer, default=0)
     category = db.relationship('Category', back_populates='posts')
     tags = db.relationship("Tag", secondary=post_tags, back_populates="posts")
+    related_impressions = db.Column(db.Integer, default=0)
+    related_clicks = db.Column(db.Integer, default=0)
     labels = db.relationship("Label", secondary=post_labels, back_populates="posts")
     views = db.Column(db.Integer, default=0)
+    status = db.Column(
+        db.String(20),
+        default="draft", 
+        index=True
+    )
+    is_locked = db.Column(db.Boolean, default=False)  # ✅ add this
+    published_at = db.Column(db.DateTime, nullable=True, index=True)
+    read_time = db.Column(db.Integer, default=0)  # minutes
+    resubmission_count = db.Column(db.Integer, default=0)
+    author = db.relationship("User", back_populates="posts")
+    rejection_reason = db.Column(db.Text, nullable=True)
+    scheduled_at = db.Column(db.DateTime, nullable=True)
     featured_image = db.Column(db.String(500)) 
-    is_published = db.Column(db.Boolean, default=False)
+    is_published = db.Column(db.Boolean, default=False, index=True)
     is_breaking = db.Column(db.Boolean, default=False)
     is_editor_pick = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
@@ -95,15 +202,44 @@ class Post(db.Model):
         onupdate=datetime.utcnow
     )
     comments = db.relationship("Comment", backref="post", lazy=True)
+    like_count = db.Column(db.Integer, default=0) 
     likes = db.relationship(
         "Like",
         backref="post",
         lazy="dynamic",
         cascade="all, delete-orphan"
     )
+    plan = db.Column(db.String(20), default="free")
 
     def __repr__(self):
         return f"<Post {self.title}>"
+
+    @property
+    def daily_limit(self):
+        return {
+            "free": 5,
+            "pro": 50,
+            "newsroom": 500
+        }.get(self.plan, 5)
+
+@event.listens_for(Post.slug, "set", retval=True)
+def generate_slug_on_set(target, value, oldvalue, initiator):
+    if not value and value != oldvalue:
+        return generate_slug(value or target.title)
+    return value
+
+@event.listens_for(Post.content, "set", retval=False)
+def update_read_time(target, value, oldvalue, initiator):
+    if value:
+        target.read_time = calculate_read_time(value)
+    else:
+        target.read_time = 0
+
+class Repost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    post_id = db.Column(db.Integer, db.ForeignKey("post.id"))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class AppSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -122,6 +258,14 @@ class ContactMessage(db.Model):
     name = db.Column(db.String(200))
     email = db.Column(db.String(200))
     message = db.Column(db.Text)
+    subject = db.Column(db.String(200), nullable=True)
+
+    type = db.Column(db.String(20))  
+    # "contact", "feedback", "report"
+
+    is_read = db.Column(db.Boolean, default=False)
+    is_replied = db.Column(db.Boolean, default=False)
+
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(
         db.DateTime,
@@ -132,17 +276,61 @@ class ContactMessage(db.Model):
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    author = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref='comments')
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    replies = db.relationship('Reply', backref='comment', cascade='all, delete-orphan')
 
-    post_id = db.Column(db.Integer, db.ForeignKey("post.id"))
+class Reply(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='replies')
+    comment_id = db.Column(db.Integer, db.ForeignKey('comment.id'))
+
+class CommentReaction(db.Model):
+    __tablename__ = "comment_reactions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey("comment.id"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    reaction = db.Column(db.String(20), nullable=False)  # like, love, haha, wow
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
+    __table_args__ = (
+        db.UniqueConstraint("comment_id", "user_id", name="unique_comment_reaction"),
+    )
+
+    comment = db.relationship("Comment", backref="reactions")
+    user = db.relationship("User", backref="comment_reactions")
 
 class Like(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey("post.id"), nullable=False)
     session_id = db.Column(db.String(100), nullable=False)
 
+class CaptionHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    input_text = db.Column(db.Text, nullable=False)
+    confidence = db.Column(db.Integer)
+    tone = db.Column(db.String(50))
+    caption = db.Column(db.Text, nullable=False)
+    length = db.Column(db.String(50))
+    platform = db.Column(db.String(50))
+    captions = db.Column(db.JSON)
+    style = db.Column(db.String(20))
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
+class DailyUsage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer)
+    date = db.Column(db.Date)
+    count = db.Column(db.Integer, default=0)
+
 @login_manager.user_loader
 def load_user(user_id):
-    return Admin.query.get(int(user_id))
+    return User.query.get(int(user_id))

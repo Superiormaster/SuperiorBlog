@@ -1,0 +1,178 @@
+window.toggleReplyForm = toggleReplyForm;
+window.toggleReplies = toggleReplies;
+window.toggleComments = toggleComments;
+
+// Comment 
+function toggleComments() {
+  const section = document.getElementById("comment-section");
+  section.classList.toggle("hidden");
+
+  // Automatically show fixed comment form when section opens
+  const form = document.getElementById("fixed-comment-form");
+  if (!section.classList.contains("hidden") && form) {
+    form.classList.remove("hidden");
+    //form.querySelector("textarea").focus();
+  }
+}
+
+// -----------------------------
+// TOGGLE REPLIES
+// -----------------------------
+function toggleReplies(commentId) {
+  const replies = document.getElementById(`replies-${commentId}`);
+  const btn = document.getElementById(`toggle-replies-btn-${commentId}`);
+  if (replies.classList.contains("hidden")) {
+    replies.classList.remove("hidden");
+    btn.textContent = "Hide Replies";
+  } else {
+    replies.classList.add("hidden");
+    btn.textContent = `View Replies (${replies.children.length})`;
+  }
+}
+
+// -----------------------------
+// TOGGLE REPLY FORM UNDER EACH COMMENT
+// -----------------------------
+function toggleReplyForm(commentId) {
+  const form = document.getElementById(`reply-form-${commentId}`);
+  const textarea = form.querySelector("textarea");
+
+  // toggle visibility
+  form.classList.toggle("hidden");
+
+  // clear content when opening
+  if (!form.classList.contains("hidden")) {
+    textarea.value = "";
+    textarea.focus();
+  }
+}
+
+// -----------------------------
+// FIXED COMMENT FORM
+// -----------------------------
+const commentForm = document.getElementById("fixed-comment-form");
+const commentTextarea = commentForm?.querySelector("textarea");
+
+if (commentTextarea) {
+  commentTextarea.addEventListener("focus", () => {
+    commentForm.classList.remove("hidden"); // just show form, no scrolling
+  });
+}
+
+// Close Comment Form
+function closeCommentForm() {
+  const form = document.getElementById("fixed-comment-form");
+  if (form) form.classList.add("hidden");
+}
+
+// Open Reply form
+function openReplyModal() {
+  document.getElementById("replyModal").classList.remove("hidden");
+  document.getElementById("replyModal").classList.add("flex");
+}
+
+// Close Reply Form
+function closeReplyModal() {
+  document.getElementById("replyModal").classList.add("hidden");
+  document.getElementById("replyModal").classList.remove("flex");
+}
+
+// Add comment via AJAX
+const commentForm = document.getElementById("fixed-comment-form");
+const commentCount = document.getElementById("comment-count");
+if (commentForm) {
+  commentForm.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const textarea = this.querySelector("textarea");
+    const formData = new FormData(this);
+
+    fetch(this.action, {
+      method: "POST",
+      body: formData,
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log(data);
+      const commentList = document.getElementById("comment-list");
+      const noComments = document.getElementById("no-comment");
+
+      const li = document.createElement("li");
+      li.classList.add("mb-4", "border-b", "pb-2");
+      li.innerHTML = `
+        <p class="font-semibold text-xl md:text-2xl">${data.username}</p>
+        <p class="text-gray-400 text-sm md:text-xl">${data.content}</p>
+        <p class="text-xs text-gray-500">${data.created_at}</p>
+        <div class="flex gap-3 mt-2">
+          <button data-safe class="btn-primary text-blue-500 text-sm"
+                  onclick="toggleReplyForm(${data.comment_id})">
+            Reply
+          </button>
+          <button class="btn-primary text-gray-500 text-sm hidden" 
+                  id="toggle-replies-btn-${data.comment_id}" 
+                  onclick="toggleReplies(${data.comment_id})">
+            View Replies (0)
+          </button>
+        </div>
+        <form id="reply-form-${data.comment_id}" data-action="${data.reply_url}" action="/reply/${data.comment_id}" method="POST" class="mt-2 ml-4 hidden">
+          <input type="hidden" name="csrf_token" value="${data.csrf_token}">
+          <textarea name="content" placeholder="Write a reply..." class="border rounded px-2 py-1 w-full text-sm" required></textarea>
+          <button type="submit" class="btn-primary bg-blue-600 text-white px-2 py-1 rounded text-sm mt-1">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </form>
+        <ul id="replies-${data.comment_id}" class="ml-6 mt-3 hidden"></ul>
+      `;
+
+      // Add on top
+      if (noComments) noComments.remove();
+      commentList.prepend(li);
+
+      textarea.value = ""; // clear textarea
+      textarea.focus(); // focus but don't scroll page
+      if (commentCount) {
+        commentCount.textContent = parseInt(commentCount.textContent) + 1;
+      }
+
+      attachReplySubmit(li.querySelector("form"));
+    })
+    .catch(err => console.error(err));
+  });
+}
+
+// Add reply via AJAX
+document.querySelectorAll("[id^='reply-form-']").forEach(replyForm => {
+  replyForm.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const textarea = this.querySelector("textarea");
+    const formData = new FormData(this);
+    const repliesList = this.closest("li").querySelector("ul[id^='replies-']");
+
+    fetch(this.action, {
+      method: "POST",
+      body: formData,
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(res => res.json())
+    .then(data => {
+      const li = document.createElement("li");
+      li.classList.add("border-l-2", "border-gray-600", "pl-3", "mb-2");
+      li.innerHTML = `
+        <p class="font-semibold text-sm">${data.username}</p>
+        <p class="text-gray-400 text-sm">${data.content}</p>
+        <p class="text-xs text-gray-500">${data.created_at}</p>
+      `;
+
+      // Add reply on top
+      repliesList.prepend(li);
+      repliesList.classList.remove("hidden");
+
+      textarea.value = ""; // clear textarea
+      textarea.focus(); // focus but don't scroll
+      attachReplySubmit(form);
+    })
+    .catch(err => console.error(err));
+  });
+});

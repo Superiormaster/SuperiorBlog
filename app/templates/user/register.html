@@ -1,0 +1,111 @@
+{% extends 'user/base.html' %} 
+{% block content %}
+
+    <!-- Signup Card -->
+<div class="text-center mt-12 w-full rounded-lg">
+  <h2 class="px-6 py-2 font-extrabold mb-6 text-center text-4xl bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-400">Create account</h2>
+</div>
+
+  <div class="flex justify-center items-center space-x-8">
+    <div class="p-6 rounded-lg w-80">
+      <img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior icon" class="w-full object-cover rounded-md">
+
+      <form method="POST" action="{{ url_for('public.user_register') }}" class="space-y-4 p-4 rounded-lg border border-yellow-500">
+        {{ form.hidden_tag() }}
+      <div class="mb-4">
+        {{ form.username.label(class_="block text-sm font-medium mb-1") }}
+        {{ form.username(
+            placeholder="Choose a username",
+            class_="w-full px-3 py-2 border rounded-md bg-gray-900 text-white"
+        ) }}
+        {% for error in form.username.errors %}
+          <p class="text-red-500 text-sm">{{ error }}</p>
+        {% endfor %}
+      </div>
+      <div class="mb-4">
+        {{ form.email.label(class_="block text-sm font-medium mb-1") }}
+        {{ form.email(
+            placeholder="Enter your email",
+            class_="w-full px-3 py-2 border rounded-md bg-gray-900 text-white"
+        ) }}
+        {% for error in form.email.errors %}
+          <p class="text-red-500 text-sm">{{ error }}</p>
+        {% endfor %}
+      </div>
+      <div class="mb-4">
+        {{ form.password.label(class_="block text-sm font-medium mb-1") }}
+        {{ form.password(id="password",
+            placeholder="Create a password",
+            class_="w-full px-3 py-2 border rounded-md bg-gray-900 text-white"
+        ) }}
+        {% for error in form.password.errors %}
+          <p class="text-red-500 text-sm">{{ error }}</p>
+        {% endfor %}
+      </div>
+      <div class="mb-4">
+        {{ form.confirm_password.label(class_="block text-sm font-medium mb-1") }}
+        {{ form.confirm_password(id="confirm_password",
+            placeholder="Confirm password",
+            class_="w-full px-3 py-2 border rounded-md bg-gray-900 text-white"
+        ) }}
+        {% for error in form.confirm_password.errors %}
+          <p class="text-red-500 text-sm">{{ error }}</p>
+        {% endfor %}
+      </div>
+      <div class="form-check mb-3">
+        <input type="checkbox" class="form-check-input" id="show_password" onclick="show_pass()">
+        <label class="form-check-label" for="show_password">Show Password</label>
+      </div>
+      <div class="text-sm mb-4">
+        <label class="flex items-center">
+          <input type="checkbox" class="mr-1"> I have read and agreed to User Agreement and privacy policy
+        </label>
+      </div>
+      {{ form.submit(class_="w-full bg-blue-600 text-white py-2 rounded-md font-semibold") }}
+      <div class="text-center text-sm mt-4">Or SignUp With</div>
+      <div class="space-x-4 bg-blue-600 rounded-full font-semibold mt-2 w-full">
+      <a id="googleBtn" href="{{ url_for('public.google_login') }}"
+          class="flex items-center justify-center gap-3 w-full h-12 rounded-full border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition"
+        >
+          <!-- Official Google SVG -->
+          <svg
+            id="googleIcon"
+            class="w-5 h-5"
+            viewBox="0 0 48 48"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.7 1.22 9.19 3.22l6.85-6.85C35.9 2.34 30.47 0 24 0 14.6 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.09 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.1 24.55c0-1.64-.15-3.21-.43-4.73H24v9.01h12.45c-.54 2.91-2.18 5.38-4.64 7.04l7.1 5.5C43.8 36.83 46.1 31.21 46.1 24.55z"/>
+            <path fill="#FBBC05" d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.98-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.91-5.81l-7.1-5.5c-1.97 1.32-4.49 2.1-8.81 2.1-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.6 48 24 48z"/>
+          </svg>
+        
+          <span id="googleText" class="text-white">Sign in with Google</span>
+          <span
+            id="googleSpinner"
+            class="hidden absolute right-5 w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"
+          ></span>
+        </a>
+         <p id="googleError" class="hidden text-sm text-red-500">
+            Something went wrong. Please try again.
+          </p>
+      </div>
+      <div class="text-center text-sm mt-2">
+        Already have an account? <a href="{{ url_for('public.user_login') }}" class="text-green-500">Login</a>
+      </div>
+    </div>
+  </div>
+
+<script>
+function show_pass() {
+  const password = document.getElementById("password");
+  const confirm = document.getElementById("confirm_password");
+  const checkbox = document.getElementById("show_password");
+  
+  const type = checkbox.checked ? "text" : "password";
+  password.type = type;
+  confirm.type = type;
+}
+</script>
+
+{% endblock %}

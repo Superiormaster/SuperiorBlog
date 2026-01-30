@@ -1,19 +1,59 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<div class="px-4 py-10 w-full bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+<div class="py-10 w-full bg-gray-800 shadow-lg rounded-lg overflow-hidden">
   
-  <div class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold">Dashboard</h1>
-    <a href="{{ url_for('admin.create_or_edit') }}"
+  <aside id="sidebar" class="fixed inset-y-auto md:hidden min-h-screen left-0 w-64 bg-gray-900 text-white transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50">
+    <div class="p-5 text-xl font-bold border-b border-gray-700">Superior Master</div>
+    <nav class="p-4 space-y-3">
+      <a href="{{ url_for('admin.myposts') }}" class="block px-4 py-2 rounded hover:bg-gray-700">My Posts</a>
+      <a href="{{ url_for('admin.create_post') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Create</a>
+      <a href="{{ url_for('admin.analytics') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Analysis</a>
+      <a href="{{ url_for('admin.admin_messages') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Messages</a>
+      {% for msg in messages %}
+        <a href="{{ url_for('admin.view_message', id=msg.id) }}" 
+           class="block px-4 py-2 rounded hover:bg-gray-800">
+          View Message
+        </a>
+      {% endfor %}
+      <a href="{{ url_for('admin.tags') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Manage Tags</a>
+      <a href="{{ url_for('admin.users') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Users</a>
+      <a href="{{ url_for('admin.settings') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Settings</a>
+      <a href="{{ url_for('admin.change_password') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Change Password</a>
+    </nav>
+  </aside>
+  
+  <div class="px-4 mb-2 flex justify-between items-center">
+    <button id="menuBtn" class="text-gray-700 text-2xl md:hidden"><i class="fa fa-arrow-right" aria-hidden="true"></i></button>
+    <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+    <a href="{{ url_for('admin.create_post', id=None) }}"
        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
       New Post
     </a>
   </div>
   
+   <div class="hidden mx-0 md:block justify-between rounded w-full bg-gray-900 text-white transform transition-transform duration-300 z-50">
+    <nav class="flex p-4 justify-between space-y-2">
+      <a href="{{ url_for('admin.myposts') }}" class="block px-4 py-2 rounded hover:bg-gray-700">My Posts</a>
+      <a href="{{ url_for('admin.create_post') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Create</a>
+      <a href="{{ url_for('admin.analytics') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Analysis</a>
+      <a href="{{ url_for('admin.admin_messages') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Messages</a>
+      {% for msg in messages %}
+        <a href="{{ url_for('admin.view_message', id=msg.id) }}" 
+           class="block px-4 py-2 rounded hover:bg-gray-800">
+          View Message
+        </a>
+      {% endfor %}
+      <a href="{{ url_for('admin.tags') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Tags Used</a>
+      <a href="{{ url_for('admin.users') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Users</a>
+      <a href="{{ url_for('admin.settings') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Settings</a>
+      <a href="{{ url_for('admin.change_password') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Change Password</a>
+    </nav>
+  </div>
+  
     <!-- Search & Filters -->
-  <form method="GET" class="flex flex-col md:flex-row gap-3 md:gap-4 sm:items-center py-11">
+  <form method="GET" class="flex flex-col md:flex-row gap-3 px-4 md:gap-4 sm:items-center py-11">
     <input type="text"
            name="q"
            value="{{ q }}"
@@ -24,6 +64,8 @@
       <option value="all" {{ 'selected' if status == 'all' }}>All</option>
       <option value="published" {{ 'selected' if status == 'published' }}>Published</option>
       <option value="draft" {{ 'selected' if status == 'draft' }}>Drafts</option>
+      <option value="rejected" {{ 'selected' if status == 'rejected' }}>Rejected</option>
+      <option value="published" {{ 'selected' if status == 'published' }}>Published</option>
     </select>
 
     <button class="w-full sm:w-auto bg-yellow-600 text-white px-4 py-2 border rounded text-sm">
@@ -32,7 +74,7 @@
   </form>
   
   <!-- Sidebar -->
-  <div class="flex h-fit hidden md:block bg-gray-700 shadow rounded-lg overflow-hidden">
+  <div class="flex h-fit px-4 hidden md:block bg-gray-700 shadow rounded-lg overflow-hidden">
     <aside class="bg-gray-700 w-full shadow rounded-lg p-4 h-fit border">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl font-semibold">Posts</h2>
@@ -47,6 +89,7 @@
             <th class="px-4 py-3">Title</th>
             <th class="px-4 py-3">Status</th>
             <th class="px-4 py-3">Date</th>
+            <th class="px-4 py-2">Moderation</th>
             <th class="px-4 py-3 text-right">Actions</th>
           </tr>
         </thead>
@@ -59,34 +102,50 @@
             </td>
             
             <td class="px-4 py-3">
-            <span id="status-{{ post.id }}"
-                  class="px-2 py-1 text-xs rounded
-                  {{ 'bg-green-100 text-green-700' if post.is_published else 'bg-gray-100 text-gray-600' }}">
-              {{ 'Published' if post.is_published else 'Draft' }}
-            </span>
-          </td>
+            <span class="px-2 py-1 text-xs rounded 
+          {% if post.status == 'published' %}bg-green-100 text-green-700
+          {% elif post.status == 'draft' %}bg-gray-100 text-gray-600
+          {% elif post.status == 'rejected' %}bg-red-100 text-red-700
+          {% elif post.status == 'pending' %}bg-yellow-100 text-yellow-700{% endif %}">
+            {{ post.status|capitalize }}
+          </span>
+            </td>
 
             <td class="px-4 py-3 text-gray-400">
               {{ post.created_at.strftime('%B %d, %Y') }}
             </td>
 
-            <td class="px-4 py-3 text-right space-x-3">
-              <form action="{{ url_for('admin.toggle_publish', id=post.id) }}"
-                    method="POST"
-                    class="inline">
-                <button class="text-sm text-gray-60 hover:underline">
-                  {{ 'Unpublish' if post.is_published else 'Publish' }}
-                </button>
-              </form>
+          <td class="px-4 py-3 text-gray-400">
+          {{ post.rejection_reason or 'No issues detected' }}
+        </td>
 
-              <a href="{{ url_for('admin.create_or_edit', id=post.id) }}"
-                 class="text-sm text-blue-600 hover:underline">
-                Edit
-              </a>
-              <form action="{{ url_for('admin.delete', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
-                  <button type="submit" class="text-sm text-red-500 hover:underline">Delete</button>
+        <td class="py-1">
+          {% if post.status in ['pending', 'pending_review'] %}
+            <div class="flex flex-col gap-2">
+              <form action="{{ url_for('admin.approve_post', id=post.id) }}" method="POST">
+                <button class="w-full bg-green-600 text-white py-2 rounded text-sm">Approve</button>
               </form>
-            </td>
+        
+              <form action="{{ url_for('admin.reject_post', id=post.id) }}" method="POST">
+                <input type="text" name="reason" placeholder="Reason for rejection" class="w-full border rounded px-3 py-2 text-sm mb-2">
+                <button class="w-full bg-red-600 text-white py-2 rounded text-sm">Reject</button>
+              </form>
+            </div>
+            {% elif post.status == 'draft' %}
+            <span class="text-xs text-gray-500 text-right">Saved as draft</span>
+            {% elif post.status == 'rejected'%}
+            <span class="text-sm text-gray-400">
+            {{ post.rejection_reason or 'Reviewed' }}
+            </span>
+              <form action="{{ url_for('admin.delete', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+                <button type="submit" class="text-sm rounded py-2 w-full bg-red-600 text-white hover:underline">Delete</button>
+              </form>
+            {% elif post.status == 'scheduled' %}
+              <p class="text-xs text-gray-400 text-right">scheduled</p>
+            {% else %}
+              <p class="text-xs text-gray-400 text-right">Approved</p>
+            {% endif %}
+          </td>
           </tr>
           {% else %}
           <tr>
@@ -102,7 +161,7 @@
   </aside>
   </div>
   
-  <div class="md:hidden space-y-4">
+  <div class="md:hidden space-y-4 px-4">
     {% for post in posts %}
     <div class="bg-gray-700 rounded-lg p-4 shadow">
       
@@ -111,31 +170,46 @@
       </h3>
   
       <div class="flex justify-between text-sm mb-2">
-        <span class="px-2 py-1 rounded text-xs
-        {{ 'bg-green-100 text-green-700' if post.is_published else 'bg-gray-100 text-gray-600' }}">
-          {{ 'Published' if post.is_published else 'Draft' }}
-        </span>
+      <span class="px-2 py-1 rounded text-xs
+      {% if post.status == 'published' %}bg-green-100 text-green-700
+      {% elif post.status == 'draft' %}bg-gray-100 text-gray-600
+      {% elif post.status == 'rejected' %}bg-red-100 text-red-700
+      {% elif post.status == 'pending' %}bg-yellow-100 text-yellow-700{% endif %}">
+        {{ post.status|capitalize }}
+      </span>
   
         <span class="text-gray-400">
           {{ post.created_at.strftime('%b %d, %Y') }}
         </span>
       </div>
-  
-      <div class="flex justify-end gap-4 text-sm">
-        <form action="{{ url_for('admin.toggle_publish', id=post.id) }}"
-          method="POST"
-          class="inline">
-          <button class="text-sm text-gray-60 hover:underline">
-          {{ 'Unpublish' if post.is_published else 'Publish' }}
-          </button>
-        </form>
-        <a href="{{ url_for('admin.create_or_edit', id=post.id) }}" class="text-blue-400">Edit</a>
-  
-        <form action="{{ url_for('admin.delete', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
-            <button type="submit" class="text-sm text-red-500 hover:underline">Delete</button>
-        </form>
-      </div>
-  
+
+      <p class="text-sm text-gray-300 mb-3">
+        {{ post.rejection_reason or 'No issues detected' }}
+      </p>
+      
+    {% if post.status in ['pending', 'pending_review'] %}
+    <div class="flex flex-col gap-2">
+      <form action="{{ url_for('admin.approve_post', id=post.id) }}" method="POST">
+        <button class="w-full bg-green-600 text-white py-2 rounded text-sm">Approve</button>
+      </form>
+
+      <form action="{{ url_for('admin.reject_post', id=post.id) }}" method="POST">
+        <input type="text" name="reason" placeholder="Reason for rejection" class="w-full border rounded px-3 py-2 text-sm mb-2">
+        <button class="w-full bg-red-600 text-white py-2 rounded text-sm">Reject</button>
+      </form>
+    </div>
+    {% elif post.status == 'draft' %}
+    <span class="text-xs text-gray-500 text-right">Saved as draft</span>
+    {% elif post.status in ['rejected', 'published'] %}
+    <span class="text-sm text-gray-400">
+    {{ post.rejection_reason or 'Reviewed' }}
+    </span>
+      <form action="{{ url_for('admin.delete', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+        <button type="submit" class="text-sm rounded py-2 w-full bg-red-600 text-white hover:underline">Delete</button>
+      </form>
+    {% else %}
+      <p class="text-xs text-gray-400 text-right">Scheduled</p>
+    {% endif %}
     </div>
     {% else %}
       <div class="text-center py-6 text-gray-500">
@@ -145,7 +219,7 @@
   </div>
   
   <!-- Pagination -->
-  <div class="flex justify-center my-3 gap-2">
+  <div class="px-4 flex justify-center my-3 gap-2">
     {% if posts.has_prev %}
       <a href="{{ url_for('admin.dashboard', page=posts.prev_num, q=q, status=status) }}"
          class="px-3 py-1 border rounded">Prev</a>
@@ -160,15 +234,31 @@
          class="px-3 py-1 border rounded">Next</a>
     {% endif %}
   </div>
-
-  <ul class="homepage_down_nav border py-3 px-4 rounded-xl mb-4" id="drawerNav">
-  {% if current_user.is_authenticated %}
-  <li><a href="{{ url_for('admin.settings') }}" class="flex items-center gap-2"><i class="fa fa-cogs" aria-hidden="true"></i> Settings</a></li>
-  <li><a href="{{ url_for('admin.tags') }}">Manage Tags</a></li>
-  <li><a href="{{ url_for('admin.change_password') }}" class="text-blue-500 hover:underline flex items-center gap-2"><i class="fa fa-eraser" aria-hidden="true"></i>Change Password</a></li>
-  <li><a href="{{ url_for('admin.logout') }}" class="flex items-center gap-2"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a></li>
-  {% endif %}
-  </ul>
 </div>
+
+<!-- Backdrop -->
+<div 
+  id="backdrop"
+  class="fixed inset-0 bg-black/40 hidden z-40 md:hidden">
+</div>
+
+<script>
+  const sidebar = document.getElementById('sidebar');
+  const menuBtn = document.getElementById('menuBtn');
+  const backdrop = document.getElementById('backdrop');
+
+  function openSidebar() {
+    sidebar.classList.remove('-translate-x-full');
+    backdrop.classList.remove('hidden');
+  }
+
+  function closeSidebar() {
+    sidebar.classList.add('-translate-x-full');
+    backdrop.classList.add('hidden');
+  }
+
+  menuBtn.addEventListener('click', openSidebar);
+  backdrop.addEventListener('click', closeSidebar);
+</script>
 
 {% endblock %}

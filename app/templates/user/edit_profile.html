@@ -1,0 +1,59 @@
+{% extends "user/base.html" %}
+{% block content %}
+
+<form method="POST" class="mt-8 px-4 py-3 space-y-4">
+  {{ form.csrf_token }}
+  <div class="text-center text-3xl font-bold rounded text-gray-500 bg-yellow-600">Edit Profile</div>
+  
+  <div>
+    <label class="block text-sm">Username</label>
+    {{ form.username(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+  </div>
+
+  <div>
+    <label class="block text-sm">Description</label>
+    {{ form.description(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+  </div>
+
+  <div>
+    <label class="block text-sm">Category</label>
+    {{ form.category(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+  </div>
+
+  <div>
+    <label class="block text-sm">Legal Name</label>
+    {{ form.full_name(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+  </div>
+
+  <div>
+    <label class="block text-sm">Location</label>
+    {{ form.location(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+  </div>
+
+  <div>
+    <label class="block text-sm">ID Type</label>
+    {{ form.id_type(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+  </div>
+  
+  <div>
+    <label class="block text-sm">ID Number</label>
+    {{ form.id_number(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+  </div>
+
+  <div>
+    <label class="block text-sm">Phone Number</label>
+    {{ form.phone(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+  </div>
+
+  <!--<div>
+    <label class="block text-sm">Bank Account</label>
+    {{ form.bank_account(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+  </div>-->
+
+  <button
+    class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
+    Save Changes
+  </button>
+</form>
+
+{% endblock %}

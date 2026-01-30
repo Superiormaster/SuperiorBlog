@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="flex gap-2 bg-gray-800 justify-between px-4 mx-4 rounded border border-gray-700 mt-12">
+  <a href="?range=7" class="btn">7 Days</a>
+  <a href="?range=30" class="btn">30 Days</a>
+  <a href="?range=90" class="btn">90 Days</a>
+</div>
+
+  <!-- Analysis Section -->
+<div class="grid gap-6 grid-cols-2 md:grid-cols-3 mb-6 mt-6 px-4">
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Total Views(Unique views)</h3>
+      <span class="text-emerald-400">↑ {{ growth_percentage }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_views }}</p>
+  </div>
+  
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Total Time Read</h3>
+      <span class="text-emerald-400">↑ {{ total_read_time_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold text-center">{{ total_read_time }} min</p>
+  </div>
+
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Total Active Users</h3>
+      <span class="text-emerald-400">↑ {{ total_active_users_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold text-center">{{ total_active_users }}</p>
+  </div>
+
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Total Registered Users</h3>
+      <span class="text-emerald-400">↑ {{ total_registered_users_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold text-center">{{ total_registered_users }}</p>
+  </div>
+
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Likes</h3>
+      <span class="text-emerald-400">↑ {{ total_likes_growth }}%</span>
+    </div>
+    <p class="stat-value text-2xl font-bold">{{ total_likes }}</p>
+  </div>
+  
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Replies</h3>
+      <span class="text-emerald-400">↑ {{ total_replies_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_replies }}</p>
+  </div>
+  
+    <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Unique Visitors</h3>
+      <span class="text-emerald-400">↑ {{ total_replies_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_replies }}</p>
+  </div>
+  
+  <div class="panel bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Total Posts</h3>
+      <span class="text-emerald-400">↑ {{ total_posts_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_posts }}</p>
+  </div>
+  
+    <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Total time on page</h3>
+      <span class="text-emerald-400">↑ {{ total_replies_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_replies }}</p>
+  </div>
+
+  <div class="panel bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Deleted accounts</h3>
+      <span class="text-emerald-400">↑ {{ total_deleted_accounts_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_deleted_accounts }}</p>
+  </div>
+
+  <div class="panel hidden md:block bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Caption Users</h3>
+      <span class="text-emerald-400">↑ {{ total_caption_users_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_caption_users }}</p>
+  </div>
+</div>
+
+<div class="mb-6 mt-6 px-4">
+  <div class="panel md:hidden bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Caption Users</h3>
+      <span class="text-emerald-400">↑ {{ total_caption_users_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_caption_users }}</p>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 mt-12 px-4">
+    <div class="panel">
+      <h2 class="panel-title">Post chart</h2>
+      <div class="chart-placeholder">
+        <canvas id="postChart"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-title">Caption chart</h2>
+      <div class="chart-placeholder">
+        <canvas id="captionChart"></canvas>
+      </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 mt-12 px-4">
+  <div class="panel bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h2 class="panel-title">Avg Posts</h2>
+      <span class="text-emerald-400">↑ {{ total_avg_posts_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_avg_posts }}</p>
+  </div>
+
+  <div class="panel bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h2 class="panel-title">Avg Caption</h2>
+      <span class="text-emerald-400">↑ {{ total_avg_caption_growth }}%</span>
+    </div>
+    <div class="h-20 bg-black/80 rounded mt-6">
+      <p class="text-2xl font-bold">{{ total_avg_caption }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6 mt-12 px-4">
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Repost</h3>
+      <span class="text-emerald-400">↑ {{ total_repost_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_repost }}</p>
+  </div>
+  
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Impressions</h3>
+      <span class="text-emerald-400">↑ {{ total_impressions_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_impressions }}</p>
+  </div>
+  
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Profile visits</h3>
+      <span class="text-emerald-400">↑ {{ total_profile_visits_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_profile_visits }}</p>
+  </div>
+
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Shares</h3>
+      <span class="text-emerald-400">↑ {{ total_shares_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_shares }}</p>
+  </div>
+
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Engagements</h3>
+      <span class="text-emerald-400">↑ {{ total_engagements_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_engagements }}</p>
+  </div>
+  
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Engagement rate</h3>
+      <span class="text-emerald-400">↑ {{ total_engagement_rate_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_engagement_rate }}%</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+new Chart(document.getElementById("postChart"), {
+  type: 'bar',
+  data: {
+    labels: {{ platforms|map(attribute=0)|list }},
+    datasets: [{
+      label: "Posts",
+      data: {{ platforms|map(attribute=1)|list }}
+    }]
+  }
+});
+
+new Chart(document.getElementById("captionChart"), {
+  type: 'bar',
+  data: {
+    labels: {{ platforms|map(attribute=0)|list }},
+    datasets: [{
+      label: "Captions",
+      data: {{ platforms|map(attribute=1)|list }}
+    }]
+  }
+});
+</script>
+
+{% endblock %}

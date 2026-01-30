@@ -1,0 +1,87 @@
+{% extends 'user/base.html' %} 
+{% block content %}
+
+<div class="max-w-5xl mx-auto mt-14 bg-white/5 backdrop-blur rounded-2xl shadow-lg p-8">
+
+  <div class="mb-8 text-center">
+    <h1 class="text-3xl font-bold tracking-tight">Your Generated Captions History</h1>
+    <p class="text-gray-400 mt-2">Click on a history entry to view all captions and confidence scores.</p>
+  </div>
+
+  {% if history %}
+    <div class="space-y-4">
+      {% for item in history %}
+        <div class="p-4 rounded-xl bg-gray-900/50 border border-gray-700 shadow cursor-pointer history-item" data-item-id="{{ loop.index }}">
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-400">{{ item.created_at.strftime('%b %d, %Y %H:%M') }}</span>
+            <span class="text-lg font-semibold uppercase">{{ item.platform.upper() }}</span>
+          </div>
+          <div class="mb-3 p-3 rounded-lg bg-gray-800/70 border border-gray-700">
+            <p class="text-white clamp-3 text-md">{{ item.caption }}</p>
+          </div>
+          <p class="text-center bg-gray-800 text-gray-300 rounded border border-gray-600 text-sm">Click to view captions ▼</p>
+
+          <!-- Hidden caption list -->
+          <div class="mt-3 space-y-2 hidden captions-container" id="captions-{{ loop.index }}">
+          {% if item.captions %}
+            {% for cap in item.captions %}
+              <div class="p-3 rounded-lg bg-gray-800/70 border border-gray-700">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="font-semibold text-white">{{ cap.style|capitalize }}</span>
+                  <span class="text-sm text-green-400">{{ cap.confidence }}%</span>
+                </div>
+                <p class="text-gray-200">{{ cap.caption }}</p>
+                {% if cap.reason %}
+                  <p class="text-xs text-gray-400 mt-1"><em>Reason: {{ cap.reason }}</em></p>
+                {% endif %}
+                {% if item.tone %}
+                <p class="text-gray-400 italic text-sm">Tone: {{ item.tone }}</p>
+                {% endif %}
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-gray-200">No captions saved for this entry.</p>
+          {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-center text-gray-400 mt-6">You haven’t generated any captions yet.</p>
+  {% endif %}
+  <button onclick="loadCaptionHistory({{ h.id }})">
+    View
+</button>
+
+</div>
+
+<script>
+  // Toggle captions visibility on click
+  document.querySelectorAll('.history-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const id = item.dataset.itemId;
+      const captions = document.getElementById(`captions-${id}`);
+      captions.classList.toggle('hidden');
+    });
+  });
+  
+  function loadCaptionHistory(id) {
+    fetch(`/caption/history/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        const editor = document.getElementById("editor");
+        editor.innerHTML = "";
+  
+        data.captions.forEach(c => {
+          editor.innerHTML += `
+            <div class="mb-3 p-3 border rounded">
+              <strong>${c.style}</strong><br>
+              ${c.caption}
+            </div>
+          `;
+        });
+      });
+  }
+</script>
+
+{% endblock %}

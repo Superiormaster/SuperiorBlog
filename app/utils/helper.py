@@ -1,9 +1,11 @@
-import os
+import os, logging
 from slugify import slugify
-from flask import flash
-from app.models import Tag, db
-import cloudinary.uploader
-from cloudinary.exceptions import Error as CloudinaryError
+from flask import flash, abort, current_app
+from app.models import Tag, Post
+from flask_login import current_user
+from functools import wraps
+from datetime import datetime
+from app.extensions import db
 
 MAX_TAGS = 5
 
@@ -30,28 +32,79 @@ def process_tags(raw_tags):
         tags.append(tag)
     return tags
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
-
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def upload_image(file):
-    if not file or not allowed_file(file.filename):
-        return None
-
-    try:
-      result = cloudinary.uploader.upload(
-          file,
-          folder="SuperiorNews",
-          resource_type="image",
-          timeout=60
-      )
-  
-      return result.get("secure_url")
-
-    except CloudinaryError as e:
-        print("Cloudinary upload failed:", e)
-        return None
-
 def make_slug(title):
     return slugify(title)
+
+def get_related_posts(post, limit=5):
+    related = []
+    used_ids = {post.id}
+
+    # 1️⃣ By tags
+    if post.tags:
+        tag_ids = [t.id for t in post.tags]
+        tagged = (
+            Post.query
+            .join(Post.tags)
+            .filter(
+                Tag.id.in_(tag_ids),
+                Post.is_published == True,
+                Post.id.notin_(used_ids)
+            )
+            .order_by(Post.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        related.extend(tagged)
+        used_ids.update(p.id for p in tagged)
+
+    # 2️⃣ Same category
+    if len(related) < limit and post.category_id:
+        cat_posts = (
+            Post.query
+            .filter(
+                Post.category_id == post.category_id,
+                Post.is_published == True,
+                Post.id.notin_(used_ids)
+            )
+            .order_by(Post.created_at.desc())
+            .limit(limit - len(related))
+            .all()
+        )
+        related.extend(cat_posts)
+        used_ids.update(p.id for p in cat_posts)
+
+    # 3️⃣ Recent fallback
+    if len(related) < limit:
+        recent = (
+            Post.query
+            .filter(
+                Post.is_published == True,
+                Post.id.notin_(used_ids)
+            )
+            .order_by(Post.created_at.desc())
+            .limit(limit - len(related))
+            .all()
+        )
+        related.extend(recent)
+
+    return related
+
+logging.basicConfig(level=logging.INFO)
+
+def publish_scheduled_posts(app):
+  with app.app_context():
+    now = datetime.utcnow()
+
+    posts = Post.query.filter(
+        Post.status == "scheduled",
+        Post.scheduled_at <= now
+    ).all()
+
+    for post in posts:
+        post.status = "published"
+        post.is_published = True
+        post.published_at = now
+        logging.info(f"Post {post.id} published at {now}")
+
+    if posts:
+        db.session.commit()

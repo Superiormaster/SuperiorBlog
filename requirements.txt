@@ -15,6 +15,7 @@ Flask-Login==0.6.3
 Flask-Caching==2.3.1
 Flask-Mail==0.10.0
 Flask-WTF==1.2.2
+authlib
 gunicorn==23.0.0
 psycopg[binary]
 psycopg2-binary>=2.9
@@ -26,3 +27,7 @@ WTForms==3.2.1
 requests
 email_validator
 cloudinary
+google-auth 
+google-auth-oauthlib 
+apscheduler
+tzdata

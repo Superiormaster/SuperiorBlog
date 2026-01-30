@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-center bg-gray-800 py-4 mt-12 mb-4">List of Users</h1>
+
+<div class="bg-gray-800 mx-4 py-3 rounded hidden md:block">
+  <table class="w-full text-left mx-4">
+    <tr>
+      <th>Username</th>
+      <th>Registered On</th>
+      <th>Active</th>
+      <th>No of posts</th>
+      <th>Delete</th>
+    </tr>
+  
+    {% for tag, count in tags %}
+    <tr>
+      <td>{{ tag.name }}</td>
+      <td>{{ tag.slug }}</td>
+      <td>{{ count }}</td>
+      <td></td>
+      <td></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% for user in users %}
+<tr>
+  <td>{{ user.username }}</td>
+  <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+  <td>{{ 'Yes' if user.is_active else 'No' }}</td>
+  <td>{{ user.posts|length }}</td>
+  <td>
+    <form action="{{ url_for('admin.toggle_user', user_id=user.id) }}" method="POST">
+      <button type="submit" class="px-3 py-1 bg-yellow-500 text-white rounded">
+        {{ 'Block' if user.is_active else 'Restore' }}
+      </button>
+    </form>
+  </td>
+  <td>
+    <form action="{{ url_for('admin.delete_user', user_id=user.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+      <button type="submit" class="text-sm rounded bg-gray-400 px-3 py-1 text-red-500 hover:underline">Delete</button>
+    </form>
+  </td>
+</tr>
+{% endfor %}
+
+<div class="bg-gray-700 mx-4 py-3 px-4 rounded md:hidden">
+    <h3 class="font-semibold text-lg">
+      Users usernames 
+    </h3>
+    <p class="text-sm text-gray-500">Registered On: </p>
+    <span class="py-1 rounded text-xs mt-2">
+      Status: Active(Yes/No)
+    </span>
+    <p class="text-gray-400">
+      No of Posts:
+    </p>
+  
+    <div class="flex justify-end gap-4 text-sm mt-4">
+      <form action="#" method="POST">
+        <button type="submit" class="px-3 py-1 bg-green-600 text-white rounded">
+          Restore User
+        </button>
+      </form>
+
+      <form action="#" method="POST" onsubmit="return confirm('Are you sure?')">
+        <button type="submit" class="text-sm rounded bg-gray-400 px-3 py-1 text-red-500 hover:underline">Delete User</button>
+      </form>
+    </div>
+    <div class="text-center py-6 text-gray-500">
+        No User yet.
+    </div>
+</div>
+
+<div class="md:hidden">
+  {% for user in users %}
+  <div class="bg-gray-700 py-3 px-4 rounded mb-4">
+    <h3 class="font-semibold text-lg">{{ user.username }}</h3>
+    <p class="text-sm text-gray-500">Registered: {{ user.created_at.strftime('%Y-%m-%d') }}</p>
+    <span class="py-1 rounded text-xs mt-2">
+      Status: {{ 'Active' if user.is_active else 'Blocked' }}
+    </span>
+    <p class="text-gray-400">No of Posts: {{ user.posts|length }}</p>
+
+    <div class="flex justify-end gap-2 mt-4">
+      <form action="{{ url_for('admin.toggle_user', user_id=user.id) }}" method="POST">
+        <button type="submit" class="px-3 py-1 bg-yellow-500 text-white rounded">
+          {{ 'Block' if user.is_active else 'Restore' }}
+        </button>
+      </form>
+      <form action="{{ url_for('admin.delete_user', user_id=user.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+        <button type="submit" class="text-sm rounded bg-gray-400 px-3 py-1 text-red-500 hover:underline">Delete</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

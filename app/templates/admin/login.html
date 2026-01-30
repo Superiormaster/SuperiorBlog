@@ -5,7 +5,7 @@
   <div class="w- p-8 rounded-lg shadow-lg">
     <form method="POST" action="{{ url_for('admin.login') }}" class="space-y-4 p-4 border border-rose-100">
       {{ form.hidden_tag() }}
-      <h2 class="font-bold mb-6 text-center text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-400">Login</h2>
+      <h2 class="font-bold mb-6 text-center text-4xl bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-400">Login</h2>
       <div>
         {{ form.identifier.label(class_="block text-sm font-medium text-gray-100") }}
         {{ form.identifier(class_="w-full mb-2 py-3 px-4 border-white/10 bg-white/10 border rounded text-white transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500") }}

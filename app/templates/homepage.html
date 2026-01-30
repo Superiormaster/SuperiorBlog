@@ -1,13 +1,65 @@
-{% extends 'base.html' %} 
+{% extends 'user/base.html' %} 
 {% block content %}
 
-{% if breaking %}
-<div class="bg-red-600 text-white text-center py-2 px-4 text-lg font-bold animate-pulse fixed top-18 w-full z-50">
-    Breaking News: <a href="{{ url_for('public.post_detail', slug=breaking.slug) }}" class="line-clamp-1 underline hover:text-yellow-300">{{ breaking.title }}</a>
+{% if breaking_posts %}
+<div class="bg-red-600 text-white py-2 px-4 font-bold fixed top-16 w-full z-50">
+  <div class="flex items-center gap-4 px-4 py-2 overflow-hidden">
+    <span class="flex items-center gap-1 font-bold uppercase shrink-0">
+            <span class="animate-pulse">🔴</span> Breaking News
+        </span>
+    <div class="w-full overflow-hidden">
+      <div class="ticker-track">
+        {% for post in breaking_posts %}
+            <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
+               class="mx-6 underline hover:text-yellow-300 whitespace-nowrap leading-relaxed line-clamp-1 underline mx-4 hover:text-yellow-300">
+                {{ post.title }}
+            </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
 </div>
-<div class="h-20"></div> <!-- Spacer so content isn't hidden -->
+
+<div class="h-22"></div>
 {% endif %}
 
+<aside class="md:hidden mt-10 w-full bg-gray-700 text-white transform transition-transform duration-300 z-50">
+  <div class="flex w-full items-center gap-4 px-4 overflow-hidden">
+    <nav class="flex justify-between items-center px-3 bg-gray-800 relative flex-nowrap gap-10 w-full overflow-hidden overflow-x-auto">
+      <a data-redirect class="btn-primary btn-danger" href="{{ url_for('public.index') }}">Home</a>
+      <a href="{{ url_for('public.category', slug='world') }}"  data-redirect class="btn-primary btn-danger">World</a>
+      <a href="{{ url_for('public.category', slug='sports') }}" data-redirect class="btn-primary btn-danger">Sports</a>
+      <a href="{{ url_for('public.category', slug='politics') }}" data-redirect class="btn-primary btn-danger">Politics</a>
+      <a href="{{ url_for('public.category', slug='business') }}" data-redirect class="btn-primary btn-danger">Business</a>
+     <!-- <a href="{{ url_for('caption.caption_page') }}">Generate Captions</a>-->
+      {% if current_user.is_authenticated %}
+      <a href="{{ url_for('public.user_logout') }}">Logout</a>
+      {% else %}
+      <a href="{{ url_for('public.user_login') }}">Login</a>
+      {% endif %}
+    </div>
+  </nav>
+</aside>
+
+<!--<div class="max-w-5xl mx-auto mt-14">
+  <h2 class="text-3xl font-bold mb-6">🔥 Editor's Pick Captions</h2>
+
+  {% if editor_picks %}
+    <div class="space-y-4">
+      {% for caption in editor_picks %}
+        <div class="bg-gray-800 p-4 rounded-xl shadow-md">
+          <p class="text-white text-lg">{{ caption.caption }}</p>
+          <p class="text-gray-400 text-sm">Platform: {{ caption.platform.upper() }}, Confidence: {{ caption.confidence }}%</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-gray-400 px-3">      
+    <a href="{{ url_for('caption.caption_page') }}">No premium captions yet. Generate some to see them here!</a>
+    </p>
+  {% endif %}
+</div>
+-->
 <div class="flex home py-10">
 <form action="{{ url_for('public.search') }}" method="get" class="flex mb-6 mt-4 mx-2">
   <input
@@ -19,59 +71,99 @@
   <button class="px-4 rounded-r bg-[#c89a1a] text-white py-2 rounded-r-lg"><i class="fa fa-search" aria-hidden="true"></i></button>
 </form>
 
-<div class="p-4 rounded-lg bg-gray-800">
+<div class="p-3 rounded-lg bg-gray-800">
   <h3 class="text-center text-4xl mb-4 bg-red-600 text-white px-2 py-1 uppercase font-bold">
     Trending News
   </h3>
 
-  <div class="overflow-x-auto flex space-x-4 py-4" id="trending-slider">
+  <div class="overflow-x-auto flex space-x-3 py-4" id="trending-slider">
     {% for t in trending_posts %}
-    <div class="min-w-[200px] lg:min-h-[250px] bg-gray-700 p-4 rounded flex-shrink-0">
-      <a href="{{ url_for('public.post_detail', slug=t.slug) }}" class="text-lg font-semibold hover:underline">
+    {% if t.slug %}
+    <div class="min-w-[130px] lg:min-h-[250px] bg-gray-700 p-4 rounded flex-shrink-0">
+      <a href="{{ url_for('public.post_detail', slug=t.slug) }}" class="text-lg font-semibold hover:underline truncate block line-clamp-1 mb-1 w-[8.5rem] leading-[1.5rem] overflow-hidden">
         {{ t.title }}
       </a>
       {% if t.featured_image %}
-        <img src="{{ t.featured_image }}"
-             class="rounded mt-2 w-full h-40 object-cover">
-      {% endif %}
+        <img
+          src="{{ t.featured_image }}"
+          loading="lazy"
+          decoding="async"
+          class="w-32 h-22 object-cover rounded"
+          alt="{{ t.title }}"
+        >
+        {% else %}
+        <div class="fallback-thumbnail border h-24 w-34 rounded border-gray-800 flex items-center justify-center">
+          <div class="bg-neutral-800 h-22 w-32"></div>
+        </div>
+        {% endif %}
       <p class="text-sm text-gray-400 mt-2">{{ t.comments|length }} 💬</p>
     </div>
+    {% endif %}
     {% endfor %}
   </div>
 
-  <div class="py-6">
+  <div class="py-6 space-y-4">
     {% for post in posts %}
-    <div class="bg-white/5 shadow-md rounded p-4 hover:shadow-lg transition">
-      <div class="relative">
+    <div class="flex flex-col md:flex-row gap-4 bg-white/5 shadow-md rounded p-4 hover:shadow-lg transition">
+  
+      <!-- Image -->
+      <div class="md:w-1/3 w-full">
         {% if post.featured_image %}
-          <img src="{{ post.featured_image }}"
-               class="rounded w-full mb-6 object-cover">
+          <img
+            src="{{ post.featured_image }}"
+            loading="lazy"
+            decoding="async"
+            class="w-full h-40 md:h-48 object-cover rounded"
+            alt="{{ post.title }}"
+          >
+        {% else %}
+          <div class="h-40 md:h-48 w-full rounded bg-neutral-800 flex items-center justify-center text-gray-500">
+            No image
+          </div>
         {% endif %}
-
-        <div class="absolute top-0 left-0 bg-red-500 p-2 text-white text-sm">
-          {% for label in post.labels %}
-            <span class="text-xs text-white rounded">{{ label.name }}</span>
-          {% endfor %}
-        </div>
       </div>
-
-        <h3 class="text-2xl font-semibold mb-2">
-          <a href="{{ url_for('public.post_detail', slug=post.slug) }}" class="text-blue-600 hover:underline">{{ post.title }}</a>
-        </h3>
-        <p class="text-gray-500 text-sm mb-2">{{ post.created_at.strftime('%B %d, %Y') }}</p>
-        <div class="prose text-gray-300 text-2xl md:text-3xl line-clamp-3">
-          {{ post.content | markdown | safe }}
-        </div>
-        <a href="{{ url_for('public.post_detail', slug=post.slug) }}" class="text-blue-500 hover:underline mt-2 text-xl inline-block">Read more</a>
-
-      <div class="flex gap-2 mt-4">
-          {% for tag in post.tags %}
-            <a href="{{ url_for('public.tag', slug=tag.slug) }}" class="text-sm text-yellow-500 bg-gray-800 px-2 py-1 rounded">#{{ tag.name }}</a>
+  
+      <!-- Content -->
+      <div class="md:w-2/3 w-full relative">
+  
+        <!-- Labels -->
+        <div class="absolute top-0 left-0 flex gap-1 flex-wrap">
+          {% for label in post.labels %}
+            <span class="bg-red-500 text-xs px-2 py-1 text-white rounded">
+              {{ label.name }}
+            </span>
           {% endfor %}
+        </div>
+  
+        <h3 class="text-xl md:text-2xl font-semibold mt-6 mb-1 text-yellow-500 leading-snug line-clamp-2">
+          <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
+             class="hover:underline">
+            {{ post.title }}
+          </a>
+        </h3>
+  
+        <p class="text-gray-500 text-sm mb-1">
+          Published on {{ post.created_at.strftime('%B %d, %Y') }}
+        </p>
+  
+        <p class="text-sm text-gray-400 mb-2">
+          By <b>{{ post.author.username }}</b>
+        </p>
+  
+        <!-- Tags -->
+        <div class="flex gap-2 flex-wrap">
+          {% for tag in post.tags %}
+            <a href="{{ url_for('public.tag', slug=tag.slug) }}"
+               class="text-xs text-yellow-500 bg-gray-800 px-2 py-1 rounded">
+              #{{ tag.name }}
+            </a>
+          {% endfor %}
+        </div>
+  
       </div>
     </div>
     {% else %}
-      <p>No posts yet.</p>
+      <p class="text-gray-400">No posts yet.</p>
     {% endfor %}
   </div>
   
@@ -84,9 +176,9 @@
             <button class="px-4 bg-[#c89a1a] text-white py-2 rounded-r-lg">Subscribe</button>
           </form>
 
-        <ul class="homepage_down_nav border py-3 px-4 rounded-xl mb-4" id="drawerNav">
+        <ul class="homepage_down_nav hidden md:block border py-3 px-4 rounded-xl mb-4" id="drawerNav">
         {% if current_user.is_authenticated %}
-        <li><a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+        <li><a href="{{ url_for('public.user_dashboard') }}" class="flex items-center gap-2"><i class="fa fa-dashboard"></i> Dashboard</a></li>
         {% endif %}
         
           <li><a href="{{ url_for('public.contact') }}" class="flex items-center gap-2"><i class="fa fa-envelope" aria-hidden="true"></i>Contact Us</a></li>

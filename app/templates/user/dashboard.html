@@ -1,0 +1,270 @@
+{% extends "user/base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="px-4 py-10 w-full bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+
+  <aside id="sidebar" class="fixed inset-y-auto md:hidden min-h-screen left-0 w-64 bg-gray-800 text-white transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50">
+    <div class="p-5 text-xl font-bold border-b border-gray-700">Dashboard</div>
+    <nav class="p-4 space-y-3">
+     <!-- <a href="{{ url_for('caption.caption_page') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Caption Generator</a>-->
+      <a href="{{ url_for('public.create_post') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Create</a>
+      <a href="{{ url_for('public.user_analysis') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Analysis</a>
+      <a href="{{ url_for('public.user_profile', username=current_user.username) }}" class="block px-4 py-2 rounded hover:bg-gray-700">Account</a>
+      <!--<a href="{{ url_for('caption.caption_history_list') }}" class="sidebar-link block px-4 py-2 rounded hover:bg-gray-700">Caption History</a>-->
+    </nav>
+  </aside>
+
+  <div class="flex justify-between items-center">
+    <button id="menuBtn" class="text-gray-600 text-2xl md:hidden"><i class="fa fa-arrow-right" aria-hidden="true"></i></button>
+    <h1 class="text-2xl font-bold">Dashboard</h1>
+    <a href="{{ url_for('public.create_post') }}"
+       class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      New Post
+    </a>
+  </div>
+  
+    <div class="hidden md:block w-full bg-gray-900 mx-0 mt-2 text-white transform transition-transform duration-300 z-50">
+    <nav class="flex justify-between p-4 space-y-3">
+      <!--<a href="{{ url_for('caption.caption_page') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Caption Generator</a>-->
+      <a href="{{ url_for('public.create_post') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Create</a>
+      <a href="{{ url_for('public.user_analysis') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Analysis</a>
+      <a href="{{ url_for('public.user_profile', username=current_user.username) }}" class="block px-4 py-2 rounded hover:bg-gray-700">Account</a>
+      <!--<a href="/captions/history" class="sidebar-link block px-4 py-2 rounded hover:bg-gray-700">Caption History</a>-->
+      {% if current_user.is_authenticated %}
+      <a href="{{ url_for('public.user_change_password') }}" class="block px-4 py-2 rounded hover:bg-gray-700 hover:underline">Change Password</a>
+      <a href="{{ url_for('public.user_logout') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Logout</a>
+      {% endif %}
+    </nav>
+  </div>
+
+    <!-- Search & Filters -->
+  <form method="GET" class="flex flex-col md:flex-row gap-3 md:gap-4 sm:items-center mt-10">
+    <input type="text"
+           name="q"
+           value="{{ q }}"
+           placeholder="Search posts..."
+           class="w-full sm:flex-1 border rounded px-3 py-2 text-sm">
+
+    <select name="status" class="w-full border sm:w-40 rounded px-3 py-2 text-sm">
+      <option value="all" {{ 'selected' if status == 'all' }}>All</option>
+      <option value="published" {{ 'selected' if status == 'published' }}>Published</option>
+      <option value="draft" {{ 'selected' if status == 'draft' }}>Drafts</option>
+    </select>
+
+    <button class="w-full sm:w-auto bg-yellow-600 text-white px-4 py-2 border rounded text-sm">
+      Filter
+    </button>
+  </form>
+  
+        <div class="flex justify-center items-center gap-4 my-6">
+        <a href="{{ url_for('public.user_dashboard', status='all') }}" class="px-3 py-1 bg-gray-200 rounded {% if status=='all' %}bg-blue-500 text-white{% endif %}">All</a>
+        <a href="{{ url_for('public.user_dashboard', status='draft') }}" class="px-3 py-1 bg-gray-200 rounded {% if status=='draft' %}bg-blue-500 text-white{% endif %}">Drafts</a>
+        <a href="{{ url_for('public.user_dashboard', status='rejected') }}" class="px-3 py-1 bg-gray-200 rounded {% if status=='rejected' %}bg-blue-500 text-white{% endif %}">Rejected</a>
+        <a href="{{ url_for('public.user_dashboard', status='published') }}" class="px-3 py-1 bg-gray-200 rounded {% if status=='published' %}bg-blue-500 text-white{% endif %}">Published</a>
+    </div>
+  
+  <!-- Sidebar -->
+  <div class="flex h-fit hidden md:block bg-gray-700 shadow rounded-lg overflow-hidden">
+    <aside class="bg-gray-700 w-full shadow rounded-lg p-4 h-fit border">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-semibold">Posts</h2>
+      </div>
+
+    <section class="flex-1">
+
+    <div class="bg-gray-700 shadow rounded-lg overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-600 text-left">
+          <tr>
+            <th class="px-4 py-3">Title</th>
+            <th class="px-4 py-3">Status</th>
+            <th class="px-4 py-3">Date</th>
+            <th class="px-4 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for post in posts %}
+          <tr class="border-t hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium">
+              {{ post.title }}
+            </td>
+            
+            <td class="px-4 py-3">
+            <span class="px-2 py-1 rounded text-xs mt-2
+                {% if post.status == 'published' %}
+                  bg-green-100 text-green-700
+                {% elif post.status == 'draft' %}
+                  bg-gray-100 text-gray-600
+                {% elif post.status == 'pending' %}
+                  bg-yellow-100 text-yellow-700
+                {% elif post.status == 'rejected' %}
+                  bg-red-100 text-red-700
+                {% endif %}
+            ">
+              {{ post.status|capitalize }}
+            </span>
+          </td>
+
+            <td class="px-4 py-3 text-gray-400">
+              {{ post.created_at.strftime('%B %d, %Y') }}
+            </td>
+
+            <td class="px-4 py-3 text-right space-x-3 flex justify-end">
+              {% if post.status in ['draft', 'rejected'] and (post.resubmission_count or 0) < 2 %}
+                <a href="{{ url_for('public.edit_post', id=post.id) }}" class="px-3 py-1 bg-blue-500 text-white rounded">Edit</a>
+      
+                <form action="{{ url_for('public.submit_user_post', id=post.id) }}" method="POST">
+                  {{ submit_form.hidden_tag() }}
+                  <button type="submit" class="px-3 py-1 bg-green-600 text-white rounded">
+                    Submit
+                  </button>
+                </form>
+                <form action="{{ url_for('public.delete_post', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+                  {{ delete_form.hidden_tag() }}
+                  <button type="submit" class="text-sm rounded bg-gray-400 px-3 py-1 text-red-500 hover:underline">Delete</button>
+              </form>
+              {% elif post.status in ['pending', 'pending_review'] %}
+                <span class="text-gray-400 text-sm rounded px-3 py-1 bg-white">Waiting for Review</span>
+                {% elif post.status == 'published' %}
+                  <form action="{{ url_for('public.delete_post', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+                  {{ delete_form.hidden_tag() }}
+                  <button type="submit" class="text-sm rounded bg-gray-400 px-3 py-1 text-red-500 hover:underline">Delete</button>
+              </form>
+              <span class="text-gray-400 text-sm rounded px-3 py-1 bg-white">Locked</span>
+              {% else %}
+                <span class="text-gray-400 text-sm rounded px-3 py-1 bg-white">Locked</span>
+              {% endif %}
+      
+              {% if post.status == 'rejected' and post.resubmission_count >= 2 %}
+                <span class="px-3 py-1 bg-gray-300 text-gray-600 rounded">Max Resubmissions Reached</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" class="text-center py-6 text-gray-500">
+              No posts yet. Start by creating one!
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  </aside>
+  </div>
+  
+  <div class="md:hidden space-y-4">
+    {% for post in posts %}
+    <div class="bg-gray-700 rounded-lg p-4 shadow">
+      
+      <h3 class="font-semibold text-lg">
+        {{ post.title }}
+      </h3>
+      <p class="text-sm text-gray-500">Category: {{ post.category.name if post.category else 'None' }}</p>
+  
+      <div class="flex justify-between text-sm mb-2">
+        <span class="px-2 py-1 rounded text-xs mt-2
+            {% if post.status == 'published' %}
+              bg-green-100 text-green-700
+            {% elif post.status == 'draft' %}
+              bg-gray-100 text-gray-600
+            {% elif post.status == 'pending' %}
+              bg-yellow-100 text-yellow-700
+            {% elif post.status == 'rejected' %}
+              bg-red-100 text-red-700
+            {% endif %}
+        ">
+          Status: {{ post.status|capitalize }}
+        </span>
+
+        <span class="text-gray-400">
+          {{ post.created_at.strftime('%b %d, %Y') }}
+        </span>
+      </div>
+  
+      <div class="flex justify-end gap-4 text-sm mt-4">
+        {% if post.status in ['draft', 'rejected'] and (post.resubmission_count or 0) < 2 %}
+          <a href="{{ url_for('public.edit_post', id=post.id) }}" class="px-3 py-1 bg-blue-500 text-white rounded">Edit</a>
+
+          <form action="{{ url_for('public.submit_user_post', id=post.id) }}" method="POST">
+            {{ submit_form.hidden_tag() }}
+            <button type="submit" class="px-3 py-1 bg-green-600 text-white rounded">
+              Submit
+            </button>
+          </form>
+          <form action="{{ url_for('public.delete_post', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+            {{ delete_form.hidden_tag() }}
+            <button type="submit" class="text-sm rounded bg-gray-400 px-3 py-1 text-red-500 hover:underline">Delete</button>
+        </form>
+              {% elif post.status in ['pending', 'pending_review'] %}
+                <span class="text-gray-400 text-sm rounded px-3 py-1 bg-white">Waiting for Review</span>
+                {% elif post.status == 'published' %}
+                  <form action="{{ url_for('public.delete_post', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+                  {{ delete_form.hidden_tag() }}
+                  <button type="submit" class="text-sm rounded bg-gray-400 px-3 py-1 text-red-500 hover:underline">Delete</button>
+              </form>
+              <span class="text-gray-400 text-sm rounded px-3 py-1 bg-white">Locked</span>
+              {% else %}
+          <span class="text-gray-400 text-sm rounded px-3 py-1 bg-white">Locked</span>
+        {% endif %}
+
+        {% if post.status == 'rejected' and post.resubmission_count >= 2 %}
+          <span class="px-3 py-1 bg-gray-300 text-gray-600 rounded">Max Resubmissions Reached</span>
+        {% endif %}
+      </div>
+  
+    </div>
+    {% else %}
+      <div class="text-center py-6 text-gray-500">
+        No posts yet. Start by creating one!
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  <div class="flex justify-center my-3 gap-2">
+    {% if posts.has_prev %}
+      <a href="{{ url_for('public.user_dashboard', page=posts.prev_num, q=q, status=status) }}"
+         class="px-3 py-1 border rounded">Prev</a>
+    {% endif %}
+
+    <span class="px-3 py-1 text-gray-500">
+      Page {{ posts.page }} of {{ posts.pages }}
+    </span>
+
+    {% if posts.has_next %}
+      <a href="{{ url_for('public.user_dashboard', page=posts.next_num, q=q, status=status) }}"
+         class="px-3 py-1 border rounded">Next</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Backdrop -->
+<div 
+  id="backdrop"
+  class="fixed inset-0 bg-black/40 hidden z-40 md:hidden">
+</div>
+
+<script>
+  const sidebar = document.getElementById('sidebar');
+  const menuBtn = document.getElementById('menuBtn');
+  const backdrop = document.getElementById('backdrop');
+
+  function openSidebar() {
+    sidebar.classList.remove('-translate-x-full');
+    backdrop.classList.remove('hidden');
+  }
+
+  function closeSidebar() {
+    sidebar.classList.add('-translate-x-full');
+    backdrop.classList.add('hidden');
+  }
+
+  menuBtn.addEventListener('click', openSidebar);
+  backdrop.addEventListener('click', closeSidebar);
+</script>
+
+{% endblock %}
