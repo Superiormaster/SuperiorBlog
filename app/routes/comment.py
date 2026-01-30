@@ -22,7 +22,8 @@ def create_comment():
     )
 
     db.session.add(comment)
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to add comment")
 
     return jsonify({
         "success": True,
@@ -48,7 +49,8 @@ def reply_to_comment(comment_id):
     parent.replies_count += 1
 
     db.session.add(reply)
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to add reply")
 
     return jsonify({
         "success": True,
@@ -127,7 +129,8 @@ def delete_comment(comment_id):
         if parent and parent.replies_count > 0:
             parent.replies_count -= 1
 
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to delete comments")
 
     return jsonify({"success": True})
 
@@ -157,7 +160,8 @@ def react_to_comment(comment_id):
         db.session.add(new_reaction)
         comment.reactions_count += 1
 
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to add reactions")
 
     # Return updated reactions count for frontend
     counts = {}

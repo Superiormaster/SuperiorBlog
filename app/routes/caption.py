@@ -83,7 +83,8 @@ def generate_caption_route():
 
     if not current_user.is_premium and usage:
       usage.count += 1
-      db.session.commit()
+      if not safe_commit():
+        print("Caption generated.")
     return jsonify({"results": results})
   except requests.exceptions.Timeout:
     flash("AI request timed out. Check your network.", "error")

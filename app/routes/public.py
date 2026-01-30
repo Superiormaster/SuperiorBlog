@@ -49,7 +49,8 @@ def user_register():
         user = User(username=form.username.data.strip(), email=form.email.data.strip().lower())
         user.set_password(form.password.data)
         db.session.add(user)
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to register user")
         flash("Account created! Please log in.", "success")
         return redirect(url_for('public.user_login'))
     return render_template('user/register.html', form=form)
@@ -106,7 +107,8 @@ def reset_password(token):
     form = ResetPasswordForm()
     if form.validate_on_submit():
         user.set_password(form.password.data)
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to reset password")
         flash("Your password has been reset. Please log in", "success")
         return redirect(url_for("public.user_login"))
 
@@ -121,7 +123,8 @@ def user_change_password():
             flash("Current password is incorrect.", "danger")
         else:
             current_user.set_password(form.new_password.data)
-            db.session.commit()
+            if not safe_commit():
+              print("Failed to change password")
             flash("Password updated successfully!", "success")
             return redirect(url_for('public.user_dashboard'))
     return render_template('user/change_password.html', form=form)
@@ -137,7 +140,8 @@ def profile_setup():
     if form.validate_on_submit():
         form.populate_obj(current_user)
         current_user.profile_completed = True
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to setup profile")
 
         flash("Profile completed successfully", "success")
         return redirect(url_for("public.user_dashboard"))
@@ -160,7 +164,8 @@ def user_profile(username):
         visitor_id=current_user.id if current_user.is_authenticated else None
     )
     db.session.add(visit)
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to add visit")
 
     return render_template(
         "user/profile.html",
@@ -181,7 +186,8 @@ def edit_profile():
                 return redirect(url_for("public.edit_profile"))
 
         form.populate_obj(current_user)
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to edit profile")
 
         flash("Profile updated successfully.", "success")
         return redirect(
@@ -370,7 +376,8 @@ def user_analysis():
 def share_post(post_id):
     post = Post.query.get_or_404(post_id)
     post.shares = (post.shares or 0) + 1
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to share post")
     return {"success": True}
 
 @public_bp.route('/dashboard')
@@ -535,7 +542,8 @@ def user_create_or_edit(id=None):
             return render_template("user/create.html", form=form, rules=rules, post=post)
 
         db.session.add(post)
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to save post")
 
         try:
           result = auto_moderate(post, current_user) if post else None
@@ -545,13 +553,15 @@ def user_create_or_edit(id=None):
           if status == "rejected":
               post.status = "rejected"
               flash(reason, "error")
-              db.session.commit()
+              if not safe_commit():
+                print("Failed to save post")
               return redirect(url_for("public.edit_post", id=post.id))
           
           if status == "pending_review":
               post.status = "pending_review"
               flash(reason or "Post requires editorial review", "warning")
-              db.session.commit()
+              if not safe_commit():
+                print("Failed to save post")
               return redirect(url_for("public.user_dashboard"))
           # ✅ Auto-approve
           post.status = "approved"
@@ -595,7 +605,8 @@ def user_create_or_edit(id=None):
             post.is_published = False
             post.content = form.content.data
         
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to save post")
 
         flash("Post submitted successfully.", "success")
         return redirect(url_for("public.user_dashboard"))
@@ -646,11 +657,13 @@ def save_draft():
 
     post.content = content
     post.status = "draft"
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to save post")
     return jsonify({"status": "updated", "post_id": post.id})
   
     db.session.add(post)
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to save post")
     return jsonify({"status": "saved", "post_id": post.id})
 
 @public_bp.route("/post/user/<int:id>/submit", methods=["POST"])
@@ -746,7 +759,8 @@ def delete_post(id):
 
     if form.validate_on_submit():
       db.session.delete(post)
-      db.session.commit()
+      if not safe_commit():
+        print("Failed to delete post")
   
       flash("Post deleted successfully.", "success")
     return redirect(url_for("public.user_dashboard"))
@@ -804,7 +818,8 @@ def google_callback():
     if not user:
         user = User(email=user_email, username=user_name, oauth_provider="google", oauth_id=oauth_id)
         db.session.add(user)
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to login user")
 
     login_user(user)
     flash("Logged in successfully", "success")
@@ -846,7 +861,8 @@ def google_one_tap():
             avatar=picture
         )
         db.session.add(user)
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to login user")
 
     login_user(user)
 
@@ -965,7 +981,8 @@ def post_detail(slug):
         section_title = "Trending Now"
     else:
         section_title = "Related Stories"
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to view post")
 
     return render_template("post.html", post=post, content_html=content_html, latest_posts=latest_posts, related_posts=related_posts, section_title=section_title)
 
@@ -975,7 +992,8 @@ def track_related_click():
     post = Post.query.get(data["post_id"])
     if post:
         post.related_clicks = (post.related_clicks or 0) + 1
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to view related posts")
     return {"status": "ok"}
 
 # Add comment
@@ -986,7 +1004,8 @@ def add_comment(slug):
     content = request.form['content']
     comment = Comment(content=content, user_id=current_user.id, post_id=post.id)
     db.session.add(comment)
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to add comment")
 
     # Check if AJAX request
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -1008,7 +1027,8 @@ def add_reply(comment_id):
     content = request.form['content']
     reply = Reply(content=content, user_id=current_user.id, comment_id=comment.id)
     db.session.add(reply)
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to add reply")
     return jsonify({
         "username": current_user.username,
         "content": reply.content,
@@ -1078,7 +1098,8 @@ def subscribe():
 
     subscriber = Subscriber(email=email)
     db.session.add(subscriber)
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to add subscribers")
 
     flash("Thanks for subscribing", "success")
     return redirect(url_for("public.index"))
@@ -1114,7 +1135,8 @@ def category(slug):
     )
 
     category.views += 1
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to view category post")
 
     return render_template(
         "category.html",
@@ -1147,7 +1169,8 @@ def like_post(id):
     # Add like
     like = Like(post_id=id, session_id=session["sid"])
     db.session.add(like)
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to add like")
 
     count = Like.query.filter_by(post_id=id).count()
 
@@ -1170,7 +1193,8 @@ def contact():
         )
 
         db.session.add(msg)
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to send email")
 
         flash("Your message has been sent successfully.", "success")
         return redirect(url_for("public.contact"))

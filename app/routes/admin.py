@@ -75,7 +75,8 @@ def change_password():
 
         # Update password
         current_user.password = generate_password_hash(form.new_password.data)
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to change password")
         flash("Password updated successfully!", "success")
         return redirect(url_for("admin.dashboard"))
 
@@ -241,7 +242,8 @@ def create_or_edit(id=None):
             return render_template("admin/create.html", form=form, rules=rules, post=post)
 
         db.session.add(post)
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to save post")
 
         # Make sure you correct this especially looking at grammar.py
         try:
@@ -252,13 +254,15 @@ def create_or_edit(id=None):
           if status == "rejected":
               post.status = "rejected"
               flash(reason, "error")
-              db.session.commit()
+              if not safe_commit():
+                print("Post rejected.")
               return redirect(url_for("admin.edit_post", id=post.id))
           
           if status == "pending_review":
               post.status = "pending_review"
               flash(reason or "Post requires editorial review", "warning")
-              db.session.commit()
+              if not safe_commit():
+                print("Post in pending review")
               return redirect(url_for("admin.dashboard"))
           # ✅ Auto-approve
           post.status = "approved"
@@ -290,7 +294,8 @@ def create_or_edit(id=None):
             post.is_published = False
             post.content = form.content.data
         
-        db.session.commit()
+        if not safe_commit():
+          print("Post submitted successfully.")
 
         flash("Post submitted successfully.", "success")
         return redirect(url_for("admin.dashboard"))
@@ -320,7 +325,8 @@ def save_draft():
         if post and post.user_id == current_user.id:
             post.content = content
             post.status = "draft"
-            db.session.commit()
+            if not safe_commit():
+              print("Post saved as draft.")
             return jsonify({"status": "updated", "post_id": post.id})
 
     # If new draft
@@ -331,7 +337,8 @@ def save_draft():
         is_published=False
     )
     db.session.add(post)
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to save post")
     return jsonify({"status": "saved", "post_id": post.id})
 
 @admin_bp.route("/post/user/<int:id>/submit", methods=["POST"])
@@ -361,7 +368,8 @@ def submit_user_post(id):
     post.rejection_reason = reason
     post.is_published = (status == "published")
 
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to publish post")
     flash(f"Post submitted: {status.upper()}" + (f" ({reason})" if reason else ""), "success")
     return redirect(url_for("admin.dashboard"))
 
@@ -393,7 +401,8 @@ def approve_post(id):
 
     post.author.rejected_posts = (post.author.rejected_posts or 0) + 1
 
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to approve post")
     flash("Post approved!", "success")
 
     # redirect based on where request came from
@@ -414,7 +423,8 @@ def reject_post(id):
 
     post.author.rejected_posts = (post.author.rejected_posts or 0) + 1
 
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to reject post")
     flash("Post rejected!", "danger")
 
     next_page = request.referrer or url_for("admin.dashboard")
@@ -452,7 +462,8 @@ def reply_message(id):
 
     if success:
       msg.is_replied = True
-      db.session.commit()
+      if not safe_commit():
+        print("Failed to send message")
   
       flash("Reply sent successfully.", "success")
     else:
@@ -468,7 +479,8 @@ def reply_message(id):
 def view_message(id):
     msg = ContactMessage.query.get_or_404(id)
     msg.is_read = True
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to read messages")
 
     return render_template("admin/message_detail.html", msg=msg)
 
@@ -621,7 +633,8 @@ def delete(id):
     post = Post.query.get_or_404(id)
 
     db.session.delete(post)
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to delete post")
 
     flash("Post deleted", "success")
     return redirect(url_for("admin.dashboard"))
@@ -641,14 +654,16 @@ def settings():
     if not settings:
         settings = AppSettings()
         db.session.add(settings)
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to save settings")
 
     form = PrivacyTermsForm(obj=settings)
 
     if form.validate_on_submit():
         settings.privacy_policy = form.privacy_policy.data
         settings.terms_conditions = form.terms_conditions.data
-        db.session.commit()
+        if not safe_commit():
+          print("Failed to save privacy")
         flash("Settings updated successfully!", "success")
         return redirect(url_for("admin.dashboard"))
 
@@ -710,7 +725,8 @@ def toggle_user(user_id):
 
     user.is_blocked = not user.is_blocked
     user.is_active = not user.is_active
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to block users")
     flash(f"{user.username} has been {'blocked' if not user.is_active else 'restored'}.", "success")
     return redirect(url_for("admin.users"))
 
@@ -720,6 +736,7 @@ def toggle_user(user_id):
 def delete_user(user_id):
     user = User.query.get_or_404(user_id)
     db.session.delete(user)
-    db.session.commit()
+    if not safe_commit():
+        print("Failed to delete users")
     flash(f"{user.username} has been deleted.", "success")
     return redirect(url_for("admin.users"))
