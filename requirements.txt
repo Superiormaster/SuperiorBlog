@@ -31,3 +31,4 @@ google-auth
 google-auth-oauthlib 
 apscheduler
 tzdata
+bs4
