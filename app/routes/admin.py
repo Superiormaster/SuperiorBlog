@@ -9,6 +9,7 @@ from flask_login import (
 )
 from flask_mail import Message as MailMessage
 from app.utils.decorators import admin_required, role_required
+from app.utils.db_helpers import safe_commit
 from app.utils.email import send_email
 from app.moderation.engine import auto_moderate
 from app.models import Post, Admin, AppSettings, Category, Label, Tag, CaptionHistory, User, Comment, ContactMessage, Repost

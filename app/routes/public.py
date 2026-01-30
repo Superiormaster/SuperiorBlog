@@ -16,6 +16,7 @@ from app.utils.helper import process_tags, get_related_posts, publish_scheduled_
 from app.utils.cloudinary_helper import upload_image_file
 from app.utils.email import send_email
 from app.utils.decorators import generate_unique_slug
+from app.utils.db_helpers import safe_commit
 from app.extensions import db, cache, csrf
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests

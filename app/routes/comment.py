@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from app.extensions import db
+from app.utils.db_helpers import safe_commit
 from app.models import Comment
 
 comments_bp = Blueprint("comments", __name__)

@@ -7,6 +7,7 @@ from datetime import date
 from app.extensions import db, csrf
 from app.models import CaptionHistory
 from app.utils.limits import can_generate
+from app.utils.db_helpers import safe_commit
 
 caption_bp = Blueprint('caption', __name__)
 

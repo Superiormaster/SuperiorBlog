@@ -2,6 +2,7 @@ import requests
 from flask import Blueprint, render_template, request, jsonify, redirect
 from flask_login import login_user, logout_user, current_user, login_required
 from app.extensions import db
+from app.utils.db_helpers import safe_commit
 
 billing_bp = Blueprint('billings', __name__)
 
