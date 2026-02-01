@@ -12,6 +12,7 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY")
     PAYSTACK_SECRET_KEY = os.environ.get("PAYSTACK_SECRET_KEY")
     WTF_CSRF_ENABLED = True
+    SQLALCHEMY_DATABASE_URI = None
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     MAIL_SERVER = 'smtp.gmail.com'

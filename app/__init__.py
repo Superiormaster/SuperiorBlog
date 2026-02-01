@@ -21,11 +21,11 @@ def create_app():
     app = Flask(__name__) 
     app.config.from_object(Config)
 
-    database_url = os.getenv("DATABASE_URL")
-    if database_url:
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    # Choose DB depending on environment
+    if os.getenv("RAILWAY_ENVIRONMENT") == "production":
+        app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL_PROD")
     else:
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
+        app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL_STAGING", "sqlite:///blog.db")
 
     app.config.update(
       CACHE_TYPE="SimpleCache",
@@ -39,7 +39,8 @@ def create_app():
     cache.init_app(app) 
     mail.init_app(app)
     register_commands(app)
-    start_scheduler(app)
+    if os.getenv("RAILWAY_ENVIRONMENT") == "production":
+        start_scheduler(app)
 
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp)
