@@ -21,11 +21,23 @@ def create_app():
     app = Flask(__name__) 
     app.config.from_object(Config)
 
-    # Choose DB depending on environment
-    if os.getenv("RAILWAY_ENVIRONMENT") == "production":
-        app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL_PROD")
+    # Detect environment
+    env = os.getenv("RAILWAY_ENVIRONMENT", "development").lower()
+
+    if env == "production":
+        # Use main branch DB
+        database_url = os.getenv("DATABASE_URL_PROD")
+        if not database_url:
+            raise RuntimeError("DATABASE_URL_PROD is not set!")
     else:
-        app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL_STAGING", "sqlite:///blog.db")
+        # Use staging DB
+        database_url = os.getenv("DATABASE_URL_STAGING")
+        if not database_url:
+            raise RuntimeError("DATABASE_URL_STAGING is not set!")
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    if env == "development":
+        database_url = os.getenv("DATABASE_URL_STAGING", "sqlite:///database.db")
 
     app.config.update(
       CACHE_TYPE="SimpleCache",
