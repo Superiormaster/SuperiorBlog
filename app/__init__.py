@@ -21,13 +21,18 @@ def create_app():
     app = Flask(__name__) 
     app.config.from_object(Config)
 
-    env = os.getenv("RAILWAY_ENVIRONMENT", "development").strip().lower()
-
+    env = os.getenv("RAILWAY_ENVIRONMENT", "development")
+    env = env.strip().lower()
+    
+    if env not in ("production", "staging"):
+        print(f"[WARNING] Unknown RAILWAY_ENVIRONMENT='{env}', defaulting to staging")
+        env = "staging"
+    
     if env == "production":
         database_url = os.getenv("DATABASE_URL_PROD")
         if not database_url:
             raise RuntimeError("DATABASE_URL_PROD is not set!")
-    elif env == "staging":
+    elif:
         database_url = os.getenv("DATABASE_URL_STAGING")
         if not database_url:
             raise RuntimeError("DATABASE_URL_STAGING is not set!")
@@ -49,7 +54,7 @@ def create_app():
     cache.init_app(app) 
     mail.init_app(app)
     register_commands(app)
-    if os.getenv("RAILWAY_ENVIRONMENT") == "production":
+    if env == "production":
         start_scheduler(app)
 
     app.register_blueprint(public_bp)
