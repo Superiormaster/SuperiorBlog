@@ -1,4 +1,13 @@
 {% extends 'user/base.html' %} 
+
+{% block title %}
+Caption Generator – SuperiorNews
+{% endblock %}
+
+{% block meta_description %}
+Generate engaging social media captions instantly using SuperiorNews AI caption generator.
+{% endblock %}
+
 {% block content %}
 
 <div class="max-w-5xl mx-auto mt-14 bg-white/5 backdrop-blur rounded-2xl shadow-lg p-8">  
@@ -78,7 +87,7 @@
   <div class="mt-12 p-6 rounded-xl bg-gradient-to-r from-blue-600/20 to-cyan-500/20 border border-blue-500/20">
     <p class="font-semibold mb-3">🚀 Want more creator & newsroom tools?</p>
     <form action="{{ url_for('public.subscribe') }}" method="post" class="flex flex-col md:flex-row gap-3">
-      <input type="email" placeholder="Your email address" class="flex-1 p-3 rounded-lg bg-gray-900 text-white" />
+      <input type="email" name="email" placeholder="Your email address" class="flex-1 p-3 rounded-lg bg-gray-900 text-white" />
       <button class="px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700">Subscribe</button>
     </form>
   </div>

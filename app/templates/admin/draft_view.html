@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-4xl mx-auto mt-10 p-4 space-y-6">
+
+  <!-- Draft Subject -->
+  <h2 class="text-2xl mb-3 font-bold text-gray-400">Preview: {{ draft.subject }}</h2>
+
+  <!-- Draft Content Preview -->
+  <div class="border border-gray-300 rounded-lg p-6 bg-white/5 shadow-sm">
+    {{ draft.html_content | safe }}
+  </div>
+
+  <!-- Send Draft Form -->
+  <form method="post" action="{{ url_for('admin.send_draft', id=draft.id) }}">
+    <button type="submit"
+            class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+      Send Digest
+    </button>
+  </form>
+</div>
+
+{% endblock %}

@@ -24,23 +24,6 @@ post_labels = db.Table('post_labels',
     db.Column('label_id', db.Integer, db.ForeignKey('label.id'), primary_key=True)
 )
 
-class Admin(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True, nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(255), nullable=False)
-    is_admin = db.Column(db.Boolean, default=True)
-    role = db.Column(db.String(20), default="admin")
-
-    def __repr__(self):
-        return f"<User {self.username}>"
-
-    def set_password(self, password):
-        self.password = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password, password)
-
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -50,6 +33,7 @@ class User(db.Model, UserMixin):
         db.String(20),
         default="author"
     ) 
+    is_admin = db.Column(db.Boolean, default=False)
     profile_visits = db.Column(db.Integer, default=0)
     is_deleted = db.Column(db.Boolean, default=False)
     deleted_at = db.Column(db.DateTime, nullable=True)
@@ -250,8 +234,24 @@ class AppSettings(db.Model):
 
 class Subscriber(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    subscribed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    unsubscribe_token = db.Column(db.String(64), unique=True, nullable=False)
+    receive_digest = db.Column(db.Boolean, default=True)
+
+class DigestDraft(db.Model):
+  id = db.Column(db.Integer, primary_key=True) 
+  subject = db.Column(db.String(255), nullable=False) 
+  html_content = db.Column(db.Text, nullable=False) 
+  is_sent = db.Column(db.Boolean, default=False) 
+  created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class BreakingNews(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    headline = db.Column(db.String(500), nullable=False)
+    url = db.Column(db.String(500), nullable=True)
+    published_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ContactMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -1,7 +1,7 @@
 from flask import current_app
 from flask_mail import Message as MailMessage
 from app.extensions import mail
-import socket
+import socket, requests, os
 
 def send_email(to, subject, body, html=None):
   try:
@@ -26,3 +26,36 @@ def send_email(to, subject, body, html=None):
   except Exception as e:
     current_app.logger.exception("Unexpected email error")
     return False
+
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+
+def send_bulk_email(to, subject, html):
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "sender": {"name": "Superior Blog", "email": "noreply@superiorblog.com"},
+        "to": [{"email": to}],
+        "subject": subject,
+        "htmlContent": html
+    }
+
+    requests.post(url, json=data, headers=headers)
+
+def send_weekly_digest(subscriber, posts):
+    items = "".join([
+        f"<li><a href='https://yourdomain.com/post/{p.slug}'>{p.title}</a><p>{p.excerpt}</p></li>"
+        for p in posts
+    ])
+    html = f"""
+    <h2>This Week on Superior Blog</h2>
+    <ul>{items}</ul>
+    <p><a href='https://yourdomain.com/login'>Start Writing</a></p>
+    <p style='font-size:12px'>
+        <a href='https://yourdomain.com/unsubscribe/{subscriber.unsubscribe_token}'>Unsubscribe</a>
+    </p>
+    """
+    send_bulk_email(subscriber.email, "Weekly Digest", html)

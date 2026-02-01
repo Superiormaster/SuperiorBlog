@@ -7,8 +7,6 @@
   <aside id="sidebar" class="fixed inset-y-auto md:hidden min-h-screen left-0 w-64 bg-gray-900 text-white transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50">
     <div class="p-5 text-xl font-bold border-b border-gray-700">Superior Master</div>
     <nav class="p-4 space-y-3">
-      <a href="{{ url_for('admin.myposts') }}" class="block px-4 py-2 rounded hover:bg-gray-700">My Posts</a>
-      <a href="{{ url_for('admin.create_post') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Create</a>
       <a href="{{ url_for('admin.analytics') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Analysis</a>
       <a href="{{ url_for('admin.admin_messages') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Messages</a>
       {% for msg in messages %}
@@ -17,38 +15,38 @@
           View Message
         </a>
       {% endfor %}
-      <a href="{{ url_for('admin.tags') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Manage Tags</a>
+      <a href="{{ url_for('admin.list_subscribers') }}" class="block px-4 py-2 rounded hover:bg-gray-800">View Subscribers</a>
+      <a href="{{ url_for('admin.create_draft') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Create Drafts</a>
+      <a href="{{ url_for('admin.list_drafts') }}" class="block px-4 py-2 rounded hover:bg-gray-800">View All Drafts</a>
+      <a href="{{ url_for('admin.tags') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Tags Used</a>
       <a href="{{ url_for('admin.users') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Users</a>
       <a href="{{ url_for('admin.settings') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Settings</a>
       <a href="{{ url_for('admin.change_password') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Change Password</a>
     </nav>
   </aside>
   
-  <div class="px-4 mb-2 flex justify-between items-center">
+  <div class="px-4 mb-2 flex gap-6 items-center">
     <button id="menuBtn" class="text-gray-700 text-2xl md:hidden"><i class="fa fa-arrow-right" aria-hidden="true"></i></button>
     <h1 class="text-2xl font-bold">Admin Dashboard</h1>
-    <a href="{{ url_for('admin.create_post', id=None) }}"
-       class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-      New Post
-    </a>
   </div>
   
-   <div class="hidden mx-0 md:block justify-between rounded w-full bg-gray-900 text-white transform transition-transform duration-300 z-50">
-    <nav class="flex p-4 justify-between space-y-2">
-      <a href="{{ url_for('admin.myposts') }}" class="block px-4 py-2 rounded hover:bg-gray-700">My Posts</a>
-      <a href="{{ url_for('admin.create_post') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Create</a>
-      <a href="{{ url_for('admin.analytics') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Analysis</a>
-      <a href="{{ url_for('admin.admin_messages') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Messages</a>
+   <div class="hidden mx-0 md:block justify-between rounded w-full bg-gray-900 text-white transform transition-transform duration-300 z-50 overflow-x-auto overflow-y-hidden whitespace-nowrap touch-pan-x scrollbar-hide">
+    <nav class="flex space-y-2 flex-row flex-nowrap gap-2 p-4 snap-x snap-mandatory">
+      <a href="{{ url_for('admin.analytics') }}" class="block px-4 py-2 rounded hover:bg-gray-800 snap-start">Analysis</a>
+      <a href="{{ url_for('admin.admin_messages') }}" class="block px-4 py-2 rounded hover:bg-gray-800 snap-start">Messages</a>
       {% for msg in messages %}
         <a href="{{ url_for('admin.view_message', id=msg.id) }}" 
-           class="block px-4 py-2 rounded hover:bg-gray-800">
+           class="block px-4 py-2 rounded hover:bg-gray-800 snap-start">
           View Message
         </a>
       {% endfor %}
-      <a href="{{ url_for('admin.tags') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Tags Used</a>
-      <a href="{{ url_for('admin.users') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Users</a>
-      <a href="{{ url_for('admin.settings') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Settings</a>
-      <a href="{{ url_for('admin.change_password') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Change Password</a>
+      <a href="{{ url_for('admin.list_subscribers') }}" class="block px-4 py-2 rounded hover:bg-gray-800 snap-start">View Subscribers</a>
+      <a href="{{ url_for('admin.create_draft') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Create New Draft</a>
+      <a href="{{ url_for('admin.list_drafts') }}" class="block px-4 py-2 rounded hover:bg-gray-800 snap-start">View All Drafts</a>
+      <a href="{{ url_for('admin.tags') }}" class="block px-4 py-2 rounded hover:bg-gray-800 snap-start">Tags Used</a>
+      <a href="{{ url_for('admin.users') }}" class="block px-4 py-2 rounded hover:bg-gray-700 snap-start">Users</a>
+      <a href="{{ url_for('admin.settings') }}" class="block px-4 py-2 rounded hover:bg-gray-800 snap-start">Settings</a>
+      <a href="{{ url_for('admin.change_password') }}" class="block px-4 py-2 rounded hover:bg-gray-800 snap-start">Change Password</a>
     </nav>
   </div>
   

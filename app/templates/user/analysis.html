@@ -35,23 +35,23 @@
 
 <div class="gap-6 grid grid-cols-2 md:grid-cols-3 mb-6 px-4 mt-5">
   <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
-    <div class="flex justify-between text-xs">
+    <div class="text-xs">
       <h3 class="text-sm text-gray-400">Total Views</h3>
-      <span class="px-4 {% if views_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+      <!--<span class="px-4 {% if views_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
         {% if views_growth >= 0 %}▲{% else %}▼{% endif %}
         {{ views_growth }}%
-      </span>
+      </span>-->
     </div>
     <p class="text-2xl mt-5 font-bold">{{ total_views }}</p>
   </div>
   
   <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
-    <div class="flex justify-between text-xs mb-5">
+    <div class="text-xs mb-5">
       <h3 class="text-sm text-gray-400">Total Likes</h3>
-      <span class="px-4 {% if likes_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+      <!--<span class="px-4 {% if likes_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
         {% if likes_growth >= 0 %}▲{% else %}▼{% endif %}
         {{ likes_growth }}%
-      </span>
+      </span>-->
     </div>
     <p class="text-2xl font-bold">{{ total_likes }}</p>
   </div>
@@ -62,23 +62,23 @@
   </div>
   
   <div class="flex-1 text-center bg-gray-800 border border-gray-700 shadow rounded-xl p-4">
-    <div class="mb-5 flex justify-between text-xs">
+    <div class="mb-5 text-xs">
       <h3 class="text-sm text-gray-400">Posts per day</h3>
-      <span class="px-4 {% if posts_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+      <!--<span class="px-4 {% if posts_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
         {% if posts_growth >= 0 %}▲{% else %}▼{% endif %}
         {{ posts_growth }}%
-      </span>
+      </span>-->
     </div>
     <p class="text-2xl font-bold">{{ posts_per_day }} per day</p>
   </div>
   
   <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
-    <div class="flex justify-between text-xs">
+    <div class="text-xs">
       <h3 class="text-sm text-gray-400">Total Time Read</h3>
-      <span class="px-4 {% if read_time_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+     <!-- <span class="px-4 {% if read_time_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
         {% if read_time_growth >= 0 %}▲{% else %}▼{% endif %}
         {{ read_time_growth }}%
-      </span>
+      </span>-->
     </div>
     <p class="text-2xl mt-5 font-bold">{{ total_read_time }} min</p>
   </div>
@@ -91,7 +91,7 @@
   </div>
 </div>
 
-<div class="p-4 m-4 text-center bg-gray-800 border border-gray-700 shadow rounded-xl">
+<!--<div class="p-4 m-4 text-center bg-gray-800 border border-gray-700 shadow rounded-xl">
   <div class="flex justify-between text-xs">
     <h3 class="text-sm text-gray-400">General Growth</h3>
       <span class="px-4 {% if growth_percentage >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
@@ -103,7 +103,7 @@
   {{ growth_percentage }}%
   </p>
 </div>
-
+-->
 <div class="grid grid-cols-2 mb-6 gap-6 px-4 mt-5">
   <!--<div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4">
     <div class="flex justify-between text-xs text-neutral-400">
@@ -118,54 +118,54 @@
     </p>
   </div>-->
   
-  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4">
-    <div class="flex justify-between text-xs text-neutral-400">
+  <div class="bg-gray-800 border border-gray-700 text-center shadow rounded-xl p-4">
+    <div class="text-xs text-neutral-400">
       <span>Impressions</span>
-      <span class="px-4 {% if impressions_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+      <!--<span class="px-4 {% if impressions_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
         {% if impressions_growth >= 0 %}▲{% else %}▼{% endif %}
         {{ impressions_growth }}%
-      </span>
+      </span>-->
     </div>
-    <p class="text-2xl text-center font-bold text-white mt-1">
+    <p class="text-2xl text-center font-bold text-white mt-5">
       {{ impressions }}
     </p>
   </div>
   
-  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4">
-    <div class="flex justify-between text-xs text-neutral-400">
+  <div class="bg-gray-800 border border-gray-700 text-center shadow rounded-xl p-4">
+    <div class="text-xs text-neutral-400">
       <span>Replies</span>      
-      <span class="px-4 {% if replies_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+      <!--<span class="px-4 {% if replies_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
         {% if replies_growth >= 0 %}▲{% else %}▼{% endif %}
         {{ replies_growth }}%
-      </span>
+      </span>-->
     </div>
-    <p class="text-2xl text-center font-bold text-white mt-1">
+    <p class="text-2xl text-center font-bold text-white mt-5">
       {{ total_replies }}
     </p>
   </div>
   
-  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4">
-    <div class="flex justify-between text-xs text-neutral-400">
+  <div class="bg-gray-800 border border-gray-700 text-center shadow rounded-xl p-4">
+    <div class="text-xs text-neutral-400">
       <span>Engagements</span>
-      <span class="px-4 {% if engagements_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+      <!--<span class="px-4 {% if engagements_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
         {% if engagements_growth >= 0 %}▲{% else %}▼{% endif %}
         {{ engagements_growth }}%
-      </span>
+      </span>-->
     </div>
-    <p class="text-2xl text-center font-bold text-white mt-1">
+    <p class="text-2xl text-center font-bold text-white mt-5">
       {{ total_engagements }}
     </p>
   </div>
   
-  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4">
-    <div class="flex justify-between text-xs text-neutral-400">
+  <div class="bg-gray-800 border border-gray-700 text-center shadow rounded-xl p-4">
+    <div class="text-xs text-neutral-400">
       <span>Engagement rate</span>
-      <span class="px-4 {% if engagement_rate_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+      <!--<span class="px-4 {% if engagement_rate_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
         {% if engagement_rate_growth >= 0 %}▲{% else %}▼{% endif %}
         {{ engagement_rate_growth|default(0) }}%
-      </span>
+      </span>-->
     </div>
-    <p class="text-2xl text-center font-bold text-white mt-1">
+    <p class="text-2xl text-center font-bold text-white mt-5">
       {{ engagement_rate }}%
     </p>
   </div>

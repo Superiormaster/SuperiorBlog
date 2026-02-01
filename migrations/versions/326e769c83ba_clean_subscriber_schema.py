@@ -1,8 +1,8 @@
-"""Initial migration
+"""clean subscriber schema
 
-Revision ID: 8eccb5dc8e17
+Revision ID: 326e769c83ba
 Revises: 
-Create Date: 2026-01-19 12:04:42.446716
+Create Date: 2026-01-31 12:50:09.510973
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '8eccb5dc8e17'
+revision = '326e769c83ba'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -44,6 +44,7 @@ def upgrade():
     sa.Column('meta_title', sa.String(length=160), nullable=True),
     sa.Column('meta_description', sa.String(length=255), nullable=True),
     sa.Column('views', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name'),
     sa.UniqueConstraint('slug')
@@ -53,6 +54,10 @@ def upgrade():
     sa.Column('name', sa.String(length=200), nullable=True),
     sa.Column('email', sa.String(length=200), nullable=True),
     sa.Column('message', sa.Text(), nullable=True),
+    sa.Column('subject', sa.String(length=200), nullable=True),
+    sa.Column('type', sa.String(length=20), nullable=True),
+    sa.Column('is_read', sa.Boolean(), nullable=True),
+    sa.Column('is_replied', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.Column('resolved', sa.Boolean(), nullable=True),
@@ -73,10 +78,14 @@ def upgrade():
     )
     op.create_table('subscriber',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('email', sa.String(length=120), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('email', sa.String(length=255), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=True),
+    sa.Column('subscribed_at', sa.DateTime(), nullable=True),
+    sa.Column('unsubscribe_token', sa.String(length=64), nullable=False),
+    sa.Column('receive_digest', sa.Boolean(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('email')
+    sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('unsubscribe_token')
     )
     op.create_table('tag',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -90,13 +99,18 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('username', sa.String(length=80), nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
-    sa.Column('password_hash', sa.String(length=255), nullable=False),
+    sa.Column('password_hash', sa.String(length=255), nullable=True),
     sa.Column('role', sa.String(length=20), nullable=True),
+    sa.Column('profile_visits', sa.Integer(), nullable=True),
+    sa.Column('is_deleted', sa.Boolean(), nullable=True),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.Column('profile_completed', sa.Boolean(), nullable=True),
     sa.Column('full_name', sa.String(length=120), nullable=True),
     sa.Column('location', sa.String(length=50), nullable=True),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('category', sa.String(length=80), nullable=True),
     sa.Column('phone', sa.String(length=30), nullable=True),
+    sa.Column('id_number', sa.String(length=30), nullable=True),
     sa.Column('id_type', sa.String(length=50), nullable=True),
     sa.Column('bank_account', sa.String(length=50), nullable=True),
     sa.Column('referral_link', sa.String(length=255), nullable=True),
@@ -109,6 +123,8 @@ def upgrade():
     sa.Column('approved_posts', sa.Integer(), nullable=True),
     sa.Column('rejected_posts', sa.Integer(), nullable=False),
     sa.Column('daily_limit', sa.Integer(), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=True),
+    sa.Column('is_blocked', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
@@ -117,13 +133,15 @@ def upgrade():
     )
     op.create_table('caption_history',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('input_text', sa.Text(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('input_text', sa.Text(), nullable=False),
     sa.Column('confidence', sa.Integer(), nullable=True),
-    sa.Column('tone', sa.String(length=20), nullable=True),
-    sa.Column('length', sa.String(length=20), nullable=True),
-    sa.Column('platform', sa.String(length=20), nullable=True),
+    sa.Column('tone', sa.String(length=50), nullable=True),
+    sa.Column('caption', sa.Text(), nullable=False),
+    sa.Column('length', sa.String(length=50), nullable=True),
+    sa.Column('platform', sa.String(length=50), nullable=True),
     sa.Column('captions', sa.JSON(), nullable=True),
+    sa.Column('style', sa.String(length=20), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -135,10 +153,13 @@ def upgrade():
     sa.Column('slug', sa.String(length=200), nullable=False),
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('category_id', sa.Integer(), nullable=True),
+    sa.Column('shares', sa.Integer(), nullable=True),
+    sa.Column('impressions', sa.Integer(), nullable=True),
     sa.Column('related_impressions', sa.Integer(), nullable=True),
     sa.Column('related_clicks', sa.Integer(), nullable=True),
     sa.Column('views', sa.Integer(), nullable=True),
     sa.Column('status', sa.String(length=20), nullable=True),
+    sa.Column('is_locked', sa.Boolean(), nullable=True),
     sa.Column('published_at', sa.DateTime(), nullable=True),
     sa.Column('read_time', sa.Integer(), nullable=True),
     sa.Column('resubmission_count', sa.Integer(), nullable=True),
@@ -162,11 +183,21 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_post_published_at'), ['published_at'], unique=False)
         batch_op.create_index(batch_op.f('ix_post_status'), ['status'], unique=False)
 
+    op.create_table('profile_visits',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('visited_user_id', sa.Integer(), nullable=False),
+    sa.Column('visitor_id', sa.Integer(), nullable=True),
+    sa.Column('timestamp', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['visited_user_id'], ['user.id'], ),
+    sa.ForeignKeyConstraint(['visitor_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('comment',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('post_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['post_id'], ['post.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
@@ -192,6 +223,30 @@ def upgrade():
     sa.ForeignKeyConstraint(['post_id'], ['post.id'], ),
     sa.ForeignKeyConstraint(['tag_id'], ['tag.id'], )
     )
+    op.create_table('repost',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('post_id', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['post_id'], ['post.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('comment_reactions',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('comment_id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('reaction', sa.String(length=20), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['comment_id'], ['comment.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('comment_id', 'user_id', name='unique_comment_reaction')
+    )
+    with op.batch_alter_table('comment_reactions', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_comment_reactions_comment_id'), ['comment_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_comment_reactions_user_id'), ['user_id'], unique=False)
+
     op.create_table('reply',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('content', sa.Text(), nullable=False),
@@ -208,10 +263,17 @@ def upgrade():
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table('reply')
+    with op.batch_alter_table('comment_reactions', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_comment_reactions_user_id'))
+        batch_op.drop_index(batch_op.f('ix_comment_reactions_comment_id'))
+
+    op.drop_table('comment_reactions')
+    op.drop_table('repost')
     op.drop_table('post_tags')
     op.drop_table('post_labels')
     op.drop_table('like')
     op.drop_table('comment')
+    op.drop_table('profile_visits')
     with op.batch_alter_table('post', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_post_status'))
         batch_op.drop_index(batch_op.f('ix_post_published_at'))

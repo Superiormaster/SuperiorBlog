@@ -4,17 +4,42 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   {% if post %}
-  <meta name="description" content="{{ post.content[:150] if post and post.content else 'My Blog - Latest Posts and Updates' }}">
-  <meta property="og:title" content="{{ post.title }}">
-  <meta property="og:image" content="{{ url_for('static', filename='uploads/' ~ post.featured_image) }}">
-  {% endif %}
-  {% if category %}
-    <meta name="description" content="{{ category.meta_description }}">
-    <meta property="og:title" content="{{ category.meta_title }}">
-    {% endif %}
+    <!-- Post SEO -->
+    <title>{{ post.title }} | SuperiorNews</title>
 
-    <title>{% block title %}Superior Blog News{% endblock %}</title>
-    <meta name="description" content="{% block meta_description %}Latest breaking news{% endblock %}">
+    <meta name="description"
+          content="{{ post.meta_description if post.meta_description else post.content[:150] }}">
+
+    <meta property="og:title" content="{{ post.title }}">
+    <meta property="og:description"
+          content="{{ post.meta_description if post.meta_description else post.content[:150] }}">
+    <meta property="og:image" content="{{ post.featured_image }}">
+    <meta property="og:type" content="article">
+
+  {% elif category %}
+    <!-- Category SEO -->
+    <title>{{ category.meta_title }} | SuperiorNews</title>
+
+    <meta name="description" content="{{ category.meta_description }}">
+
+    <meta property="og:title" content="{{ category.meta_title }}">
+    <meta property="og:description" content="{{ category.meta_description }}">
+    <meta property="og:type" content="website">
+
+  {% else %}
+    <!-- Default / Homepage SEO -->
+    <title>SuperiorNews – AI Blogging & Caption Platform</title>
+
+    <meta name="description"
+          content="SuperiorNews is an AI-powered blogging and caption generation platform for creators, bloggers, and digital publishers.">
+
+    <meta property="og:title" content="SuperiorNews – AI Blogging & Caption Platform">
+    <meta property="og:description"
+          content="Create blogs, generate captions, and publish content faster with AI.">
+    <meta property="og:type" content="website">
+  {% endif %}
+
+  <meta property="og:site_name" content="SuperiorNews">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -29,10 +54,10 @@
 
 </head>
 <body class="bg-gray-900 w-full duration-700 text-gray-500">
-    <header class="h-24 navbar fixed w-full py-10 flex justify-between items-center bg-gray-900 border-b shadow-lg z-50">
+    <header class="h-24 navbar fixed w-full py-2 top-0 flex justify-between items-center bg-gray-900 border-b shadow-lg z-50">
         <div class="sm:px-4 px-2 flex-1 flex">
           <img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior icon" class="border border-yellow-500">
-          <strong class="px-2 py-1 text-2xl ml-2 text-gray-400 rounded font-bold font-mono tracking-tight">Superior
+          <strong class="px-2 py-1 text-2xl ml-2 text-gray-400 rounded font-bold font-mono tracking-tight whitespace-nowrap">Superior News
           </strong>
         </div>
         
@@ -61,7 +86,7 @@
         </div>
     </header>
     
-    <main class="text-white w-full max-w-7xl mx-auto py-6">
+    <main class="text-white w-full max-w-7xl mx-auto mt-15">
       {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             <div class="fixed top-5 right-5 space-y-2 z-50" id="flash-messages">
@@ -90,8 +115,8 @@
         <div class="avatar" aria-hidden="true"><img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior logo">
         </div>
         <div>
-            <div class="drawer__title text-xl">Superior</div>
-            <div class="drawer__subtitle">Superior Blog</div>
+            <h1 class="drawer__title text-xl">Superior News</h1>
+            <h2 class="drawer__subtitle"> AI-Powered Blogging & Caption Platform</h2>
         </div>
     </div>
 
@@ -102,7 +127,7 @@
       <input
           type="text"
           name="q"
-          placeholder="Search Superior Blog news"
+          placeholder="Search Superior News"
           class="w-full px-4 py-2 flex border border-[#c89a1a] focus:outline-none rounded-l-lg text-white"
         >
         <button class="btn-primary px-4 bg-[#c89a1a] text-white py-2 rounded-r-lg">Search</button>
@@ -163,11 +188,11 @@
         </ul>
       </div>
 
-      <footer class="drawer_footer bg-gray-700 text-gray-300">
-          <h3 class="font-bold text-xl py-3 text-center">Get Daily News</h3>
+      <footer class="drawer_footer bg-gray-700 text-gray-300 mb-8">
+          <h3 class="font-bold text-xl py-3 text-center">Stay ahead. Get the top stories every morning</h3>
           <form action="{{ url_for('public.subscribe') }}" method="post"
                 class="flex mb-6 mt-2 mx-2 text-xl">
-            <input name="email" type="email" placeholder="youremail@gmail.com" required
+            <input name="email" type="email" placeholder="Enter your email to stay informed" required
                    class="w-full px-4 py-2 flex-1 border border-[#c89a1a] focus:outline-none rounded-l-lg text-white">
             <button class="btn-primary px-4 bg-[#c89a1a] text-white py-2 rounded-r-lg">Subscribe</button>
           </form>
@@ -193,7 +218,7 @@
         </div>
     
         <div class="max-w-7xl mx-auto px-4 py-4 text-xl text-center text-sm">
-          © {{ year }} Superior Blog. All rights reserved.
+          © {{ year }} Superior News. All rights reserved.
         </div>
       </footer>
     </div>
@@ -213,6 +238,7 @@
     <script src="{{ url_for('static', filename='button.js') }}"></script>
     <script src="{{ url_for('static', filename='login.js') }}"></script>
     <script src="{{ url_for('static', filename='message.js') }}"></script>
+    <script src="{{ url_for('static', filename='cta.js') }}"></script>
     <script src="{{ url_for('static', filename='slider.js') }}"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
    <!-- <script src="https://cdn.jsdelivr.net/npm/eruda"></script>-->

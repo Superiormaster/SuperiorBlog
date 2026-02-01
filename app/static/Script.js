@@ -10,16 +10,6 @@ window.addEventListener("scroll", () => {
   }
 });
 
-const btn = document.getElementById("btn");
-
-if (btn) {
-  window.onscroll = () => {
-      btn.style.display = window.scrollY > 300 ? "block" : "none";
-  };
-  
-  btn.onclick = () => window.scrollTo({ top:0, behavior: "smooth"});
-}
-
 window.addEventListener('load', () => {
   document.body.classList.add('ready');
 });

@@ -103,7 +103,7 @@
       <p id="word-count" class="text-sm text-gray-400 mt-1">Word count: 0</p>
     </div>
     <input type="hidden" name="content" id="content-hidden" value="{{ post.content|safe if post else '' }}">
-    <input type="hidden" name="featured_image" id="featured_image">
+    <input type="hidden" name="featured_image" id="featured_image" value="{{ post.featured_image or '' }}">
     {% for error in form.content.errors %}
       <p class="text-red-500 text-sm">{{ error }}</p>
     {% endfor %}

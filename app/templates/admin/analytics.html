@@ -198,25 +198,79 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+const labels = {{ platforms | map(attribute=0) | list | tojson }};
+const values = {{ platforms | map(attribute=1) | list | tojson }};
+
 new Chart(document.getElementById("postChart"), {
   type: 'bar',
   data: {
-    labels: {{ platforms|map(attribute=0)|list }},
-    datasets: [{
-      label: "Posts",
-      data: {{ platforms|map(attribute=1)|list }}
-    }]
+    labels: labels,
+    datasets: [
+      {
+        label: "Posts",
+        data: values,
+        borderWidth: 2,
+        tension: 0.4
+      },
+      {
+        label: "Views",
+        data: values,
+        borderWidth: 2,
+        tension: 0.4
+      },
+      {
+        label: "Likes",
+        data: values,
+        borderWidth: 2,
+        tension: 0.4
+      }
+    ]
+  },
+  options: {
+    plugins: {
+      legend: {
+        labels: {
+          color: "#9ca3af"
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: "#9ca3af" },
+        grid: { color: "#1f2937" }
+      },
+      y: {
+        ticks: { color: "#9ca3af" },
+        grid: { color: "#1f2937" }
+      }
+    }
   }
 });
 
 new Chart(document.getElementById("captionChart"), {
   type: 'bar',
   data: {
-    labels: {{ platforms|map(attribute=0)|list }},
-    datasets: [{
-      label: "Captions",
-      data: {{ platforms|map(attribute=1)|list }}
-    }]
+    labels: labels,
+    datasets: [
+      {
+        label: "Captions",
+        data: values,
+        borderWidth: 2,
+        tension: 0.4
+      },
+      {
+        label: "Views",
+        data: {{ views_data|tojson }},
+        borderWidth: 2,
+        tension: 0.4
+      },
+      {
+        label: "Likes",
+        data: {{ likes_data|tojson }},
+        borderWidth: 2,
+        tension: 0.4
+      }
+    ]
   }
 });
 </script>

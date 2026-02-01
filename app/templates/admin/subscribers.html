@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-6xl mx-auto px-4 py-12">
+  <h2 class="text-2xl font-bold mb-4 text-gray-400">Subscribers</h2>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white/5 shadow-md rounded-lg overflow-hidden">
+      <thead class="bg-gray-700">
+        <tr>
+          <th class="py-3 px-4 text-left text-sm font-medium text-gray-400 uppercase tracking-wider">Email</th>
+          <th class="py-3 px-4 text-left text-sm font-medium text-gray-400 uppercase tracking-wider">Status</th>
+          <th class="py-3 px-4 text-left text-sm font-medium text-gray-400 uppercase tracking-wider">Digest</th>
+          <th class="py-3 px-4 flex text-sm font-medium text-gray-400 uppercase justify-end tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for s in subscribers %}
+        <tr class="hover:bg-gray-50">
+          <td class="py-3 px-4 text-sm text-gray-300 break-words">{{ s.email }}</td>
+          <td class="py-3 px-4 text-sm">
+            {% if s.is_active %}
+              <span class="inline-block px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">Active</span>
+            {% else %}
+              <span class="inline-block px-2 py-1 text-xs font-semibold text-red-700 bg-red-100 rounded-full">Unsubscribed</span>
+            {% endif %}
+          </td>
+          <td class="py-3 px-4 text-sm">
+            {% if s.receive_digest %}
+              <span class="inline-block px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">Enabled</span>
+            {% else %}
+              <span class="inline-block px-2 py-1 text-xs font-semibold text-gray-700 bg-gray-200 rounded-full">Disabled</span>
+            {% endif %}
+          </td>
+          <td class="py-3 px-4 flex flex-col sm:flex-row gap-2 justify-end">
+            <form method="post" action="{{ url_for('admin.resend_welcome', id=s.id) }}">
+              <button type="submit" class="w-full sm:w-auto px-3 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium transition">Resend Welcome</button>
+            </form>
+            <form method="post" action="{{ url_for('admin.toggle_digest', id=s.id) }}">
+              <button type="submit" class="w-full sm:w-auto px-3 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm font-medium transition">Toggle Digest</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-6 flex justify-end">
+    <form method="post" action="{{ url_for('admin.send_digest') }}">
+      <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow transition">Send Weekly Digest</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

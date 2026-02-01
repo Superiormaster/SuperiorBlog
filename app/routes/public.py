@@ -1,6 +1,6 @@
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, current_app, flash, make_response
 from app.models import Post, Comment, Like, Subscriber, ContactMessage, CaptionHistory, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit
-import os, traceback, re, base64, requests
+import os, traceback, re, base64, requests, secrets
 from requests.exceptions import ConnectionError
 from sqlalchemy import distinct, func
 from collections import defaultdict
@@ -15,6 +15,7 @@ from app.moderation.duplicate import is_duplicate
 from app.utils.helper import process_tags, get_related_posts, publish_scheduled_posts
 from app.utils.cloudinary_helper import upload_image_file
 from app.utils.email import send_email
+from app.utils.email import send_bulk_email
 from app.utils.decorators import generate_unique_slug
 from app.utils.db_helpers import safe_commit
 from app.extensions import db, cache, csrf
@@ -62,7 +63,7 @@ def user_login():
     form = UserLoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        if user and user.check_password(form.password.data):
+        if user and user.check_password(form.password.data) and not user.is_admin:
             login_user(user, remember=form.remember_me.data)
             flash("Logged in successfully!", "success")
             return redirect(request.args.get('next') or url_for('public.profile_setup'))
@@ -1089,20 +1090,41 @@ def subscribe():
 
     if not email:
         flash("Please enter a valid email address.", "error")
-        return redirect(url_for("public.index"))
+        return redirect(request.referrer)
 
     existing = Subscriber.query.filter_by(email=email).first()
-    if existing:
-        flash("You are already subscribed.", "info")
-        return redirect(url_for("public.index"))
 
-    subscriber = Subscriber(email=email)
+    if existing:
+        if not existing.is_active:
+            existing.is_active = True
+            db.session.commit()
+        flash("You're already subscribed", "info")
+        return redirect(request.referrer)
+
+    token = secrets.token_urlsafe(32)
+
+    subscriber = Subscriber(
+        email=email,
+        unsubscribe_token=token, 
+        is_active=True
+    )
+
     db.session.add(subscriber)
     if not safe_commit():
         print("Failed to add subscribers")
 
     flash("Thanks for subscribing", "success")
     return redirect(url_for("public.index"))
+
+@public_bp.route('/unsubscribe/<token>')
+def unsubscribe(token):
+    subscriber = Subscriber.query.filter_by(unsubscribe_token=token).first_or_404()
+
+    subscriber.is_active = False
+    if not safe_commit:
+      print("Failed to unsubscribe")
+
+    return "You have been unsubscribed successfully."
 
 @public_bp.route("/tag/<string:slug>")
 def tag(slug):

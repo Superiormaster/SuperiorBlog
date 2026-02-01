@@ -3,18 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  {% if post %}
-  <meta name="description" content="{{ post.content[:150] if post and post.content else 'My Blog - Latest Posts and Updates' }}">
-  <meta property="og:title" content="{{ post.title }}">
-  <meta property="og:image" content="{{ url_for('static', filename='uploads/' ~ post.featured_image) }}">
-  {% endif %}
-  {% if category %}
-    <meta name="description" content="{{ category.meta_description }}">
-    <meta property="og:title" content="{{ category.meta_title }}">
-    {% endif %}
-
-    <title>{% block title %}Superior Blog News{% endblock %}</title>
-    <meta name="description" content="{% block meta_description %}Latest breaking news{% endblock %}">
+    <title>{% block title %}Admin Dashboard - Superior News{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -39,16 +28,10 @@
         
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <nav class="hidden md:flex space-x-6 text-sm font-medium">
-            <a data-safe data-redirect class="btn-primary btn-danger text-2xl" href="{{ url_for('public.index') }}">Home</a>
-
-        {% for cat in nav_categories %}
-        <a href="{{ url_for('public.category', slug=cat.slug) }}"
-                 data-safe data-redirect class="btn-primary btn-danger text-2xl capitalize">
-        {{ cat.name }}
-        </a>
-        {% endfor %}
-
           {% if current_user.is_authenticated %}
+            <a href="{{ url_for('admin.dashboard') }}" data-redirect class="btn-primary btn-danger"> Admin Dashboard</a>
+            <a href="{{ url_for('admin.settings') }}" data-redirect class="btn-primary btn-danger"> Settings</a></li>
+            <a href="{{ url_for('admin.change_password') }}" data-redirect class="btn-primary btn-danger text-blue-500 hover:underline">Change Password</a>
                 <a href="{{ url_for('admin.logout') }}" data-safe data-redirect class="btn-primary btn-danger text-xl border rounded p-1">Logout</a>
           {% else %}
               <a href="{{ url_for('admin.login') }}" data-safe data-redirect class="btn-primary btn-danger text-xl border rounded p-1">Login</a>
@@ -93,8 +76,8 @@
         <div class="avatar" aria-hidden="true"><img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior logo">
         </div>
         <div>
-            <div class="drawer__title text-xl">Superior</div>
-            <div class="drawer__subtitle">Superior Blog</div>
+            <h1 class="drawer__title text-xl">Superior News</h1>
+            <h2 class="drawer__subtitle">AI-Powered Blogging & Caption Platform</h2>
         </div>
     </div>
 
@@ -105,7 +88,7 @@
         <input
           type="text"
           name="q"
-          placeholder="Search Superior Blog news"
+          placeholder="Search Superior News"
           class="w-full px-4 py-2 flex border border-[#c89a1a] focus:outline-none rounded-l-lg text-white"
         >
         <button data-safe class="btn-primary px-4 bg-[#c89a1a] text-white py-2 rounded-r-lg">Search</button>
@@ -115,104 +98,26 @@
       <div class="drawer__body">
         <div class="section-title">Navigation</div>
         <ul class="nav-list" id="drawerNav">
-          <a href="{{ url_for('public.index') }}" data-safe data-redirect class="btn-primary btn-danger mr-6"><i class="fa fa-home" aria-hidden="true"></i>Home</a>
-
         {% if current_user.is_authenticated %}
-        <li><a href="{{ url_for('admin.dashboard') }}" data-safe data-redirect class="btn-primary btn-danger"><i class="fa fa-dashboard"></i> Admin Dashboard</a></li>
-        <li><a href="{{ url_for('admin.settings') }}" data-safe data-redirect class="btn-primary btn-danger"><i class="fa fa-cogs" aria-hidden="true"></i> Settings</a></li>
-        <li><a href="{{ url_for('admin.change_password') }}" data-safe data-redirect class="btn-primary btn-danger text-blue-500 hover:underline"><i class="fa fa-eraser" aria-hidden="true"></i>Change Password</a></li>
-        <li><a href="{{ url_for('admin.logout') }}" data-safe data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a></li>
+        <li><a href="{{ url_for('admin.dashboard') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-dashboard"></i> Admin Dashboard</a></li>
+        <li><a href="{{ url_for('admin.settings') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-cogs" aria-hidden="true"></i> Settings</a></li>
+        <li><a href="{{ url_for('admin.change_password') }}" data-redirect class="btn-primary btn-danger text-blue-500 hover:underline"><i class="fa fa-eraser" aria-hidden="true"></i>Change Password</a></li>
+        <li><a href="{{ url_for('admin.logout') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a></li>
         {% else %}
-          <li><a href="{{ url_for('public.user_login') }}" data-safe data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-in"></i> Login</a></li>
-        {% endif %}
-
-        <div class="section-title">Category</div>
-          <a href="{{ url_for('public.category', slug='world') }}" data-safe data-redirect class="btn-primary btn-danger"><i class="fa fa-globe" aria-hidden="true"></i>World</a>
-          <a href="{{ url_for('public.category', slug='sports') }}" data-safe data-redirect class="btn-primary btn-danger"><i class="fa-regular fa-futbol"></i>Sports</a>
-          <a href="{{ url_for('public.category', slug='politics') }}" data-safe data-redirect class="btn-primary btn-danger">
-            <svg
-              viewBox="0 0 512 512"
-              class="w-6 h-6 text-yellow-500"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M419.404 130.723h-78.979V86.007c12.558-3.567 21.787-15.13 21.787-28.816V29.957C362.213 13.438 348.773 0 332.255 0s-29.957 13.438-29.957 29.957v27.234c0 13.686 9.229 25.249 21.787 28.816v44.716H264.17V86.007c12.558-3.567 21.787-15.13 21.787-28.816V29.957C285.957 13.438 272.518 0 256 0s-29.957 13.438-29.957 29.957v27.234c0 13.686 9.229 25.249 21.787 28.816v44.716h-59.915V86.007c12.558-3.567 21.787-15.13 21.787-28.816V29.957C209.702 13.438 196.263 0 179.745 0s-29.957 13.438-29.957 29.957v27.234c0 13.686 9.229 25.249 21.787 28.816v44.716H92.596c-4.513 0-8.17 3.658-8.17 8.17v32.681c0 4.512 3.657 8.17 8.17 8.17h24.511v57.191c0 4.512 3.657 8.17 8.17 8.17H128v217.872h-2.723c-4.513 0-8.17 3.658-8.17 8.17v24.511h-2.723c-4.513 0-8.17 3.658-8.17 8.17s3.657 8.17 8.17 8.17h283.234c4.513 0 8.17-3.658 8.17-8.17s-3.657-8.17-8.17-8.17h-2.723v-24.511c0-4.512-3.657-8.17-8.17-8.17H384V245.106h2.723c4.513 0 8.17-3.658 8.17-8.17v-57.191h24.511c4.513 0 8.17-3.658 8.17-8.17v-32.681c0-4.512-3.657-8.17-8.17-8.17z"/>
-            </svg>
-            Politics</a>
-          <a href="{{ url_for('public.category', slug='business') }}" data-safe data-redirect class="btn-primary btn-danger">
-            <svg
-              viewBox="0 0 512 512"
-              class="w-6 h-6 text-yellow-500"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M470.537 137.504H41.471C18.565 137.504 0 156.077 0 178.976v56.797l211.507 44.607V252.1h87.772v28.28L512 235.489v-56.513c0-22.899-18.565-41.472-41.463-41.472z"/>
-              <path d="M299.279 369.129h-87.772v-57.017L14.633 273.012V439.81c0 22.898 18.557 41.47 41.455 41.47h399.824c22.898 0 41.463-18.572 41.463-41.47V272.721l-198.096 39.39v56.018z"/>
-              <rect x="233.452" y="274.044" width="43.882" height="73.132"/>
-              <path d="M193.786 72.206c.008-1.703.638-3.057 1.75-4.208 1.127-1.103 2.49-1.718 4.176-1.734h112.577c1.686.016 3.058.631 4.185 1.734 1.103 1.151 1.726 2.505 1.733 4.208v29.627h35.546V72.206c.008-11.41-4.665-21.875-12.143-29.329-7.446-7.485-17.934-12.166-29.321-12.158H199.712c-11.394-.008-21.875 4.673-29.32 12.158-7.47 7.454-12.158 17.918-12.135 29.329v29.627h35.529V72.206z"/>
-            </svg>
-            Business</a>
-
-          <a href="{{ url_for('public.contact') }}" data-safe data-redirect class="btn-primary btn-danger"><i class="fa fa-envelope" aria-hidden="true"></i>Contact Us</a>
-          {% set settings = AppSettings.query.first() %}
-          {% if settings %}
-          <a href="{{ url_for('public.privacy') }}" data-safe data-redirect class="btn-primary btn-danger">
-            <i class="fa fa-shield-alt" aria-hidden="true"></i> 
-          Privacy Policy</a>
-            <a href="{{ url_for('public.terms') }}" data-safe data-redirect class="btn-primary btn-danger mr-6">
-              <i class="fa fa-file-alt" aria-hidden="true"></i> Terms & Conditions
-            </a>
-          {% endif %}
+          <li><a href="{{ url_for('public.user_login') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-in"></i> Login</a></li>
         </ul>
       </div>
 
       <footer class="drawer_footer bg-gray-700 text-gray-300">
-          <h3 class="font-bold text-xl py-3 text-center">Get Daily News</h3>
-          <form action="{{ url_for('public.subscribe') }}" method="post"
-                class="flex mb-6 mt-2 mx-2 text-xl">
-            <input name="email" type="email" placeholder="youremail@gmail.com" required
-                   class="w-full px-4 py-2 flex-1 border border-[#c89a1a] focus:outline-none rounded-l-lg text-white">
-            <button data-safe class="btn-primary px-4 bg-[#c89a1a] text-white py-2 rounded-r-lg">Subscribe</button>
-          </form>
-
-        <h2 class="text-center text-2xl">Follow us on:</h2>
-        <!-- Social Icons -->
-        <div class="flex space-x-4 justify-center mt-3 text-2xl">
-          <a href="https://www.facebook.com/share/1MoaNAoJJZ/" target="_blank" data-safe data-redirect class="btn-primary btn-danger transition-transform transform hover:scale-110">
-            <i class="fab fa-facebook-f" style="color:#1877F2;"></i>
-          </a>
-          <a href="https://twitter.com/@SMprogra" target="_blank" data-safe data-redirect class="btn-primary btn-danger transition-transform transform hover:scale-110">
-            <i class="fab fa-x-twitter" style="color:#1DA1F2;"></i>
-          </a>
-          <a href="https://www.instagram.com/superiormastersdesign?igsh=MXFsbzJ1b2x4MjQxdw=="target="_blank" data-safe data-redirect class="btn-primary btn-danger transition-transform transform hover:scale-110">
-            <i class="fab fa-instagram" style="color:#E4405F;"></i>
-          </a>
-          <a href="https://youtube.com/@lifootballmoments" target="_blank" data-safe data-redirect class="btn-primary btn-danger transition-transform transform hover:scale-110">
-            <i class="fab fa-youtube" style="color:#FF0000;"></i>
-          </a>
-          <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" data-safe data-redirect class="btn-primary btn-danger transition-transform transform hover:scale-110">
-            <i class="fab fa-linkedin-in" style="color:#0A66C2;"></i>
-          </a>
-        </div>
-    
         <div class="max-w-7xl mx-auto px-4 py-4 text-xl text-center text-sm">
-          © {{ year }} Superior Blog. All rights reserved.
+          © {{ year }} Superior News. All rights reserved.
         </div>
       </footer>
     </div>
 </aside>
-
-<div id="cookieBanner" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-4 rounded-lg shadow-lg w-full justify-center space-x-4 z-50">
-  <span>We use cookies to improve your experience on Superior
-   Blog. By continuing, you agree to our Privacy Policy.</span>
-  <div class="flex items-center justify-between">
-    <a href="{{ url_for('public.privacy') }}" data-safe data-redirect class="btn-primary btn-danger underline">Learn More</a>
-    <button id="acceptCookies" class="bg-yellow-500 text-black px-4 py-1 rounded">Accept</button>
-  </div>
-</div>
   
     <script src="{{ url_for('static', filename='Script.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/caption.js') }}"></script>
+    <script src="{{ url_for('static', filename='caption.js') }}"></script>
     <script src="{{ url_for('static', filename='create.js') }}"></script>
         <script src="{{ url_for('static', filename='comment.js') }}"></script>
     <script src="{{ url_for('static', filename='button.js') }}"></script>
@@ -221,24 +126,6 @@
     <script src="{{ url_for('static', filename='login.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>
-
-    <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const banner = document.getElementById("cookieBanner");
-  const btn = document.getElementById("acceptCookies");
-
-  if(localStorage.getItem("cookiesAccepted")) {
-    banner.classList.add("hidden");
-  }
-
-  if(btn) {
-    btn.addEventListener("click", () => {
-      localStorage.setItem("cookiesAccepted", "true");
-      banner.classList.add("hidden");
-    });
-  }
-});
-    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

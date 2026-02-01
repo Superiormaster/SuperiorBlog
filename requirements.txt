@@ -29,6 +29,6 @@ email_validator
 cloudinary
 google-auth 
 google-auth-oauthlib 
-apscheduler
+APScheduler
 tzdata
 bs4

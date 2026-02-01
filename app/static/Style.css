@@ -62,11 +62,6 @@ a:hover {
 /* Header Setting */
 header{
   height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 15px;
   color: var(--muted);
   letter-spacing: 1px;
 }
@@ -87,6 +82,16 @@ header img{
   
 .menu-btn:focus{
   outline: 2px solid rgba(212,175,55,.18);
+}
+
+/* Dashboard navbar */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Avoid sticky for Firefox */
@@ -230,6 +235,17 @@ strong{
   font-weight: 700;
   box-shadow: var(--shadow-sm);
 }
+
+/* -- Tailwind animation -- */
+
+@keyframes pulseSlow {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 2.5s ease-in-out infinite;
+}
   
 /* Pull-Out Dashboard */
   
@@ -277,11 +293,9 @@ strong{
   
 .drawer_footer {
   padding: 1rem;
-  margin-bottom: 0;
 }
   
 .drawer__header{
-  padding: 20px;
   position: sticky;
   display: flex;
   align-items: center;
@@ -293,8 +307,8 @@ strong{
 }
   
 .avatar{
-  width: 56px;
-  height: 56px;
+  width: 70px;
+  height: 75px;
   display: grid;
   place-items: center;
   border-radius: 12px;

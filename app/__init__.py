@@ -8,7 +8,6 @@ from app.routes.billing import billing_bp
 from app.routes.comment import comments_bp
 from app.extensions import db, login_manager, cache, csrf, mail
 from flask_login import current_user
-from markdown import markdown as md
 from flask_migrate import Migrate
 from app.models import AppSettings, Category, Post
 from .cli import register_commands
@@ -111,11 +110,5 @@ def create_app():
     @app.context_processor
     def inject_settings():
         return dict(AppSettings=AppSettings)
-
-    @app.template_filter('markdown')
-    def markdown_filter(text):
-        if not text:
-            return ""
-        return md(text, extensions=['fenced_code', 'codehilite', 'tables', 'nl2br'])
 
     return app
