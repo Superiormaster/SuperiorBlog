@@ -36,8 +36,7 @@ def create_app():
     cache.init_app(app) 
     mail.init_app(app)
     register_commands(app)
-    if env == "production":
-        start_scheduler(app)
+    start_scheduler(app)
 
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp)
