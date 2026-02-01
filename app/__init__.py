@@ -20,28 +20,10 @@ from datetime import datetime
 def create_app():
     app = Flask(__name__) 
     app.config.from_object(Config)
-
-    env = os.getenv("RAILWAY_ENVIRONMENT", "development")
-    env = env.strip().lower()
-    
-    if env not in ("production", "staging"):
-        print(f"[WARNING] Unknown RAILWAY_ENVIRONMENT='{env}', defaulting to staging")
-        env = "staging"
-    
-    if env == "production":
-        database_url = os.getenv("DATABASE_URL_PROD")
-        if not database_url:
-            raise RuntimeError("DATABASE_URL_PROD is not set!")
-    elif env == "staging":
-        database_url = os.getenv("DATABASE_URL_STAGING")
-        if not database_url:
-            raise RuntimeError("DATABASE_URL_STAGING is not set!")
-    else:
-        # local development fallback
-        database_url = "sqlite:///blog.db"
-
+  
+    database_url = os.getenv("DATABASE_URL", "sqlite:///blog.db")
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-
+  
     app.config.update(
       CACHE_TYPE="SimpleCache",
       CACHE_DEFAULT_TIMEOUT=300
