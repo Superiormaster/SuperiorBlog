@@ -32,7 +32,7 @@ def create_app():
         database_url = os.getenv("DATABASE_URL_PROD")
         if not database_url:
             raise RuntimeError("DATABASE_URL_PROD is not set!")
-    elif:
+    elif env == "staging":
         database_url = os.getenv("DATABASE_URL_STAGING")
         if not database_url:
             raise RuntimeError("DATABASE_URL_STAGING is not set!")
