@@ -42,6 +42,11 @@ with app.app_context():
             db.session.add(Category(name=name, slug=slug))
     db.session.commit()
     print("✅ Categories seeded successfully")
+    """try:
+    if not Category.query.first():
+        # seed logic
+except Exception as e:
+    print("Skipping category seed:", e)"""
 
     # 3️⃣ Seed labels
     for name in labels:

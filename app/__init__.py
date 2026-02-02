@@ -16,6 +16,8 @@ from .utils.scheduler import start_scheduler
 import os
 from datetime import datetime
 
+migrate = Migrate()
+
 def create_app():
     app = Flask(__name__) 
     app.config.from_object(Config)
@@ -30,7 +32,7 @@ def create_app():
 
     db.init_app(app)
     login_manager.init_app(app)
-    migrate = Migrate(app, db)
+    migrate.init_app(app, db)
     csrf.init_app(app)
     cache.init_app(app) 
     mail.init_app(app)
