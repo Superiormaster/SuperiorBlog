@@ -29,12 +29,12 @@
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <nav class="hidden md:flex space-x-6 text-sm font-medium">
           {% if current_user.is_authenticated %}
-            <a href="{{ url_for('admin.dashboard') }}" data-redirect class="btn-primary btn-danger"> Admin Dashboard</a>
-            <a href="{{ url_for('admin.settings') }}" data-redirect class="btn-primary btn-danger"> Settings</a></li>
-            <a href="{{ url_for('admin.change_password') }}" data-redirect class="btn-primary btn-danger text-blue-500 hover:underline">Change Password</a>
-                <a href="{{ url_for('admin.logout') }}" data-safe data-redirect class="btn-primary btn-danger text-xl border rounded p-1">Logout</a>
+            <a href="{{ url_for('admin.dashboard') }}" data-redirect class="btn-primary p-1 text-xl btn-danger"> Admin Dashboard</a>
+            <a href="{{ url_for('admin.settings') }}" data-redirect class="btn-primary text-xl p-1 btn-danger"> Settings</a></li>
+            <a href="{{ url_for('admin.change_password') }}" data-redirect class="btn-primary p-1 text-xl btn-danger hover:underline">Change Password</a>
+            <a href="{{ url_for('admin.logout') }}" data-safe data-redirect class="btn-primary btn-danger text-xl border rounded p-1">Logout</a>
           {% else %}
-              <a href="{{ url_for('admin.login') }}" data-safe data-redirect class="btn-primary btn-danger text-xl border rounded p-1">Login</a>
+            <a href="{{ url_for('admin.login') }}" data-safe data-redirect class="btn-primary btn-danger text-xl border rounded p-1">Login</a>
           {% endif %}
           </nav>
         </div>
@@ -69,9 +69,9 @@
     </main>
   </div>
   
-<div class="overlay" id="drawerOverlay" tabindex="-1" data-hidden="true"></div>
+<div class="fixed inset-0 bg-black/50 hidden z-50 md:hidden" id="drawerOverlay" tabindex="-1" data-hidden="true"></div>
 
-<aside class="drawer bg-gray-800" id="mainDrawer" role="dialog" aria-modal="true" aria-label="Main menu" aria-hidden="true">
+<aside class="fixed top-0 right-0 h-screen w-75 bg-gray-900 text-gray-200 md:hidden transform translate-x-full transition-transform duration-300 z-60 " id="mainDrawer" role="dialog" aria-modal="true" aria-label="Main menu" aria-hidden="true">
     <div class="drawer__header w-full">
         <div class="avatar" aria-hidden="true"><img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior logo">
         </div>
@@ -105,10 +105,11 @@
         <li><a href="{{ url_for('admin.logout') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a></li>
         {% else %}
           <li><a href="{{ url_for('public.user_login') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-in"></i> Login</a></li>
+        {% endif %}
         </ul>
       </div>
 
-      <footer class="drawer_footer bg-gray-700 text-gray-300">
+      <footer class="fixed bottom-0 drawer_footer bg-gray-700 text-gray-300">
         <div class="max-w-7xl mx-auto px-4 py-4 text-xl text-center text-sm">
           © {{ year }} Superior News. All rights reserved.
         </div>

@@ -27,8 +27,7 @@ labels = [
     "Technology",
     "Sports",
     "Entertainment",
-    "Business",
-    "Editor's Pick"
+    "Business"
 ]
 
 with app.app_context():

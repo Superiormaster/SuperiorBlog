@@ -54,7 +54,7 @@
 
 </head>
 <body class="bg-gray-900 w-full duration-700 text-gray-500">
-    <header class="h-24 navbar fixed w-full py-2 top-0 flex justify-between items-center bg-gray-900 border-b shadow-lg z-50">
+    <header class="h-24 navbar fixed w-full py-2 top-0 flex justify-between items-center bg-gray-900 border-b shadow-lg z-30">
         <div class="sm:px-4 px-2 flex-1 flex">
           <img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior icon" class="border border-yellow-500">
           <strong class="px-2 py-1 text-2xl ml-2 text-gray-400 rounded font-bold font-mono tracking-tight whitespace-nowrap">Superior News
@@ -79,14 +79,14 @@
           </nav>
         </div>
     
-        <div class="menu-btn cursor-pointer relative md:hidden" id="openDrawer" aria-controls="mainDrawer" aria-expanded="false" aria-label="Open menu">
+        <div id="openDrawer" aria-controls="mainDrawer" aria-expanded="false" aria-label="Open menu" class="md:hidden menu-btn cursor-pointer relative fixed z-50 bg-gray-900 px-3 py-2 rounded">
             <svg class="w-10 h-6 mr-2" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
         </div>
     </header>
     
-    <main class="text-white w-full max-w-7xl mx-auto mt-15">
+    <main id="mainContent" class="text-white w-full max-w-7xl mx-auto mt-15">
       {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             <div class="fixed top-5 right-5 space-y-2 z-50" id="flash-messages">
@@ -107,11 +107,12 @@
         <button class="fixed right-10 bottom-15 text-gray-100 text-2xl border rounded-xl py-2 px-1 text-white z-50" id="btn">↑</button>
         {% block content %}{% endblock %}
     </main>
-  
-<div class="overlay" id="drawerOverlay" tabindex="-1" data-hidden="true"></div>
+ 
+<div class="fixed inset-0 bg-black/50 hidden z-50 md:hidden" id="drawerOverlay" tabindex="-1" data-hidden="true"></div>
 
-<aside class="drawer bg-gray-800" id="mainDrawer" role="dialog" aria-modal="true" aria-label="Main menu" aria-hidden="true">
-    <div class="drawer__header w-full">
+<aside class="fixed top-0 right-0 h-screen w-75 bg-gray-900 text-gray-200 md:hidden transform translate-x-full transition-transform duration-300 z-60 " id="mainDrawer" role="dialog" aria-modal="true" aria-label="Main menu" aria-hidden="true">
+  <div class="drawer__layout">
+    <div class="drawer__header w-full border-b border-gray-700 p-4 flex gap-3 flex-shrink-0">
         <div class="avatar" aria-hidden="true"><img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior logo">
         </div>
         <div>
@@ -188,7 +189,7 @@
         </ul>
       </div>
 
-      <footer class="drawer_footer bg-gray-700 text-gray-300 mb-8">
+      <!--<footer class="drawer_footer bg-gray-700 text-gray-300 mb-8">
           <h3 class="font-bold text-xl py-3 text-center">Stay ahead. Get the top stories every morning</h3>
           <form action="{{ url_for('public.subscribe') }}" method="post"
                 class="flex mb-6 mt-2 mx-2 text-xl">
@@ -197,8 +198,8 @@
             <button class="btn-primary px-4 bg-[#c89a1a] text-white py-2 rounded-r-lg">Subscribe</button>
           </form>
 
-        <h2 class="text-center text-2xl">Follow us on:</h2>
-        <!-- Social Icons -->
+        <h2 class="text-center text-2xl">Follow us on:</h2>-->
+        <!-- Social Icons --><!--
         <div class="flex space-x-4 justify-center mt-3 text-2xl">
           <a href="https://www.facebook.com/share/1MoaNAoJJZ/" target="_blank" data-redirect class="btn-primary btn-danger transition-transform transform hover:scale-110">
             <i class="fab fa-facebook-f" style="color:#1877F2;"></i>
@@ -220,9 +221,11 @@
         <div class="max-w-7xl mx-auto px-4 py-4 text-xl text-center text-sm">
           © {{ year }} Superior News. All rights reserved.
         </div>
-      </footer>
+      </footer>-->
     </div>
+  </div>
 </aside>
+
 <div id="cookieBanner" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-4 rounded-lg shadow-lg w-full justify-center space-x-4 z-50">
   <span>We use cookies to improve your experience on Superior Blog. By continuing, you agree to our Privacy Policy.</span>
   <div class="flex items-center justify-between">

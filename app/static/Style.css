@@ -25,7 +25,7 @@
 }
 
 html,body {
-  height: 100%;
+  min-height: 100%;
   color: #0b0b0b;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   -webkit-font-smoothing: antialiased;
@@ -246,64 +246,62 @@ strong{
 .animate-pulse-slow {
   animation: pulseSlow 2.5s ease-in-out infinite;
 }
-  
-/* Pull-Out Dashboard */
-  
-.overlay{
-  position: fixed;
-  inset: 0;
-  opacity: 0;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  background: rgba(2,6,23,0.55);
-  transition: opacity var(--transition);
-  visibility: hidden;
-  z-index: 900;
-}
-  
-.overlay[data-hidden="false"]{
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-}
-  
-.drawer{
-  position: fixed;
-  right: 0;
-  top: 0;
-  height: 100vh;
-  max-width: 100%;
-  width: calc(320px);
-  transform: translateX(110%);
-  z-index: 950;
-  color: #fefefe;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow);
-  transition: transform var(--transition);
-  will-change: transform;
+
+/* ---SEO FALLBACK--- */
+
+.seo-intro {
+  color: #d1d5db;
+  text-align: center;
 }
 
-.drawer[aria-hidden="false"]{
-  transform: translateX(0);
+.seo-intro p {
+  max-width: 1100px;
+  margin: 0 auto;
+  font-size: 14px;
+  line-height: 1.7;
 }
-  
+
+@media (min-width: 640px) {
+  .seo-intro p {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .seo-intro p {
+    font-size: 18px;
+  }
+}
+ 
+/* Pull-Out Dashboard */
 .drawer_footer {
   padding: 1rem;
 }
-  
+
+#mainDrawer {
+  overscroll-behavior: contain;
+}
+
+#mainDrawer::-webkit-scrollbar {
+  width: 6px;
+}
+
+#mainDrawer::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 6px;
+}  
+
 .drawer__header{
   position: sticky;
   display: flex;
   align-items: center;
   gap: 15px;
+  height: 95px;
   top: 0;
   z-index: 1200;
   border-bottom: 1px solid #efefef;
   background: linear-gradient(180deg, rgba(0,0,0,0.03), transparent);
+  padding: 1rem;
 }
   
 .avatar{
@@ -321,7 +319,6 @@ strong{
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
   
 .drawer__title{
@@ -332,19 +329,23 @@ strong{
   
 .drawer__subtitle{
   font-size: 18px;
-  color: #6b7280;
-  margin-top: 4px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.drawer__layout {
+  min-height: 100%;
 }
 
 .drawer__scroll {
+  min-height: calc(100vh - 95px); /* 🔥 Chrome-safe */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  flex: 1;
 }
 
 .drawer__body{
   padding-bottom: 2rem;
-  margin-left: 2rem;
+  margin-left: 1rem;
 }
 
 .editor-toolbar {

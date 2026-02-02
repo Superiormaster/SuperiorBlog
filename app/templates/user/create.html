@@ -51,10 +51,18 @@
         </div>
       </div>
 
-      <div class="relative">
-      {{ form.labels.label(class="block font-medium mb-2 px-2") }}
-      {{ form.labels(class="w-full px-3 py-2 mb-4 rounded bg-gray-800 text-white focus:outline-none appearance-none", multiple=True) }}
-    </div>
+      <div class="space-y-2">
+        {{ form.labels.label(class="font-medium block mb-2 px-2") }}
+        {% for value, label in form.labels.choices %}
+          <label class="flex items-center gap-2 text-white w-full px-3 py-2 mb-1 rounded bg-gray-800 focus:outline-none appearance-none">
+            <input type="checkbox"
+                   name="{{ form.labels.name }}"
+                   value="{{ value }}"
+                   class="accent-blue-500">
+            {{ label }}
+          </label>
+        {% endfor %}
+      </div>
 
     <div class="px-1">
     <div>
