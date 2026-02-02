@@ -10,7 +10,6 @@ from app.extensions import db, login_manager, cache, csrf, mail
 from flask_login import current_user
 from flask_migrate import Migrate
 from app.models import AppSettings, Category, Post
-from .cli import register_commands
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.utils.helper import publish_scheduled_posts
 from .utils.scheduler import start_scheduler
@@ -35,7 +34,6 @@ def create_app():
     csrf.init_app(app)
     cache.init_app(app) 
     mail.init_app(app)
-    register_commands(app)
     start_scheduler(app)
 
     app.register_blueprint(public_bp)

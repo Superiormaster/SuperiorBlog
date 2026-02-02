@@ -267,23 +267,6 @@
           </form>
         </div>
 
-        <ul class="homepage_down_nav hidden md:block border py-3 px-4 rounded-xl mb-4" id="drawerNav">
-        {% if current_user.is_authenticated %}
-        <li><a href="{{ url_for('public.user_dashboard') }}" class="flex items-center gap-2"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-        {% endif %}
-        
-          <li><a href="{{ url_for('public.contact') }}" class="flex items-center gap-2"><i class="fa fa-envelope" aria-hidden="true"></i>Contact Us</a></li>
-          {% set settings = AppSettings.query.first() %}
-          {% if settings %}
-          <li><a href="{{ url_for('public.privacy') }}" class="flex items-center gap-2">
-            <i class="fa fa-shield-alt" aria-hidden="true"></i> 
-          Privacy Policy</a></li>
-            <li><a href="{{ url_for('public.terms') }}" class="mr-6 flex items-center gap-2">
-              <i class="fa fa-file-alt" aria-hidden="true"></i> Terms & Conditions
-            </a></li>
-          {% endif %}
-        </ul>
-
         <h2 class="text-center text-2xl">Follow us on:</h2>
         <!-- Social Icons -->
         <div class="flex space-x-4 justify-center mt-3 text-2xl">
@@ -303,17 +286,73 @@
             <i class="fab fa-linkedin-in" style="color:#0A66C2;"></i>
           </a>
         </div>
-    
-        <section class="seo-intro">
-  <p>
-    SuperiorNews helps creators, bloggers, and businesses write blog posts,
-    generate social media captions, and publish content using AI-powered tools.
-  </p>
-</section>
-        <div class="max-w-7xl mx-auto px-4 py-4 text-center text-xl text-sm">
-          © {{ year }} Superior News. All rights reserved.
-        </div>
-      </footer>
+
+<footer class="text-gray-300 px-4 py-8 sm:px-6 md:px-12 lg:px-20">
+  <!-- SEO Intro -->
+  <div class="max-w-4xl mx-auto text-center mb-8">
+    <p class="sm:text-lg md:text-xl leading-relaxed text-base sm:text-lg max-w-4xl mx-auto text-center">
+      SuperiorNews is an AI-powered content platform that helps creators, bloggers, and businesses 
+      write high-quality blog posts, generate engaging social media captions, and publish content 
+      efficiently. Boost your online presence and reach your audience faster with our smart content tools.
+    </p>
+  </div>
+
+          <ul class="homepage_down_nav hidden md:block border py-3 px-4 rounded-xl mb-4" id="drawerNav">
+        {% if current_user.is_authenticated %}
+        <li><a href="{{ url_for('public.user_dashboard') }}" class="flex items-center gap-2"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+        {% endif %}
+        
+          <li><a href="{{ url_for('public.contact') }}" class="flex items-center gap-2"><i class="fa fa-envelope" aria-hidden="true"></i>Contact Us</a></li>
+          {% set settings = AppSettings.query.first() %}
+          {% if settings %}
+          <li><a href="{{ url_for('public.privacy') }}" class="flex items-center gap-2">
+            <i class="fa fa-shield-alt" aria-hidden="true"></i> 
+          Privacy Policy</a></li>
+            <li><a href="{{ url_for('public.terms') }}" class="mr-6 flex items-center gap-2">
+              <i class="fa fa-file-alt" aria-hidden="true"></i> Terms & Conditions
+            </a></li>
+          {% endif %}
+        </ul>
+  <!-- Footer Links Grid -->
+  <!--<div class="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap- text-center sm:text-left">
+    <div>
+      <h3 class="font-semibold mb-2">Platform</h3>
+      <ul>
+        <li><a href="/features" class="hover:underline">Features</a></li>
+        <li><a href="/pricing" class="hover:underline">Pricing</a></li>
+        <li><a href="/blog" class="hover:underline">Blog</a></li>
+      </ul>
+    </div>
+    <div class="flex gap-4">
+      <h3 class="font-semibold">Company</h3>
+      <ul class="flex justify-between gap-4">
+        <!--<li><a href="/about" class="hover:underline">About Us</a></li>
+        <li><a href="/careers" class="hover:underline">Careers</a></li>
+        <li><a href="/contact" class="hover:underline">Contact</a></li>
+        <li><a href="/privacy" class="hover:underline">Privacy Policy</a></li>
+        <li><a href="/terms" class="hover:underline">Terms of Service</a></li>
+      </ul>
+    </div>
+   <!-- <div>
+      <h3 class="font-semibold mb-2">Resources</h3>
+      <ul>
+        <li><a href="/guides" class="hover:underline">Guides</a></li>
+        <li><a href="/faq" class="hover:underline">FAQ</a></li>
+        <li><a href="/support" class="hover:underline">Support</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="font-semibold mb-2">Legal</h3>
+      <ul>
+        <li><a href="/privacy" class="hover:underline">Privacy Policy</a></li>
+        <li><a href="/terms" class="hover:underline">Terms of Service</a></li>
+      </ul>
+    </div>
+  </div>-->
+  <div class="max-w-7xl mx-auto mt-8 text-center text-sm text-gray-300">
+    © {{ year }} Superior News. All rights reserved.
+  </div>
+</footer>
 </div>
 
 {% endblock %}
