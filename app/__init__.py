@@ -19,7 +19,8 @@ from datetime import datetime
 migrate = Migrate()
 
 def create_app():
-    app = Flask(__name__) 
+    app = Flask(__name__,
+    template_folder="templates" ) 
     app.config.from_object(Config)
   
     database_url = os.getenv("DATABASE_URL", "sqlite:///blog.db")

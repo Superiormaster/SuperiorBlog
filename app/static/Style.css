@@ -296,7 +296,6 @@ strong{
   display: flex;
   align-items: center;
   gap: 15px;
-  height: 95px;
   top: 0;
   z-index: 1200;
   border-bottom: 1px solid #efefef;
@@ -465,10 +464,6 @@ strong{
 }
 
 @media (max-width: 599px) {
-  .drawer{
-    width: calc(300px);
-  }
-  
   .drawer__header{
     padding: 20px;
     display: flex;

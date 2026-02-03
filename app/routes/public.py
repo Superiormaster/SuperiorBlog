@@ -29,8 +29,7 @@ from app.forms import UserLoginForm, UserRegisterForm, ChangePasswordForm, PostF
 public_bp = Blueprint(
     "public",
     __name__, 
-    url_prefix="/public",
-    template_folder="../templates/public"
+    template_folder="../templates/user"
 )
 
 @public_bp.route('/register', methods=['GET', 'POST'])
