@@ -166,7 +166,34 @@
       <p class="text-gray-400">No posts yet.</p>
     {% endfor %}
   </div>
+
+<div id="feedback-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+  <div class="bg-gray-900 p-6 rounded-lg w-80 text-white">
+    <h3 class="text-lg font-semibold mb-2">Quick feedback?</h3>
+    <p class="text-sm text-gray-400 mb-4">
+      What can we improve on Superior News?
+    </p>
   
+    <form id="feedbackForm" action="{{ url_for('public.contact_feedback') }}" method="POST"
+    <input type="hidden" name="content" id="feedbackInput">
+  
+    <div
+      id="feedbackText"
+      contenteditable="true"
+      class="w-full p-2 rounded bg-gray-800 text-white min-h-[8rem] max-h-40 overflow-auto resize-y focus:outline-none"
+      placeholder="Your thoughts..."
+    ></div>
+
+    <div class="flex justify-end gap-2 mt-3">
+      <button onclick="closeFeedback()" class="text-gray-400">Later</button>
+      <button class="bg-blue-600 px-4 py-2 rounded text-white" type="submit" onclick="document.getElementById('feedbackInput').value = document.getElementById('feedbackText').innerText.trim();">
+        Send
+      </button>
+    </div>
+    </form>
+  </div>
+</div>
+
   <!-- components/creator_prompt.html -->
   {% if not current_user.is_authenticated %}
 
@@ -294,13 +321,13 @@
   <section class="seo-intro bg-gray-800 text-gray-300 rounded-xl px-3 py-4">
   <div class="max-w-6xl mx-auto text-center">
     <p class="text-sm sm:text-base md:text-lg leading-relaxed">
-      <span class="font-semibold text-white">SuperiorNews</span> is a content platform that helps creators and bloggers publish their ideas.
+      <span class="font-semibold text-white">Superior News</span> is a content platform that helps creators and bloggers publish their ideas.
       It also generates social media captions for users.
     </p>
   </div>
 </section>
 
-          <ul class="homepage_down_nav hidden md:block border py-3 px-4 rounded-xl mb-4" id="drawerNav">
+      <ul class="homepage_down_nav text-left hidden md:block border py-3 px-4 rounded-xl mb-4" id="drawerNav">
         {% if current_user.is_authenticated %}
         <li><a href="{{ url_for('public.user_dashboard') }}" class="flex items-center gap-2"><i class="fa fa-dashboard"></i> Dashboard</a></li>
         {% endif %}
@@ -357,5 +384,48 @@
   </div>
 </footer>
 </div>
+
+<script>
+(function () {
+  const FEEDBACK_KEY = "feedback_shown";
+  const SCROLL_THRESHOLD = 0.8;
+  const TIME_THRESHOLD = 100000;
+
+  if (localStorage.getItem(FEEDBACK_KEY)) return;
+
+  let triggered = false;
+
+  function triggerFeedback(reason) {
+    if (triggered) return;
+
+    triggered = true;
+    localStorage.setItem(FEEDBACK_KEY, "true");
+
+    console.log("Feedback triggered by:", reason);
+    document.getElementById("feedback-modal")?.classList.remove("hidden");
+  }
+
+  function checkScrollDepth() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    if (docHeight <= 0) return;
+
+    if (scrollTop / docHeight >= SCROLL_THRESHOLD) {
+      triggerFeedback("scroll");
+      window.removeEventListener("scroll", checkScrollDepth);
+    }
+  }
+
+  window.addEventListener("scroll", checkScrollDepth);
+
+  setTimeout(() => {
+    triggerFeedback("time");
+  }, TIME_THRESHOLD);
+})();
+
+function closeFeedback() {
+  document.getElementById("feedback-modal").classList.add("hidden");
+}
+</script>
 
 {% endblock %}

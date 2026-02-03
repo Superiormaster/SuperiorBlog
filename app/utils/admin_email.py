@@ -4,11 +4,11 @@ from app.utils.email import send_bulk_email, send_weekly_digest
 from datetime import datetime, timedelta
 
 def send_welcome_email(email, token):
-    unsubscribe_link = f"https://yourdomain.com/unsubscribe/{token}"
+    unsubscribe_link = f"https://superiornews.app/public/unsubscribe/{token}"
     html = f"""
     <h2>Welcome to Superior Blog!</h2>
     <p>Your ideas deserve an audience.</p>
-    <p><a href='https://yourdomain.com/login'>Login & Start Creating</a></p>
+    <p><a href='https://superiornews.app/public/user_login'>Login & Start Creating</a></p>
     <p style='font-size:12px'>
         <a href='{unsubscribe_link}'>Unsubscribe</a>
     </p>
@@ -34,7 +34,7 @@ def send_latest_news():
         <h2>Latest Breaking News</h2>
         <ul>{items}</ul>
         <p style='font-size:12px'>
-            <a href='https://yourdomain.com/unsubscribe/{s.unsubscribe_token}'>Unsubscribe</a>
+            <a href='https://superiornews.app/public/unsubscribe/{s.unsubscribe_token}'>Unsubscribe</a>
         </p>
         """
         send_bulk_email(s.email, "Breaking News Today", html)

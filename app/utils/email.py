@@ -37,7 +37,7 @@ def send_bulk_email(to, subject, html):
     }
 
     data = {
-        "sender": {"name": "Superior Blog", "email": "noreply@superiorblog.com"},
+        "sender": {"name": "Superior News", "email": "noreply@superiornews.app"},
         "to": [{"email": to}],
         "subject": subject,
         "htmlContent": html
@@ -47,15 +47,15 @@ def send_bulk_email(to, subject, html):
 
 def send_weekly_digest(subscriber, posts):
     items = "".join([
-        f"<li><a href='https://yourdomain.com/post/{p.slug}'>{p.title}</a><p>{p.excerpt}</p></li>"
+        f"<li><a href='https://superiornews/public/post/{p.slug}'>{p.title}</a><p>{p.excerpt}</p></li>"
         for p in posts
     ])
     html = f"""
     <h2>This Week on Superior Blog</h2>
     <ul>{items}</ul>
-    <p><a href='https://yourdomain.com/login'>Start Writing</a></p>
+    <p><a href='https://superiornews.app/public/user_login'>Start Writing</a></p>
     <p style='font-size:12px'>
-        <a href='https://yourdomain.com/unsubscribe/{subscriber.unsubscribe_token}'>Unsubscribe</a>
+        <a href='https://superiornews/public/unsubscribe/{subscriber.unsubscribe_token}'>Unsubscribe</a>
     </p>
     """
     send_bulk_email(subscriber.email, "Weekly Digest", html)

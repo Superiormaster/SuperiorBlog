@@ -69,7 +69,7 @@
   <div class="social-bar py-3 border-gray-200 border-t mt-4">
     <!-- Bottom row: Action buttons -->
     <div class="flex">
-      <button class="btn-primary like-btn flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" data-post-id="{{ post.id }}">
+      <button class="btn-primary like-btn flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" data-url="{{ url_for('public.like_post', id=post.id) }}" onclick="likePost(this)" data-post-id="{{ post.id }}">
         <i class="md:text-2xl text-xl far fa-thumbs-up mr-2"></i>
         <span class="like-count ml-1 md:text-xl text-sm">{{ post.likes.count() }}</span>
       </button>
@@ -355,6 +355,73 @@ function trackRelatedClick(el) {
     })
   });
 }
+</script>
+<script>
+async function likePost(btn) {
+  const url = btn.dataset.url;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest"
+      },
+      credentials: "same-origin"
+    });
+
+    // Read raw text first (IMPORTANT)
+    const text = await res.text();
+
+    // If Flask returned nothing or HTML, stop
+    if (!text || text.startsWith("<")) {
+      console.error("Non-JSON response:", text);
+      return;
+    }
+
+    const data = JSON.parse(text);
+
+    // Update count
+    btn.querySelector(".like-count").textContent = data.count;
+
+    // Toggle icon
+    const icon = btn.querySelector("i");
+    icon.classList.toggle("fas", data.liked);
+    icon.classList.toggle("far", !data.liked);
+
+  } catch (err) {
+    console.error("Like failed:", err);
+  }
+}
+</script>
+<script>
+  // ---------- SHARE BUTTON HANDLER ----------
+  window.sharePost = function(postId, title) {
+    if (!postId) return;
+
+    const url = window.location.href;
+
+    // Send POST to server for analytics
+    fetch(`/post/${postId}/share`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin"
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) console.log("Share recorded:", postId);
+    })
+    .catch(err => console.error("Share error:", err));
+
+    // Native share if available
+    if (navigator.share) {
+      navigator.share({ title, url }).catch(err => console.error(err));
+    } else {
+      // Fallback: copy URL
+      navigator.clipboard.writeText(url).then(() => {
+        alert("Link copied to clipboard!");
+      }).catch(err => console.error("Clipboard error:", err));
+    }
+  };
 </script>
 
 {% endblock %}

@@ -12,6 +12,7 @@
     </p>
   </div>
   
+  <input type="text" name="website">
   <!-- Quick links -->
   <div class="flex justify-center gap-4 mb-8 text-sm">
     <a href="{{ url_for('public.contact') }}?type=contact"
@@ -23,7 +24,7 @@
   </div>
 
   <!-- Form -->
-  <form method="POST" onsubmit="return validateForm()" class="space-y-4 bg-gray-800 p-6 border border-rose-100 rounded-lg shadow-lg bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
+  <form method="POST" onsubmit="return validateForm()" class="space-y-4 bg-gray-800 p-6 border border-rose-100 rounded-lg shadow-lg border border-gray-800 rounded-xl p-6 space-y-5">
 
     <!-- Honeypot (spam protection) -->
     <input type="text" name="website" class="hidden">

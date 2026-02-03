@@ -1172,11 +1172,9 @@ def category(slug):
 def like_post(id):
     post = Post.query.get_or_404(id)
 
-    # Create anonymous session ID
     if "sid" not in session:
         session["sid"] = os.urandom(16).hex()
 
-    # Check if already liked
     existing = Like.query.filter_by(
         post_id=id,
         session_id=session["sid"]
@@ -1188,11 +1186,12 @@ def like_post(id):
             "count": Like.query.filter_by(post_id=id).count()
         })
 
-    # Add like
-    like = Like(post_id=id, session_id=session["sid"])
+    like = Like(
+        post_id=id,
+        session_id=session["sid"]
+    )
     db.session.add(like)
-    if not safe_commit():
-        print("Failed to add like")
+    db.session.commit()
 
     count = Like.query.filter_by(post_id=id).count()
 
@@ -1207,19 +1206,48 @@ def like_post(id):
 def contact():
     if request.method == "POST":
         msg = ContactMessage(
-            name=request.form.get("name"),
-            email=request.form.get("email"),
-            subject=request.form.get("subject"),
-            message=request.form.get("content"),
-            type=request.form.get("type")  # contact | feedback | report
+            name=request.form.get("name", "Anonymous"),
+            email=request.form.get("email", "anonymous@superiornewsw.app"),
+            subject=request.form.get("subject", "Feedback"),
+            message=request.form.get("content", ""),
+            type=request.form.get("type", "feedback")  # contact | feedback | report
         )
 
         db.session.add(msg)
-        if not safe_commit():
-          print("Failed to send email")
+        success = safe_commit()
 
-        flash("Your message has been sent successfully.", "success")
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"success": True})
+  
+        if success:
+            flash("Your message has been sent successfully.", "success")
+        else:
+            flash("Failed to send message. Please try again.", "error")
         return redirect(url_for("public.contact"))
+
+    return render_template("contact.html")
+
+@public_bp.route("/contact_feedback", methods=["GET", "POST"])
+@csrf.exempt
+def contact_feedback():
+    if request.method == "POST":
+        msg = ContactMessage(
+            name=request.form.get("name", "Anonymous"),
+            email=request.form.get("email", "anonymous@superiornews.app"),
+            subject=request.form.get("subject", "Feedback"),
+            message=request.form.get("content", ""),
+            type=request.form.get("type", "feedback")
+        )
+
+        db.session.add(msg)
+        success = safe_commit()
+
+        if success:
+            flash("Thank you! Your feedback has been submitted.", "success")
+        else:
+            flash("Failed to send feedback. Please try again.", "error")
+
+        return redirect(url_for("public.index"))
 
     return render_template("contact.html")
 

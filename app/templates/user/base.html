@@ -230,7 +230,7 @@
   <span>We use cookies to improve your experience on Superior Blog. By continuing, you agree to our Privacy Policy.</span>
   <div class="flex items-center justify-between">
     <a href="{{ url_for('public.privacy') }}" data-redirect class="btn-primary btn-danger underline">Learn More</a>
-    <button data-safe id="acceptCookies" class="btn-primary bg-yellow-500 text-black px-4 py-1 rounded">Accept</button>
+    <button id="acceptCookies" class="btn-primary bg-yellow-500 text-black px-4 py-1 rounded">Accept</button>
   </div>
 </div>
   
@@ -241,10 +241,11 @@
     <script src="{{ url_for('static', filename='button.js') }}"></script>
     <script src="{{ url_for('static', filename='login.js') }}"></script>
     <script src="{{ url_for('static', filename='message.js') }}"></script>
+    <script src="{{ url_for('static', filename='like.js') }}"></script>
     <script src="{{ url_for('static', filename='cta.js') }}"></script>
     <script src="{{ url_for('static', filename='slider.js') }}"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-   <!-- <script src="https://cdn.jsdelivr.net/npm/eruda"></script>-->
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>
     <script>
       const csrf_token = "{{ csrf_token() }}";
@@ -256,13 +257,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("acceptCookies");
 
   if(localStorage.getItem("cookiesAccepted")) {
-    banner.classList.add("hidden");
+    banner.style.display = "none";
   }
 
   if(btn) {
     btn.addEventListener("click", () => {
       localStorage.setItem("cookiesAccepted", "true");
-      banner.classList.add("hidden");
+      banner.style.display = "none";
     });
   }
 });

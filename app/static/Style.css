@@ -425,10 +425,6 @@ strong{
   height: 100vh;
 }
 
-textarea {
-  resize: none;
-}
-
 #tag-suggestions {
   pointer-events: auto;
 }
