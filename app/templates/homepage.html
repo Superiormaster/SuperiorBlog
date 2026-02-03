@@ -23,7 +23,7 @@
 <div class="h-22"></div>
 {% endif %}
 
-<aside class="md:hidden mt-10 w-full bg-gray-700 text-white transform transition-transform duration-300 z-50">
+<aside class="md:hidden w-full bg-gray-700 text-white transform transition-transform duration-300 z-50">
   <div class="flex w-full items-center gap-4 px-4 overflow-hidden">
     <nav class="flex justify-between items-center p-3 bg-gray-800 relative flex-nowrap gap-10 w-full overflow-hidden overflow-x-auto">
       <a data-redirect class="btn-primary btn-danger" href="{{ url_for('public.index') }}">Home</a>
@@ -60,7 +60,7 @@
   {% endif %}
 </div>
 -->
-<div class="flex home py-10">
+<div class="flex home">
 <form action="{{ url_for('public.search') }}" method="get" class="flex mb-6 mt-4 mx-2">
   <input
     type="text"
@@ -222,13 +222,15 @@
   <button type="submit" class="w-full rounded-full bg-blue-600 border border-gray-300 py-2 text-white font-semibold">
     Login
   </button>
-  <div class="text-center text-sm mt-">Or SignUp With</div>
+  <div class="text-center text-sm mt-2">Or <a href="{{ url_for('public.user_register') }}">Sign Up</a>
+  </div>
+  <!--<div class="text-center text-sm mt-2">Or SignUp With</div>
       <div class="space-x-4 bg-blue-600 rounded-full font-semibold mt-2 w-full">
       <a id="googleBtn" href="{{ url_for('public.google_login') }}"
           class="flex items-center justify-center gap-3 w-full h-12 rounded-full border border-yellow-500 text-gray-700 font-medium hover:bg-gray-50 transition"
-        >
+        >-->
           <!-- Official Google SVG -->
-          <svg
+          <!--<svg
             id="googleIcon"
             class="w-5 h-5"
             viewBox="0 0 48 48"
@@ -249,7 +251,7 @@
          <p id="googleError" class="hidden text-sm text-red-500">
             Something went wrong. Please try again.
           </p>
-      </div>
+      </div>-->
 </form>
 
 <button onclick="closeLoginModal()" class="absolute top-3 right-4 text-gray-400 text-xl">×</button>

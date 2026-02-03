@@ -19,8 +19,8 @@ from app.utils.email import send_bulk_email
 from app.utils.decorators import generate_unique_slug
 from app.utils.db_helpers import safe_commit
 from app.extensions import db, cache, csrf
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
+#from google.oauth2 import id_token
+#from google.auth.transport import requests as google_requests
 from config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
 from sqlalchemy import func, desc
 from flask_login import login_user, logout_user, current_user, login_required

@@ -1,8 +1,8 @@
 import os, json
 from dotenv import load_dotenv
 import cloudinary
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
+#from google.oauth2 import id_token
+#from google.auth.transport import requests as google_requests
 
 load_dotenv()
 
