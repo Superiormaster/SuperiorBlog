@@ -44,3 +44,15 @@ document.addEventListener('DOMContentLoaded', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 });
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeLoginModal();
+});
+
+function show_pass() {
+  const password = document.getElementById("password");
+  const checkbox = document.getElementById("show_password");
+  
+  if (!password || !checkbox) return; // safety check
+  password.type = checkbox.checked ? "text" : "password";
+}

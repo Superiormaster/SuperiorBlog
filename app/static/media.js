@@ -109,7 +109,7 @@ export async function uploadImagesBeforeSave(editor, featuredInput) {
       const formData = new FormData();
       formData.append("image", blob, "editor-image.png");
   
-      const res = await fetch("/public/upload-image", { method: "POST", body: formData });
+      const res = await fetch("/upload-image", { method: "POST", body: formData });
       if (!res.ok) {
         alert("Image upload failed");
         throw new Error("Upload failed");

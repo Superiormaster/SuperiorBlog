@@ -21,7 +21,7 @@ export function initAutoSave(editor, form) {
       data.set("status", "draft");
 
       try {
-        const res = await fetch("/public/post/draft", { method: "POST", body: data })
+        const res = await fetch("/post/draft", { method: "POST", body: data })
         // Check HTTP status first
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         // Try to parse JSON safely

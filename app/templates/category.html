@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex home">
+<div class="flex flex-col">
   <h1 class="text-3xl text-center font-bold my-3">{{ category.name }} News</h1>
   <form action="{{ url_for('public.search') }}" method="get" class="flex mb-6 mt-4 mx-2">
     <input
