@@ -60,7 +60,7 @@
   {% endif %}
 </div>
 -->
-<div class="flex home">
+<div class="flex flex-col">
 <form action="{{ url_for('public.search') }}" method="get" class="flex mb-6 mt-4 mx-2">
   <input
     type="text"
@@ -240,17 +240,32 @@
 
 <!-- Login Modal -->
 
-<div id="login-modal" class="fixed inset-0 z-[60] hidden">
+<div id="login-modal" class="hidden fixed inset-0 z-[60]">
   <div class="absolute inset-0 bg-black/40" onclick="closeLoginModal()"></div>
   <div class="relative mx-auto mt-24 w-[90%] max-w-md rounded-2xl bg-gray-800 p-6 shadow-xl">
-    <h2 class="text-xl text-center font-bold mb-4">Login to start creating</h2><form method="POST" action="{{ url_for('public.user_login') }}?next=/create" class="space-y-4">
-  <input type="email" name="email" placeholder="Email" required class="w-full rounded-lg border px-3 py-2" />
-  <input type="password" name="password" placeholder="Password" required class="w-full rounded-lg border px-3 py-2" />
-  <button type="submit" class="w-full rounded-full bg-blue-600 border border-gray-300 py-2 text-white font-semibold">
-    Login
-  </button>
-  <div class="text-center text-sm mt-2">Or <a href="{{ url_for('public.user_register') }}">Sign Up</a>
+    <h2 class="text-xl text-center font-bold mb-4">Login to start creating</h2>
+    <form method="POST" action="{{ url_for('public.user_login', next=url_for('public.create_post')) }}" class="space-y-4">
+  {{ login_form.hidden_tag() }}
+      {{ login_form.email(
+      placeholder="Email",
+      class="w-full rounded-lg border px-3 py-2"
+  ) }}
+  {{ login_form.password(
+      id="password",
+      placeholder="Password",
+      class="w-full rounded-lg border px-3 py-2"
+  ) }}
+  <div class="form-check">
+    <input type="checkbox" id="show_password" class="form-check-input" onclick="show_pass()">
+    <label class="form-check-label">Show Password</label>
   </div>
+  {{ login_form.submit(
+      class="w-full rounded-full bg-blue-600 py-2 text-white font-semibold"
+  ) }}
+  <p class="text-center text-sm mt-2">
+    Don’t have an account?
+    <a href="{{ url_for('public.user_register') }}" class="text-blue-400">Sign up</a>
+  </p>
   <!--<div class="text-center text-sm mt-2">Or SignUp With</div>
       <div class="space-x-4 bg-blue-600 rounded-full font-semibold mt-2 w-full">
       <a id="googleBtn" href="{{ url_for('public.google_login') }}"
@@ -426,6 +441,31 @@
 function closeFeedback() {
   document.getElementById("feedback-modal").classList.add("hidden");
 }
+</script>
+
+<script>
+document.getElementById('login-modal-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+
+    const res = await fetch(form.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+        closeLoginModal();
+        window.location.href = result.redirect;
+    } else {
+        const err = document.getElementById('modal-error');
+        err.textContent = result.message;
+        err.classList.remove('hidden');
+    }
+});
 </script>
 
 {% endblock %}

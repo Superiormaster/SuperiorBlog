@@ -10,6 +10,7 @@ from app.extensions import db, login_manager, cache, csrf, mail
 from flask_login import current_user
 from flask_migrate import Migrate
 from app.models import AppSettings, Category, Post
+from app.forms import UserLoginForm
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.utils.helper import publish_scheduled_posts
 from .utils.scheduler import start_scheduler
@@ -66,6 +67,10 @@ def create_app():
     @app.context_processor
     def inject_year():
         return {'year': datetime.now().year}
+
+    @app.context_processor
+    def inject_login_form():
+        return dict(login_form=UserLoginForm())
 
     @app.before_request
     def require_profile_completion():

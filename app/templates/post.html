@@ -32,7 +32,7 @@
     </div>
   </div>
 
-<div class="home flex">
+<div class="flex-col flex">
 <article class="shadow-md rounded p-6">
   {% if post.featured_image and post.featured_image not in post.content %}
     <img src="{{ post.featured_image }}"
@@ -163,14 +163,14 @@
     {% if current_user.is_authenticated %}
     <form method="POST" id="fixed-comment-form"
           action="{{ url_for('public.add_comment', slug=post.slug) }}"
-          class="fixed text-gray-700 px-4 py-2 rounded shadow-lg w-full left-0 bottom-0 bg-gray-700 border-t h-15 shadow z-50">
-      <div class="flex justify-end mt-2 gap-2">
+          class="fixed text-gray-700 px-4 py-2 rounded shadow-lg w-full left-0 bottom-0 bg-gray-800 border-t h-17 shadow z-50">
+      <div class="flex justify-end gap-2">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <textarea name="content" placeholder="Write a comment..." class="border border-gray-600 h-10 rounded px-3 py-2 w-full placeholder-gray-400 text-gray-400 focus:placeholder-gray-600 text-sm" required></textarea>
-        <button type="button" class="btn-primary bg-gray-400 text-white p-2 h-10 rounded" onclick="closeCommentForm()">
+      <textarea name="content" rows="1" placeholder="Write a comment..." class="border border-gray-600 rounded px-3 w-full placeholder-gray-400 text-gray-400 focus:placeholder-gray-600 text-sm" required></textarea>
+        <button type="button" class="btn-primary bg-gray-400 text-white p-2 h-13 rounded" onclick="closeCommentForm()">
           Cancel
         </button>
-        <button type="submit" class="btn-primary bg-blue-600 text-white p-2 h-10 rounded">
+        <button type="submit" class="btn-primary bg-blue-600 text-white p-2 h-13 w-10 rounded">
           <i class="fas fa-paper-plane"></i>
         </button>
       </div>
@@ -291,7 +291,7 @@
 </article>
 
       <footer class="drawer_footer bg-gray-700 text-gray-300">
-        <div class="p-6 rounded-xl bg-gradient-to-r from-gray-700/20 to-neutral-500/20 border border-yellow-500/20">
+        <div class="p-6 rounded-xl bg-gradient-to-r mb-4 from-gray-700/20 to-neutral-500/20 border border-yellow-500/20">
           <h3 class="font-semibold mb-3 text-center">Stay ahead. Get the top stories every morning</h3>
           <form action="{{ url_for('public.subscribe') }}" method="post" class="flex flex-col md:flex-row gap-3">
             <input type="email" name="email" placeholder="Enter your email to stay informed" class="flex-1 p-3 rounded-lg text-white w-full border border-[#c89a1a] focus:outline-none"/>

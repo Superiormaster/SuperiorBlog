@@ -339,11 +339,14 @@ def view_message(id):
 
     return render_template("admin/message_detail.html", msg=msg)
 
+def safe_list(value):
+    return value if isinstance(value, list) else []
 @admin_bp.route("/analytics")
 @login_required
 def analytics():
     range_days = int(request.args.get("range", 7))
 
+    growth_defaults = 0
     # -----------------------------
     # BASIC COUNTS
     # -----------------------------
@@ -374,9 +377,8 @@ def analytics():
     total_avg_posts_growth = growth_defaults
     total_avg_caption_growth = growth_defaults
 
-    total_likes = db.session.query(
-        func.sum(Post.likes)
-    ).scalar() or 0
+    posts = Post.query.all()
+    total_likes = sum(p.likes.count() for p in posts)
     total_replies = Comment.query.count()
     total_repost = Repost.query.count()
 
@@ -384,6 +386,11 @@ def analytics():
     # VIEWS & ENGAGEMENT
     # -----------------------------
     total_views = db.session.query(db.func.sum(Post.views)).scalar() or 0
+    views_data = [
+        post.views for post in Post.query.order_by(Post.created_at.asc()).all()
+    ]
+    posts = Post.query.order_by(Post.created_at.asc()).all()
+    likes_data = [post.likes.count() for post in posts]
     total_impressions = db.session.query(db.func.sum(Post.impressions)).scalar() or 0
     total_profile_visits = db.session.query(db.func.sum(User.profile_visits)).scalar() or 0
     total_shares = db.session.query(db.func.sum(Post.shares)).scalar() or 0
@@ -413,11 +420,6 @@ def analytics():
         db.func.count()
     ).group_by(CaptionHistory.platform).all()
 
-    # -----------------------------
-    # GROWTH PLACEHOLDERS (SAFE DEFAULTS)
-    # -----------------------------
-    growth_defaults = 0
-
     return render_template(
         "admin/analytics.html",
         range_days=range_days,
@@ -440,6 +442,8 @@ def analytics():
 
         total_repost=total_repost,
         total_impressions=total_impressions,
+        views_data=safe_list(views_data),
+        likes_data=safe_list(likes_data),
         total_profile_visits=total_profile_visits,
         total_shares=total_shares,
         total_engagements=total_engagements,

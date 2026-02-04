@@ -58,16 +58,49 @@ def user_register():
 @public_bp.route('/login', methods=['GET', 'POST'])
 def user_login():
     if current_user.is_authenticated:
-        return redirect(url_for('public.index'))
+        next_page = request.args.get('next') or url_for('public.user_dashboard')
+        return redirect(next_page)
+
     form = UserLoginForm()
+    next_page = request.args.get('next', url_for('public.user_dashboard'))
+
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
+
+        # User exists and password is correct
         if user and user.check_password(form.password.data) and not user.is_admin:
             login_user(user, remember=form.remember_me.data)
+
+            # AJAX modal login
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # If user is completely new (first-time login) in modal, tell them to sign up
+                if not user.profile_completed:  # assuming you have a boolean column profile_completed
+                    return jsonify({
+                        "success": False,
+                        "message": "Please sign up first to complete your profile."
+                    })
+                return jsonify({"success": True})
+
+            # Normal page login
             flash("Logged in successfully!", "success")
-            return redirect(request.args.get('next') or url_for('public.profile_setup'))
+            if not user.profile_completed:
+                # Redirect first-time login users to profile setup
+                return redirect(url_for('public.profile_setup'))
+            return redirect(next_page)
+
+        # Invalid login
         else:
-            flash("Invalid email or password.", "danger")
+            msg = "No account found. Please sign up." if not user else "Incorrect password."
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({"success": False, "message": msg})
+            flash(msg, "error")
+            return redirect(url_for('public.user_register', next=next_page))
+
+    # Form validation failed
+    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({"success": False, "message": "Form validation failed."})
+
+    # GET request → show login page
     return render_template('user/login.html', form=form)
 
 @public_bp.route("/forgot-password", methods=["GET", "POST"])
@@ -631,13 +664,19 @@ def save_draft():
 
     # Save draft logic here
     post_id = request.form.get("post_id")
+
+    # Update existing post
     if post_id:
         post = Post.query.get(post_id)
-        if post and post.user_id == current_user.id:
-            post.content = content
-            post.status = "draft"
-            db.session.commit()
-            return jsonify({"status": "updated", "post_id": post.id})
+        if not post or post.user_id != current_user.id:
+            return jsonify({"status": "forbidden"})
+        if getattr(post, "is_locked", False):
+            return jsonify({"status": "locked"})
+        post.content = content
+        post.status = "draft"
+        if not safe_commit():
+            print("Failed to save post")
+        return jsonify({"status": "updated", "post_id": post.id})
 
     # If new draft
     post = Post(
@@ -646,20 +685,6 @@ def save_draft():
         status="draft",
         is_published=False
     )
-
-    if post_id:
-      post = Post.query.get(post_id)
-      if not post or post.user_id != current_user.id:
-          return jsonify({"status": "forbidden"})
-
-    if post.is_locked:
-        return jsonify({"status": "locked"})
-
-    post.content = content
-    post.status = "draft"
-    if not safe_commit():
-        print("Failed to save post")
-    return jsonify({"status": "updated", "post_id": post.id})
   
     db.session.add(post)
     if not safe_commit():
