@@ -1,58 +1,83 @@
 document.addEventListener('DOMContentLoaded', () => {
   const CTA_KEY = 'creator_cta_dismissed';
+
   const cta = document.getElementById('creator-cta');
   const modal = document.getElementById('login-modal');
-  const btn = document.getElementById('btn');
+  const backToTopBtn = document.getElementById('btn');
 
-  if (!cta && !btn) return;
+  /* ---------------- CTA LOGIC ---------------- */
 
-  window.dismissCreatorCTA = function () {
-    localStorage.setItem(CTA_KEY, '1');
-    cta?.remove();
-  };
+  if (cta && !localStorage.getItem(CTA_KEY)) {
+    let shown = false;
 
-  window.openLoginModal = function () {
-    modal?.classList.remove('hidden');
-  };
+    window.dismissCreatorCTA = function () {
+      localStorage.setItem(CTA_KEY, '1');
+      cta.remove();
+    };
 
-  window.closeLoginModal = function () {
-    modal?.classList.add('hidden');
-  };
+    window.openLoginModal = function () {
+      modal?.classList.remove('hidden');
+    };
 
-  if (localStorage.getItem(CTA_KEY)) {
-    cta?.remove();
-  }
+    window.closeLoginModal = function () {
+      modal?.classList.add('hidden');
+    };
 
-  function onScroll() {
-    const scrollPercent =
-      window.scrollY / (document.body.scrollHeight - window.innerHeight);
+    function showCTA(reason) {
+      if (shown) return;
+      shown = true;
 
-    // CTA logic
-    if (cta && scrollPercent > 0.25) {
       cta.classList.remove('hidden');
+      console.log('CTA shown by:', reason);
+
+      window.removeEventListener('scroll', onScroll);
+      clearTimeout(timer);
     }
 
-    // Back to top button logic
-    if (btn) {
-      btn.style.display = window.scrollY > 300 ? 'block' : 'none';
+    function onScroll() {
+      const scrollable =
+        document.body.scrollHeight - window.innerHeight;
+
+      if (scrollable <= 0) return;
+
+      if (window.scrollY / scrollable > 0.25) {
+        showCTA('scroll');
+      }
     }
+
+    window.addEventListener('scroll', onScroll);
+
+    const timer = setTimeout(() => {
+      showCTA('time');
+    }, 5000);
+  } else {
+    cta?.remove();
   }
 
-  window.addEventListener('scroll', onScroll);
+  /* ---------------- BACK TO TOP ---------------- */
 
-  btn?.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
+  if (backToTopBtn) {
+    window.addEventListener('scroll', () => {
+      backToTopBtn.style.display =
+        window.scrollY > 300 ? 'block' : 'none';
+    });
+
+    backToTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
 });
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeLoginModal();
+/* ---------------- GLOBAL HELPERS ---------------- */
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') window.closeLoginModal?.();
 });
 
 function show_pass() {
-  const password = document.getElementById("password");
-  const checkbox = document.getElementById("show_password");
-  
-  if (!password || !checkbox) return; // safety check
-  password.type = checkbox.checked ? "text" : "password";
+  const password = document.getElementById('password');
+  const checkbox = document.getElementById('show_password');
+
+  if (!password || !checkbox) return;
+  password.type = checkbox.checked ? 'text' : 'password';
 }

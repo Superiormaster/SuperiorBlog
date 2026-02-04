@@ -221,8 +221,8 @@
   </div>
 </aside>
 
-<div id="cookieBanner" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-4 rounded-lg shadow-lg w-full justify-center space-x-4 z-50">
-  <span>We use cookies to improve your experience on Superior Blog. By continuing, you agree to our Privacy Policy.</span>
+<div id="cookieBanner" class="hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-4 transition-all duration-300 rounded-lg shadow-lg w-full justify-center space-x-4 z-50">
+  <span>We use cookies to improve your experience on Superior News. By continuing, you agree to our Privacy Policy.</span>
   <div class="flex items-center justify-between">
     <a href="{{ url_for('public.privacy') }}" data-redirect class="btn-primary btn-danger underline">Learn More</a>
     <button id="acceptCookies" class="btn-primary bg-yellow-500 text-black px-4 py-1 rounded">Accept</button>
@@ -251,16 +251,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const banner = document.getElementById("cookieBanner");
   const btn = document.getElementById("acceptCookies");
 
-  if(localStorage.getItem("cookiesAccepted")) {
-    banner.style.display = "none";
+  if (!banner || !btn) return;
+  
+  if (!localStorage.getItem("cookiesAccepted")) {
+    banner.classList.remove("hidden");
   }
 
-  if(btn) {
-    btn.addEventListener("click", () => {
-      localStorage.setItem("cookiesAccepted", "true");
-      banner.style.display = "none";
-    });
-  }
+  btn?.addEventListener("click", () => {
+    localStorage.setItem("cookiesAccepted", "true");
+    banner.classList.add("hidden");
+  });
 });
 </script>
     {% block scripts %}{% endblock %}

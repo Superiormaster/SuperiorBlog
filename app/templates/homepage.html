@@ -197,7 +197,7 @@
   <!-- components/creator_prompt.html -->
   {% if not current_user.is_authenticated %}
 
-<div id="creator-cta" class="fixed bottom-0 left-0 right-0 z-50 n">
+<div id="creator-cta" class="hidden fixed bottom-0 left-0 right-0 z-50 n">
   <div class="mx-auto max-w-6xl m-4">
     <div class="flex items-center justify-between gap-4 bg-gray-700 rounded-2xl backdrop-blur shadow-2xl border border-yellow-500 p-4">
       <!-- Text -->
@@ -454,6 +454,11 @@ function closeFeedback() {
 </script>
 
 <script>
+const modal = document.getElementById('login-modal');
+
+window.openLoginModal = () => modal?.classList.remove('hidden');
+window.closeLoginModal = () => modal?.classList.add('hidden');
+
 document.getElementById('login-modal-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
