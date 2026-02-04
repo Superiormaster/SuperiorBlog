@@ -185,7 +185,7 @@
     ></div>
 
     <div class="flex justify-end gap-2 mt-3">
-      <button onclick="closeFeedback()" class="text-gray-400">Later</button>
+      <button type="button" onclick="closeFeedback()" class="text-gray-400">Later</button>
       <button class="bg-blue-600 px-4 py-2 rounded text-white" type="submit" onclick="document.getElementById('feedbackInput').value = document.getElementById('feedbackText').innerText.trim();">
         Send
       </button>
@@ -414,7 +414,7 @@
 (function () {
   const FEEDBACK_KEY = "feedback_shown";
   const SCROLL_THRESHOLD = 0.8;
-  const TIME_THRESHOLD = 100000;
+  const TIME_THRESHOLD = 150000;
 
   if (localStorage.getItem(FEEDBACK_KEY)) return;
 
