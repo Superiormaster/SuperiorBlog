@@ -19,13 +19,9 @@
 </head>
 <body class="w-full bg-gray-900 transition-opacity duration-700 min-h-screen text-gray-500">
     <div class="xl:max-w-[1280px] w-full">
-    <header class="flex justify-between items-center navbar shadow-l bg-gray-900 border-b py-10 text-white shadow-lg fixed w-full transition-all duration-300 z-50">
-        <div style="flex:1" class="sm:px-4 px-2 flex">
-          <img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior icon" class="border border-yellow-500">
-          <strong style="color:#5b5b5b; border-radius:5px; padding:4px 6px;" class="text-2xl font-bold font-mono tracking-tight">Superior
-          </strong>
-        </div>
-        
+    <header class="flex justify-between items-center h-24 navbar shadow-l bg-gray-900 border-b text-white shadow-lg fixed w-full transition-all duration-300 z-50">
+      <img src="{{ url_for('static', filename='Img/New.png') }}" class="h-6" alt="Superior icon">
+
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <nav class="hidden md:flex space-x-6 text-sm font-medium">
           {% if current_user.is_authenticated %}
@@ -72,12 +68,11 @@
 <div class="fixed inset-0 bg-black/50 hidden z-50 md:hidden" id="drawerOverlay" tabindex="-1" data-hidden="true"></div>
 
 <aside class="fixed top-0 right-0 h-screen w-75 bg-gray-900 text-gray-200 md:hidden transform translate-x-full transition-transform duration-300 z-60 " id="mainDrawer" role="dialog" aria-modal="true" aria-label="Main menu" aria-hidden="true">
-    <div class="drawer__header w-full">
-        <div class="avatar" aria-hidden="true"><img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior logo">
+    <div class="drawer__header w-full border-b border-gray-700 p-4 flex gap-3 flex-col flex-shrink-0">
+        <div class="" aria-hidden="true"><img src="{{ url_for('static', filename='Img/New.png') }}" alt="Superior logo" class="h-12">
         </div>
-        <div>
-            <h1 class="drawer__title text-xl">Superior News</h1>
-            <h2 class="drawer__subtitle">AI-Powered Blogging & Caption Platform</h2>
+        <div class="text-center">
+        <h2 class="drawer__subtitle"> AI-Powered Blogging & Caption Platform</h2>
         </div>
     </div>
 

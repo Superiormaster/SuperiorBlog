@@ -55,12 +55,8 @@
 </head>
 <body class="bg-gray-900 w-full duration-700 text-gray-500">
     <header class="h-24 navbar fixed w-full py-2 top-0 flex justify-between items-center bg-gray-900 border-b shadow-lg z-30">
-        <div class="sm:px-4 px-2 flex-1 flex">
-          <img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior icon" class="border border-yellow-500">
-          <strong class="px-2 py-1 text-2xl ml-2 text-gray-400 rounded font-bold font-mono tracking-tight whitespace-nowrap">Superior News
-          </strong>
-        </div>
-        
+        <img src="{{ url_for('static', filename='Img/New.png') }}" class="h-6" alt="Superior icon">
+
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <nav class="hidden md:flex space-x-6 text-sm font-medium">
             <a data-redirect class="btn-primary btn-danger text-2xl" href="{{ url_for('public.index') }}">Home</a>
@@ -112,12 +108,11 @@
 
 <aside class="fixed top-0 right-0 h-screen w-75 bg-gray-900 text-gray-200 md:hidden transform translate-x-full transition-transform duration-300 z-60 " id="mainDrawer" role="dialog" aria-modal="true" aria-label="Main menu" aria-hidden="true">
   <div class="drawer__layout">
-    <div class="drawer__header w-full border-b border-gray-700 p-4 flex gap-3 flex-shrink-0">
-        <div class="avatar" aria-hidden="true"><img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior logo">
+    <div class="drawer__header w-full border-b border-gray-700 p-4 flex gap-3 flex-col flex-shrink-0">
+        <div class="" aria-hidden="true"><img src="{{ url_for('static', filename='Img/New.png') }}" alt="Superior logo" class="h-12">
         </div>
-        <div>
-            <h1 class="drawer__title text-xl">Superior News</h1>
-            <h2 class="drawer__subtitle"> AI-Powered Blogging & Caption Platform</h2>
+        <div class="text-center">
+        <h2 class="drawer__subtitle"> AI-Powered Blogging & Caption Platform</h2>
         </div>
     </div>
 

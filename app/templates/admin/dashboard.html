@@ -2,7 +2,7 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<div class="py-10 mt-5 w-full bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+<div class="mt-8 w-full bg-gray-800 shadow-lg rounded-lg overflow-hidden">
   
   <aside id="sidebar" class="fixed inset-y-auto md:hidden min-h-screen left-0 w-64 bg-gray-900 text-white transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50">
     <div class="p-5 text-xl font-bold border-b border-gray-700">Superior Master</div>
@@ -51,7 +51,7 @@
   </div>
   
     <!-- Search & Filters -->
-  <form method="GET" class="flex flex-col md:flex-row gap-3 px-4 md:gap-4 sm:items-center py-11">
+  <form method="GET" class="flex flex-col md:flex-row gap-3 px-4 md:gap-4 sm:items-center py-7">
     <input type="text"
            name="q"
            value="{{ q }}"
