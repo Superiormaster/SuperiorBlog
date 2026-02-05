@@ -97,15 +97,18 @@
   </div>
 
 <script>
-function show_pass() {
-  const password = document.getElementById("password");
-  const confirm = document.getElementById("confirm_password");
+document.addEventListener('DOMContentLoaded', () => {
   const checkbox = document.getElementById("show_password");
-  
-  const type = checkbox.checked ? "text" : "password";
-  password.type = type;
-  confirm.type = type;
-}
+  checkbox.addEventListener('change', () => {
+    const inputs = document.querySelectorAll('input[type="password"], input[type="text"]');
+    const type = checkbox.checked ? "text" : "password";
+    inputs.forEach(input => {
+      if (input.id === "password" || input.id === "confirm_password") {
+        input.type = type;
+      }
+    });
+  });
+});
 </script>
 
 {% endblock %}
