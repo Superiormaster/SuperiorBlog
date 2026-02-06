@@ -183,6 +183,36 @@ textarea:focus {
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
+/* Policy Editor */
+.policy-toolbar {
+  display: flex;
+  gap: 1.5rem;       /* spacing between buttons */
+  overflow-x: auto;   /* enable horizontal scrolling */
+  -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+  white-space: nowrap; /* prevent wrapping to new line */
+  padding: 0.25rem 0; /* optional: top/bottom spacing */
+  position: relative;
+  padding-bottom: 6px;
+}
+
+.policy-toolbar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 100%;
+  pointer-events: none;
+}
+
+.policy-toolbar button {
+  flex: 0 0 auto;
+}
+
+.policy-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Editor-toolbar */
 #toolbar {
   display: flex;
@@ -226,6 +256,22 @@ textarea:focus {
 
 .btn-danger {
   @apply bg-red-600 hover:bg-red-700;
+}
+
+/* Policy Editor buttons */
+.policy-btn {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-size: 14px;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.policy-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
 }
 
 /* Editor buttons */

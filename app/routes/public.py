@@ -2,7 +2,7 @@ from flask import Blueprint, request, render_template, redirect, url_for, sessio
 from app.models import Post, Comment, Like, Subscriber, ContactMessage, CaptionHistory, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit
 import os, traceback, re, base64, requests, secrets
 from requests.exceptions import ConnectionError
-from sqlalchemy import distinct, func
+from sqlalchemy import distinct, func, or_
 from collections import defaultdict
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
@@ -90,7 +90,7 @@ def user_login():
 
         # Invalid login
         else:
-            msg = "No account found. Please sign up." if not user else "Incorrect password."
+            msg = "No account found. Please sign up." if not user else "Incorrect password. Please register"
             if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({"success": False, "message": msg})
             flash(msg, "error")
@@ -187,6 +187,7 @@ def profile_setup():
 
 @public_bp.route("/profile/<username>")
 @login_required
+@csrf.exempt
 def user_profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     is_owner = current_user.id == user.id
@@ -915,24 +916,26 @@ def index():
         .order_by(Post.created_at.desc())
         .all()
     )
-    
+
     trending_posts = (
         Post.query
         .outerjoin(Comment)
-        .outerjoin(Like)
         .filter(
             Post.is_published == True,
+            Post.status == "published",
             Post.published_at >= three_days_ago,
-            Post.status == "published"
+            or_(
+                Post.views >= 50,
+                Post.like_count >= 10
+            )
         )
         .group_by(Post.id)
-        .order_by(
-            (func.count(Comment.id) + func.count(Like.id)).desc()
-        )
+        .having(func.count(Comment.id) >= 5)  # only aggregate needed in having
+        .order_by((func.count(Comment.id) + Post.like_count + Post.views).desc())
         .limit(5)
         .all()
     )
-    
+
     breaking_posts = (
         Post.query
         .join(Post.labels)
@@ -992,20 +995,30 @@ def post_detail(slug):
         .limit(5)
         .all()
     )
-    
-    related_posts = get_related_posts(post)
 
-    if post.views >= 1000:
-        related_posts = (
-            Post.query
-            .filter(Post.is_published == True)
-            .order_by(Post.views.desc())
-            .limit(5)
-            .all()
+    # ---------------------------
+    # CATEGORY-BASED RELATED + TRENDING
+    # ---------------------------
+    related_posts = (
+        Post.query
+        .filter(
+            Post.is_published == True,
+            Post.category_id == post.category_id,
+            Post.id != post.id
         )
-        section_title = "Trending Now"
+        .order_by(
+            desc(Post.views + Post.like_count + Post.related_clicks)
+        )
+        .limit(5)
+        .all()
+    )
+  
+    # Dynamic title
+    if related_posts and related_posts[0].views >= 1000:
+        section_title = "Trending in This Category"
     else:
         section_title = "Related Stories"
+
     if not safe_commit():
         print("Failed to view post")
 
@@ -1174,8 +1187,18 @@ def category(slug):
 
     trending_posts = (
         Post.query
-        .filter_by(category_id=category.id, is_published=True)
-        .order_by(Post.views.desc())
+        .filter(
+            Post.category_id == category.id,
+            Post.is_published == True,
+            Post.views >= 50,
+            Post.like_count >= 10
+        )
+        .outerjoin(Post.comments)
+        .group_by(Post.id)
+        .having(func.count(Comment.id) >= 5)
+        .order_by(
+            desc(Post.views + Post.like_count + func.count(Comment.id))
+        )
         .limit(5)
         .all()
     )

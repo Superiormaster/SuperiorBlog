@@ -74,9 +74,9 @@
   <!-- Right: Auth & Hamburger -->
   <div class="flex items-center gap-4">
     {% if current_user.is_authenticated %}
-      <a href="{{ url_for('public.user_logout') }}" class="text-xl border rounded p-1">Logout</a>
+      <a href="{{ url_for('public.user_logout') }}" class="text-sm border rounded p-1">Logout</a>
     {% else %}
-      <a href="{{ url_for('public.user_login') }}" class="text-xl border rounded p-1">Login</a>
+      <a href="{{ url_for('public.user_login') }}" class="text-sm border rounded p-1">Login</a>
     {% endif %}
 
     <!-- Hamburger menu (mobile) -->

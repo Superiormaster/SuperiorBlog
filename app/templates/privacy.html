@@ -1,20 +1,115 @@
 {% extends "user/base.html" %}
-
-{% block title %}Privacy Policy | Profnetnews{% endblock %}
-
 {% block content %}
 
-<section class="max-w-4xl mx-auto px-4 py-12">
-  <div class="bg-white shadow-md rounded-lg p-6 md:p-10">
-    
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">
-      Privacy Policy
-    </h1>
-    
-    <div class="text-gray-700 leading-relaxed">
-      {{ settings.privacy_policy | safe }}
+<div class="max-w-5xl mx-auto px-4 py-10">
+  <!-- Page Title -->
+  <h1 class="text-4xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-400">
+    Privacy Policy – Superior News
+  </h1>
+
+  <!-- Effective Date -->
+  <p class="text-center text-gray-400 mb-6">Effective Date: February 4, 2026</p>
+
+  <!-- Intro -->
+  <div class="bg-white/10 border border-white/20 rounded-xl p-6 mb-8 shadow-md text-white">
+    <p class="mb-4">
+      At <span class="text-xl text-blue-500">Superior News</span>, your privacy and trust are our top priority. 
+      This Privacy Policy explains how we collect, use, and protect your information when you visit or post on our public blogging platform, Superior News.
+    </p>
+    <p>
+      By using our website and services, you agree to the practices described in this policy.
+    </p>
+  </div>
+
+  <!-- Sections -->
+  <div class="space-y-8">
+    <!-- 1. Information We Collect -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">1. Information We Collect</h2>
+      <p class="mb-2">When you use Superior News, we may collect the following types of information:</p>
+      <h3 class="font-semibold mb-1">a. Personal Information You Provide</h3>
+      <ul class="list-disc ml-6 mb-3">
+        <li>Name, email address, and any other details you provide when signing up.</li>
+        <li>Content you post, including articles, comments, images, or any submissions.</li>
+        <li>Feedback or messages you send to us.</li>
+      </ul>
+      <h3 class="font-semibold mb-1">b. Automatically Collected Information</h3>
+      <ul class="list-disc ml-6">
+        <li>IP address, browser type, device type, and operating system.</li>
+        <li>Pages you visit, time spent on the site, and browsing behavior.</li>
+        <li>Cookies and similar technologies to improve your experience.</li>
+      </ul>
+    </div>
+
+    <!-- 2. How We Use Your Information -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">2. How We Use Your Information</h2>
+      <p class="mb-2">We use your information for purposes such as:</p>
+      <ul class="list-disc ml-6">
+        <li>Operating, maintaining, and improving Superior News.</li>
+        <li>Allowing you to post, comment, and interact with other users.</li>
+        <li>Responding to your inquiries, feedback, or support requests.</li>
+        <li>Sending updates, announcements, and promotional content (if you opt-in).</li>
+        <li>Analyzing trends and improving the functionality and user experience of our platform.</li>
+      </ul>
+    </div>
+
+    <!-- 3. How We Share Your Information -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">3. How We Share Your Information</h2>
+      <p>We respect your privacy and do not sell your personal information. However, we may share information:</p>
+      <ul class="list-disc ml-6">
+        <li>With service providers who help us operate our website (e.g., hosting, analytics, or email services).</li>
+        <li>To comply with legal obligations, prevent fraud, or protect the safety of our users.</li>
+        <li>In the event of a business transfer, such as a merger, acquisition, or sale of assets.</li>
+      </ul>
+    </div>
+
+    <!-- 4. Cookies and Tracking Technologies -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">4. Cookies and Tracking Technologies</h2>
+      <p>We use cookies and similar technologies to:</p>
+      <ul class="list-disc ml-6">
+        <li>Remember your preferences.</li>
+        <li>Enhance your browsing experience.</li>
+        <li>Analyze website traffic and performance.</li>
+      </ul>
+      <p class="mt-2">You can manage or disable cookies through your browser settings, but some features may not function properly if cookies are disabled.</p>
+    </div>
+
+    <!-- 5. Your Privacy Choices -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">5. Your Privacy Choices</h2>
+      <ul class="list-disc ml-6">
+        <li><strong>Editing or Deleting Posts:</strong> You can edit or remove any post you’ve made.</li>
+        <li><strong>Email Preferences:</strong> You can unsubscribe from promotional emails at any time.</li>
+        <li><strong>Account Deletion:</strong> You can request deletion of your account and personal data by contacting us at <a href="https://www.superiornews.app/contact" class="text-blue-400 underline">contact@superiornews.app</a>.</li>
+      </ul>
+    </div>
+
+    <!-- 6. Data Security -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">6. Data Security</h2>
+      <p>We implement industry-standard security measures to protect your data from unauthorized access, alteration, disclosure, or destruction. While we strive to keep your information safe, no online platform can guarantee 100% security.</p>
+    </div>
+
+    <!-- 7. Changes to This Privacy Policy -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">7. Changes to This Privacy Policy</h2>
+      <p>We may update this Privacy Policy occasionally to reflect changes in our practices or for legal reasons. Updated policies will be posted here with a revised Effective Date.</p>
+    </div>
+
+    <!-- 8. Contact Us -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">8. Contact Us</h2>
+      <p>If you have questions, concerns, or requests regarding this Privacy Policy, please contact us:</p>
+      <ul class="list-disc ml-6">
+        <li>Email: <a href="https://www.superiornews.app/contact" class="text-blue-400 underline">contact@superiornews.app</a></li>
+        <li>Website: <a href="https://www.superiornews.app" class="text-blue-400 underline">www.superiornews.app</a></li>
+      </ul>
+      <p class="mt-2">Your privacy matters. At Superior News, we are committed to keeping your information safe while letting you share your voice with the world.</p>
     </div>
   </div>
-</section>
+</div>
 
 {% endblock %}

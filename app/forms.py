@@ -1,7 +1,12 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField, SelectField, BooleanField, FileField, SelectMultipleField, DateTimeField, MultipleFileField, HiddenField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, Regexp, ValidationError
 from flask_wtf.file import FileAllowed, FileField
+
+def validate_full_name(form, field):
+    if field.data:
+        if len(field.data.strip().split()) < 2:
+            raise ValidationError("Please enter your first and last name.")
 
 class LoginForm(FlaskForm):
     identifier = StringField("Username or Email", validators=[DataRequired()])
@@ -95,16 +100,21 @@ class ProfileForm(FlaskForm):
     full_name = StringField(
         "Full Name",
         validators=[
-            Optional(),
-            Length(max=120)
+          DataRequired(message="Full name is required."),
+          Length(min=5, max=120),
+          validate_full_name
         ]
     )
 
     description = TextAreaField(
         "Description",
         validators=[
-            Optional(),
-            Length(max=1000)
+          DataRequired(message="Profile description is required."),
+          Length(
+            min=20,
+            max=1000,
+            message="Description must be at least 20 characters."
+          )
         ]
     )
 
@@ -120,8 +130,12 @@ class ProfileForm(FlaskForm):
     location = StringField(
         "Location",
         validators=[
-            Optional(),
-            Length(max=50)
+          DataRequired(message="Location is required."),
+          Regexp(
+            r'^[A-Za-z\s,.-]{2,50}$',
+            message="Enter a valid location."
+          ),
+          Length(max=50)
         ]
     )
 
@@ -145,8 +159,12 @@ class ProfileForm(FlaskForm):
     phone = StringField(
         "Phone Number",
         validators=[
-            Optional(),
-            Length(max=30)
+          DataRequired(message="Phone number is required."),
+          Regexp(
+            r'^\+?[0-9]{10,15}$',
+            message="Enter a valid phone number (digits only)."
+          ),
+          Length(max=30)
         ]
     )
 

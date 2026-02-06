@@ -1,13 +1,123 @@
 {% extends "user/base.html" %}
-{% block title %}Terms & Conditions | Profnetnews{% endblock %}
-
 {% block content %}
-<section class="max-w-4xl mx-auto px-4 py-12">
-  <div class="bg-white shadow-md rounded-lg p-6 md:p-10">
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">Terms & Conditions</h1>
-    <div class="text-gray-700 leading-relaxed">
-      {{ settings.terms_conditions | safe }}
+
+<div class="max-w-5xl mx-auto px-4 py-10">
+  <!-- Page Title -->
+  <h1 class="text-4xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-400">
+    Terms and Conditions – Superior News
+  </h1>
+
+  <!-- Effective Date -->
+  <p class="text-center text-gray-400 mb-6">Effective Date: February 4, 2026</p>
+
+  <!-- Intro -->
+  <div class="bg-white/10 border border-white/20 rounded-xl p-6 mb-8 shadow-md text-white">
+    <p class="mb-4">
+      Welcome to <span class="text-blue-500 text-xl">Superior News</span>. By accessing or using our website and services (<a href="https://www.superiornews.app" class="text-blue-400 underline">www.superiornews.app</a>), you agree to comply with these Terms and Conditions. Please read them carefully.
+    </p>
+    <p>If you do not agree, you must not use our platform.</p>
+  </div>
+
+  <!-- Sections -->
+  <div class="space-y-8">
+    <!-- 1. Acceptance of Terms -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">1. Acceptance of Terms</h2>
+      <ul class="list-disc ml-6">
+        <li>You are at least 16 years old.</li>
+        <li>You agree to follow all applicable laws and these Terms and Conditions.</li>
+        <li>You accept our Privacy Policy, which governs how we collect and use your information.</li>
+      </ul>
+    </div>
+
+    <!-- 2. Use of Our Platform -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">2. Use of Our Platform</h2>
+      <p>Superior News is a public blogging platform. You may:</p>
+      <ul class="list-disc ml-6 mb-2">
+        <li>Create an account and post content (articles, images, comments).</li>
+        <li>Interact with other users’ posts responsibly.</li>
+      </ul>
+      <p>You must not:</p>
+      <ul class="list-disc ml-6">
+        <li>Post illegal, harmful, or offensive content.</li>
+        <li>Violate intellectual property rights.</li>
+        <li>Attempt to hack, disrupt, or damage our platform or servers.</li>
+      </ul>
+    </div>
+
+    <!-- 3. User Accounts -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">3. User Accounts</h2>
+      <ul class="list-disc ml-6">
+        <li>You are responsible for keeping your account secure.</li>
+        <li>You are responsible for all activity under your account.</li>
+        <li>We may suspend or terminate your account if you violate these Terms.</li>
+      </ul>
+    </div>
+
+    <!-- 4. Content Ownership -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">4. Content Ownership</h2>
+      <ul class="list-disc ml-6">
+        <li>You retain ownership of your content, but by posting, you grant Superior News a license to display, share, and promote it on the platform.</li>
+        <li>You confirm that your content does not infringe on any third-party rights.</li>
+        <li>We reserve the right to remove any content that violates these Terms.</li>
+      </ul>
+    </div>
+
+    <!-- 5. Prohibited Conduct -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">5. Prohibited Conduct</h2>
+      <ul class="list-disc ml-6">
+        <li>Post content that is offensive, abusive, threatening, or defamatory.</li>
+        <li>Spam, advertise, or promote unrelated services without permission.</li>
+        <li>Impersonate another person or entity.</li>
+        <li>Engage in any activity that could harm users or the platform.</li>
+      </ul>
+    </div>
+
+    <!-- 6. Disclaimers -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">6. Disclaimers</h2>
+      <p>Superior News is provided “as is” without warranties of any kind. We do not guarantee that the platform will always be secure, error-free, or available. You use the platform at your own risk.</p>
+    </div>
+
+    <!-- 7. Limitation of Liability -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">7. Limitation of Liability</h2>
+      <p>Superior News is not liable for any damages, losses, or claims arising from your use of the platform. This includes lost data, lost profits, or other incidental or consequential damages.</p>
+    </div>
+
+    <!-- 8. Termination -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">8. Termination</h2>
+      <p>We may terminate or suspend your access at any time for violating these Terms. Upon termination, you must stop using the platform and delete any content or downloads obtained from it.</p>
+    </div>
+
+    <!-- 9. Changes to Terms -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">9. Changes to Terms</h2>
+      <p>We may update these Terms from time to time. Changes will be posted on this page with a revised Effective Date. Continued use of Superior News after changes means you accept the updated Terms.</p>
+    </div>
+
+    <!-- 10. Governing Law -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">10. Governing Law</h2>
+      <p>These Terms are governed by the laws of Nigeria. Any disputes arising from these Terms or your use of Superior News will be resolved under Nigerian law.</p>
+    </div>
+
+    <!-- 11. Contact Us -->
+    <div class="bg-white/10 border border-white/20 rounded-xl p-6 shadow-md text-white">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-400">11. Contact Us</h2>
+      <p>If you have questions about these Terms, contact us:</p>
+      <ul class="list-disc ml-6">
+        <li>Email: <a href="https://www.superiornews.app/contact" class="text-blue-400 underline">contact@superiornews.app</a></li>
+        <li>Website: <a href="https://www.superiornews.app" class="text-blue-400 underline">www.superiornews.app</a></li>
+      </ul>
+      <p class="mt-2">By using Superior News, you agree to follow these rules and help us maintain a safe and welcoming blogging community.</p>
     </div>
   </div>
-</section>
+</div>
+
 {% endblock %}

@@ -5,7 +5,7 @@
   Privacy and Terms & Conditions Settings
 </h1>
 
-<form method="post" class="space-y-6 px-6">
+<form method="post" class="space-y-6 px-2">
   {{ form.hidden_tag() }}
 
   <div>
@@ -14,13 +14,22 @@
            from-blue-500 to-cyan-400">
       Privacy Policy
     </label>
-
-    {{ form.privacy_policy(
-        rows=10,
-        class="w-full mb-2 py-3 px-4 border-white/10 bg-white/10
-               border rounded text-white transition focus:outline-none
-               focus:bg-blue-500/5 focus:border-blue-500"
-    ) }}
+    <div class="border policy-editor rounded bg-white/10 w-full mb-2 py-3 px-4 border-white/10 focus:outline-none h-[45rem] focus:bg-blue-500/5 focus:border-blue-500">
+      <div class="policy-toolbar mb-2 flex gap-1 justify-between">
+        <button type="button" class="policy-btn" data-cmd="h1">H1</button>
+        <button type="button" class="policy-btn" data-cmd="h2">H2</button>
+        <button type="button" class="policy-btn" data-cmd="p">Normal</button>
+        <button type="button" class="policy-btn" data-cmd="bold"><b>B</b></button>
+        <button type="button" class="policy-btn" data-cmd="italic"><i>I</i></button>
+        <button type="button" class="policy-btn" data-cmd="link"><i class="fa fa-link" aria-hidden="true"></i></button>
+        <button type="button" class="policy-btn" data-cmd="undo"><i class="fa fa-undo" aria-hidden="true"></i></button>
+        <button type="button" class="policy-btn" data-cmd="redo"><i class="fa fa-redo" aria-hidden="true"></i></button>
+      </div>
+      <div contenteditable="true" class="policy-content h-[38rem] overflow-x-hidden overflow-y-auto border rounded bg-white/10 w-full mb-2 py-3 px-4 border-white/10 text-white break-words whitespace-pre-wrap transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500">{{ settings.privacy_policy | safe }}
+      </div>
+      {{ form.privacy_policy(type="hidden") }}
+    </div>
+  </div>
   </div>
 
   <div>
@@ -29,20 +38,30 @@
            from-blue-500 to-cyan-400">
       Terms & Conditions
     </label>
-
-    {{ form.terms_conditions(
-        rows=10,
-        class="w-full mb-2 py-3 px-4 border-white/10 bg-white/10
-               border rounded text-white transition focus:outline-none
-               focus:bg-blue-500/5 focus:border-blue-500"
-    ) }}
+    <div class="border policy-editor rounded bg-white/10 w-full mb-2 py-3 px-4 border-white/10 focus:outline-none h-[45rem] focus:bg-blue-500/5 focus:border-blue-500">
+      <div class="policy-toolbar mb-2 flex gap-1 justify-between">
+        <button type="button" class="policy-btn" data-cmd="h1">H1</button>
+        <button type="button" class="policy-btn" data-cmd="h2">H2</button>
+        <button type="button" class="policy-btn" data-cmd="p">Normal</button>
+        <button type="button" class="policy-btn" data-cmd="bold"><b>B</b></button>
+        <button type="button" class="policy-btn" data-cmd="italic"><i>I</i></button>
+        <button type="button" class="policy-btn" data-cmd="link"><i class="fa fa-link" aria-hidden="true"></i></button>
+        <button type="button" class="policy-btn" data-cmd="undo"><i class="fa fa-undo" aria-hidden="true"></i></button>
+        <button type="button" class="policy-btn" data-cmd="redo"><i class="fa fa-redo" aria-hidden="true"></i></button>
+      </div>
+      <div contenteditable="true" class="policy-content h-[38rem] overflow-x-hidden overflow-y-auto border rounded bg-white/10 w-full mb-2 py-3 px-4 border-white/10 text-white break-words whitespace-pre-wrap transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500">{{ settings.terms_conditions | safe }}
+      </div>
+      {{ form.terms_conditions(type="hidden") }}
+    </div>
+  </div>
   </div>
 
   {{ form.submit(
-      class="text-white px-8 py-3 bg-blue-600 rounded-xl shadow-lg
+      class="text-white ml-5 px-8 py-3 bg-blue-600 rounded-xl shadow-lg
              hover:bg-blue-700 transition relative font-medium
              overflow-hidden hover:-translate-y-0.5
              hover:shadow-[0_0_15px_rgba(50,130,246,0.4)]"
   ) }}
 </form>
+
 {% endblock %}

@@ -8,46 +8,73 @@
   <div>
     <label class="block text-sm">Username</label>
     {{ form.username(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    {% for error in form.username.errors %}
+      <p class="text-red-500 text-sm">{{ error }}</p>
+    {% endfor %}
   </div>
 
   <div>
     <label class="block text-sm">Description</label>
     {{ form.description(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    {% for error in form.description.errors %}
+      <p class="text-red-500 text-sm">{{ error }}</p>
+    {% endfor %}
   </div>
 
   <div>
     <label class="block text-sm">Category</label>
     {{ form.category(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    {% for error in form.category.errors %}
+      <p class="text-red-500 text-sm">{{ error }}</p>
+    {% endfor %}
   </div>
 
   <div>
     <label class="block text-sm">Full Name</label>
     {{ form.full_name(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    {% for error in form.full_name.errors %}
+      <p class="text-red-500 text-sm">{{ error }}</p>
+    {% endfor %}
   </div>
 
   <div>
     <label class="block text-sm">Location</label>
     {{ form.location(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    {% for error in form.location.errors %}
+      <p class="text-red-500 text-sm">{{ error }}</p>
+    {% endfor %}
   </div>
 
  <!-- <div>
     <label class="block text-sm">ID Type</label>
     {{ form.id_type(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    {% for error in form.id_type.errors %}
+      <p class="text-red-500 text-sm">{{ error }}</p>
+    {% endfor %}
   </div>
   
   <div>
     <label class="block text-sm">ID Number</label>
     {{ form.id_number(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    {% for error in form.id_number.errors %}
+      <p class="text-red-500 text-sm">{{ error }}</p>
+    {% endfor %}
   </div>-->
 
   <div>
     <label class="block text-sm">Phone Number</label>
     {{ form.phone(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    {% for error in form.phone.errors %}
+      <p class="text-red-500 text-sm">{{ error }}</p>
+    {% endfor %}
   </div>
 
   <!--<div>
     <label class="block text-sm">Bank Account</label>
     {{ form.bank_account(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    {% for error in form.bank_account.errors %}
+      <p class="text-red-500 text-sm">{{ error }}</p>
+    {% endfor %}
   </div>-->
 
   <button
