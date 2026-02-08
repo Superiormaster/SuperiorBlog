@@ -1,4 +1,4 @@
-from flask import Flask, request, url_for, redirect, session
+from flask import Flask, request, url_for, redirect, session, has_request_context
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
 from app.routes.public import public_bp
@@ -70,6 +70,8 @@ def create_app():
 
     @app.context_processor
     def inject_login_form():
+        if not has_request_context():
+            return {}
         return dict(login_form=UserLoginForm())
 
     @app.before_request

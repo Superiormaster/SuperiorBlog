@@ -18,7 +18,7 @@ def caption_page():
         .filter(CaptionHistory.style == "editor_pick") \
         .order_by(desc(CaptionHistory.confidence)) \
         .limit(5).all()
-    return render_template('caption.html', editor_picks=editor_picks)
+    return render_template('tools/caption.html', editor_picks=editor_picks)
 
 @caption_bp.route("/captions/history")
 @login_required
@@ -26,7 +26,7 @@ def caption_history_list():
     histories = CaptionHistory.query.filter_by(
         user_id=current_user.id
     ).order_by(CaptionHistory.created_at.desc()).all()
-    return render_template("caption_history.html", histories=histories)
+    return render_template("tools/caption_history.html", histories=histories)
 
 @caption_bp.route("/captions/history/<int:id>")
 @login_required
@@ -37,9 +37,19 @@ def caption_history(id):
     ).first_or_404()
 
     return render_template(
-        "caption_history_detail.html",
+        "tools/caption_history_detail.html",
         history=history
     )
+
+@caption_bp.route("/tools/x-generator")
+@login_required
+def x_generator():
+    editor_picks = CaptionHistory.query \
+        .filter_by(style="editor_pick") \
+        .order_by(desc(CaptionHistory.confidence)) \
+        .limit(5).all()
+
+    return render_template("tools/x_generator.html", editor_picks=editor_picks)
 
 @caption_bp.route('/caption/generate', methods=['POST'])
 @csrf.exempt
@@ -59,6 +69,10 @@ def generate_caption_route():
     tone = data.get("tone", None)
     length = data.get("length", "short")
     platforms = [data.get("platform", None)]
+    intent = data.get("intent", "inform")
+    mode = data.get("mode", "breaking")
+    avoid_clickbait = data.get("avoid_clickbait", False)
+
 
     if not text:
       return jsonify({"error": "Text is required"}), 400
@@ -73,7 +87,11 @@ def generate_caption_route():
       user=current_user,
       tone=tone,
       length=length,
-      platforms=platforms
+      platforms=platforms,
+      mode=mode,
+      intent=intent,
+      avoid_clickbait=avoid_clickbait
+      #platforms=["x"]
     )
 
     if not results:

@@ -322,7 +322,9 @@
     <!-- General Links -->
     <div class="flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">General</h4>
-      <a href="{{ url_for('public.contact') }}" class="hover:text-white">Contact Us</a>
+      <a href="{{ url_for('public.contact', type='contact') }}" class="hover:text-white">Contact Us</a>
+      <a href="{{ url_for('public.contact', type='feedback') }}" class="hover:text-white">Write a feedback</a>
+      <a href="{{ url_for('public.contact', type='report') }}" class="hover:text-white">Report a problem</a>
       <a href="{{ url_for('public.privacy') }}" class="hover:text-white">Privacy Policy</a>
       <a href="{{ url_for('public.terms') }}" class="hover:text-white">Terms & Conditions</a>
     </div>
@@ -359,7 +361,7 @@
     </div>
 
     <!-- Optional Extra / Generate Captions -->
-    <div class="md:hidden hidden flex flex-col space-y-2">
+    <div class="md:hidden flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">Tools</h4>
       <a href="{{ url_for('caption.caption_page') }}" class="hover:text-white">Generate Captions</a>
     </div>

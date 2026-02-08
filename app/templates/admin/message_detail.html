@@ -86,4 +86,35 @@
   </div>
 </div>
 
+<script>
+  // Get the modal
+  const replyModal = document.getElementById("replyModal");
+
+  // Function to open the modal
+  function openReplyModal() {
+    replyModal.classList.remove("hidden");
+    replyModal.classList.add("flex");
+  }
+
+  // Function to close the modal
+  function closeReplyModal() {
+    replyModal.classList.remove("flex");
+    replyModal.classList.add("hidden");
+  }
+
+  // Optional: close modal if user clicks outside the modal content
+  replyModal.addEventListener("click", function(e) {
+    if (e.target === replyModal) {
+      closeReplyModal();
+    }
+  });
+
+  // Optional: close modal with Escape key
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape" && !replyModal.classList.contains("hidden")) {
+      closeReplyModal();
+    }
+  });
+</script>
+
 {% endblock %}

@@ -90,7 +90,7 @@
     {% if not current_user.is_authenticated %}
     <p class="text-gray-400 my-6 ">
       You must
-      <a href="{{ url_for('public.user_login') }}" data-safe data-redirect class="btn-primary btn-danger text-blue-500 underline">
+      <a href="{{ url_for('public.user_login') }}" data-redirect class="btn-primary btn-danger text-blue-500 underline">
         log in
       </a>
       to comment or reply.

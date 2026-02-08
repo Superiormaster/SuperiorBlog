@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https:                                
+  <title>Explore Page</title>
+</head>
+<body class="bg-black text-white">
+  <div class="p-4">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-xl font-bold">Explore</h1>
+      <div class="flex space-x-2">
+        <button class="bg-green-500 p-2 rounded">...</button>
+        <button class="bg-gray-700 p-2 rounded">...</button>
+      </div>
+    </div>
+
+    <!-- Junk files & Status saver -->
+    <div class="flex justify-between mb-4">
+      <div class="flex items-center space-x-2">
+        <span class="text-red-500 text-2xl">₹5</span>
+        <div>
+          <p class="text-red-500">82 KB</p>
+          <p class="text-gray-400">Junk files</p>
+        </div>
+      </div>
+      <div class="bg-gray-800 p-3 rounded flex items-center">
+        <span class="text-green-500">Status saver</span>
+      </div>
+    </div>
+
+    <!-- WeScore Section -->
+    <div class="bg-gray-800 rounded-lg p-4 mb-4">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-white font-bold">WeScore</h2>
+        <div class="flex space-x-2">
+          <span class="text-green-500">Live</span>
+          <button class="text-gray-400">More ></button>
+        </div>
+      </div>
+      <div class="flex justify-between mb-2">
+        <div>
+          <p class="text-sm">Group C</p>
+          <p>MC Alger <span class="text-white font-bold">2</span></p>
+          <p>Hilal Omdurm... <span class="text-white font-bold">0</span></p>
+        </div>
+        <div>
+          <p class="text-sm">Round 25</p>
+          <p>Leeds <span class="text-white font-bold">1</span></p>
+          <p>Nottm Forest <span class="text-white font-bold">0</span></p>
+        </div>
+      </div>
+      <div class="flex justify-between text-sm">
+        <button class="bg-green-500 p-2 rounded">Matches</button>
+        <button class="bg-gray-700 p-2 rounded">Favourites</button>
+        <button class="bg-blue-500 p-2 rounded">Table</button>
+      </div>
+    </div>
+
+    <!-- Music Section -->
+    <div class="bg-gray-800 rounded-lg p-4 mb-4">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-pink-500 font-bold">Music</h2>
+        <button class="text-gray-400">All 3 songs ></button>
+      </div>
+      <div class="flex items-center space-x-4">
+        <div class="bg-purple-500 w-20 h-20 rounded-full flex items-center justify-center">
+          <button class="bg-white p-2 rounded-full">▶</button>
+        </div>
+        <div>
+          <p>Here With You</p>
+          <p class="text-gray-400">AUD-20250409-WA0001</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Free Stories -->
+    <div class="bg-gray-800 rounded-lg p-4 mb-4">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-yellow-500 font-bold">Free Stories</h2>
+        <button class="text-gray-400">More ></button>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <img src="story1.jpg" alt="story" class="rounded">
+          <p>The Top Lady...</p>
+          <button class="text-red-500">Continue ></button>
+        </div>
+        <!-- Add more story items similarly -->
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="flex justify-around bg-gray-900 py-2 fixed bottom-0 w-full">
+      <button class="text-white">🏠 Home</button>
+      <button class="text-blue-500">Explore</button>
+      <button class="text-white">📂 Files</button>
+      <button class="text-white">Tabs <span class="bg-red-500 rounded-full px-1">19</span></button>
+      <button class="text-white">👤 Me</button>
+    </div>
+  </div>
+</body>
+</html>

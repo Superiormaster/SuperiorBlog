@@ -58,16 +58,17 @@ class User(db.Model, UserMixin):
     daily_limit = db.Column(db.Integer, default=5)  
     _is_active = db.Column("is_active", db.Boolean, default=True)
     is_blocked = db.Column(db.Boolean, default=False)
+    is_subscribed = db.Column(db.Boolean, default=True)
     posts = db.relationship("Post", back_populates="author", lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     # Optional: profile image, bio, etc.
 
-    def generate_reset_token(self, expires_sec=1800):
+    def generate_reset_token(self, expires_sec=3600):
         s = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
         return s.dumps(self.id, salt="password-reset")
 
     @staticmethod
-    def verify_reset_token(token, expires_sec=1800):
+    def verify_reset_token(token, expires_sec=3600):
         s = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
         try:
             user_id = s.loads(
@@ -274,6 +275,13 @@ class ContactMessage(db.Model):
     )
     resolved = db.Column(db.Boolean, default=False)
 
+class EmailLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    recipient = db.Column(db.String(255))
+    subject = db.Column(db.String(255))
+    status = db.Column(db.String(50))  # sent / failed
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
@@ -330,6 +338,13 @@ class DailyUsage(db.Model):
     user_id = db.Column(db.Integer)
     date = db.Column(db.Date)
     count = db.Column(db.Integer, default=0)
+
+class FootballCache(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    data_type = db.Column(db.String(50))  # e.g., "live", "table"
+    league = db.Column(db.String(10))     # e.g., "PL"
+    json_data = db.Column(db.JSON)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):

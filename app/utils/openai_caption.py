@@ -35,17 +35,55 @@ def generate_ai_caption(
         style_prompt = "Make it clear, concise, and readable."
 
     prompt = f"""
-You are a professional social media editor for a modern news and creator platform.
+You are a professional social media editor for a modern news and creator platform. You are a professional social media editor working for a news-driven creator platform.
 
 Your task:
-Generate ONE high-quality caption based on the input text.
+Generate ONE high-quality caption based on the input text. Rewrite the following content for four platforms using platform-native writing styles.
+Your task is to rewrite the content below into platform-native captions.
+Each platform must follow its natural writing behavior.
 
 Context:
 - Platform: {platform}
 - Tone: {tone}
 - Desired length: {length}
 - Emojis allowed: {emoji_allowed}
-- Style: {style}
+- Writing style: {style}
+- Confidence level: {confidence}
+
+GLOBAL RULES:
+- Writing style: {style}
+- Confidence level: {confidence}
+- Do NOT repeat the same wording across platforms
+- Do NOT mention that this is AI-generated
+
+PLATFORM RULES:
+
+Instagram:
+- Emotion-driven
+- Engaging and scroll-stopping
+- Light CTA if confidence is assertive or bold
+- Hashtags allowed (max 5, relevant only)
+- Emojis allowed only if confidence is bold (max 1)
+
+Facebook:
+- Conversational and explanatory
+- Reads like a human wrote it
+- No hashtags
+- CTA only if promotional style
+
+WhatsApp:
+- Very short
+- Headline-style
+- No emojis
+- No hashtags
+- Feels like a status update
+
+X (Twitter):
+- Strong hook in first line
+- Opinionated if style is opinionated
+- Under 240 characters
+- Emojis only if confidence is bold (max 1)
+
 
 Rules:
 - Match the writing style of the specified platform
@@ -55,6 +93,18 @@ Rules:
 - {style_prompt}
 - Avoid clickbait or misleading claims
 - Output ONLY the caption text (no quotes, no labels, no explanations)
+- Instagram: emotional, engaging, hashtags allowed
+- Facebook: conversational, explanatory
+- WhatsApp: short, headline-like
+- X: strong hook, opinionated, under 240 characters
+
+Return response strictly in JSON:
+{
+  "instagram": "",
+  "facebook": "",
+  "whatsapp": "",
+  "x": ""
+}
 
 Text:
 {text}

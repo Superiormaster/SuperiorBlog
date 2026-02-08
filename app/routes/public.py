@@ -1,5 +1,5 @@
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, current_app, flash, make_response
-from app.models import Post, Comment, Like, Subscriber, ContactMessage, CaptionHistory, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit
+from app.models import Post, Comment, Like, Subscriber, ContactMessage, CaptionHistory, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit, FootballCache
 import os, traceback, re, base64, requests, secrets
 from requests.exceptions import ConnectionError
 from sqlalchemy import distinct, func, or_
@@ -15,7 +15,6 @@ from app.moderation.duplicate import is_duplicate
 from app.utils.helper import process_tags, get_related_posts, publish_scheduled_posts
 from app.utils.cloudinary_helper import upload_image_file
 from app.utils.email import send_email
-from app.utils.email import send_bulk_email
 from app.utils.decorators import generate_unique_slug
 from app.utils.db_helpers import safe_commit
 from app.extensions import db, cache, csrf
@@ -90,11 +89,11 @@ def user_login():
 
         # Invalid login
         else:
-            msg = "No account found. Please sign up." if not user else "Incorrect password. Please register"
+            msg = "No account found. Please sign up." if not user else "Incorrect password. Please check your password"
             if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({"success": False, "message": msg})
             flash(msg, "error")
-            return redirect(url_for('public.user_register', next=next_page))
+            return redirect(url_for('public.user_login', next=next_page))
 
     # Form validation failed
     if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -1158,10 +1157,11 @@ def unsubscribe(token):
     subscriber = Subscriber.query.filter_by(unsubscribe_token=token).first_or_404()
 
     subscriber.is_active = False
-    if not safe_commit:
-      print("Failed to unsubscribe")
+    if not safe_commit():
+      current_app.logger.error(f"Failed to unsubscribe {subscriber.email}")
+      return "Error unsubscribing. Please try again.", 500
 
-    return "You have been unsubscribed successfully."
+    return "You have been unsubscribed successfully. {subscriber.email}"
 
 @public_bp.route("/tag/<string:slug>")
 def tag(slug):
@@ -1310,6 +1310,27 @@ def privacy():
 def terms():
     settings = AppSettings.query.first()
     return render_template("terms.html", settings=settings)
+
+@public_bp.route("/football")
+def football_page():
+    live = FootballCache.query.filter_by(data_type="live", league="PL").first()
+    table = FootballCache.query.filter_by(data_type="table", league="PL").first()
+    return render_template("football.html", live=live.json_data if live else [], table=table.json_data if table else [])
+
+@public_bp.route("/explore")
+def explore_page():
+    # Get cached data
+    live = FootballCache.query.filter_by(data_type="live", league="PL").first()
+    table = FootballCache.query.filter_by(data_type="table", league="PL").first()
+
+    live_matches = live.json_data if live else []
+    league_table = table.json_data[0]["table"] if table else []
+
+    return render_template(
+        "tools/explore.html",
+        live_matches=live_matches,
+        league_table=league_table
+    )
 
 # Sitemap for Google News
 @public_bp.route("/sitemap.xml")

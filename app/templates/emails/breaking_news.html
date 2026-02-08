@@ -1,0 +1,79 @@
+<!-- templates/emails/breaking_news.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Breaking News</title>
+</head>
+<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#000;">
+
+  <!-- Outer wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td align="center" style="padding:20px;">
+
+        <!-- Main container -->
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#1F2937; padding:20px; border-radius:8px;">
+          
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding-bottom:20px;">
+              <img src="https://www.superiornews.app/static/Img/New.png" 
+                   alt="Superior News" 
+                   width="120" 
+                   style="display:block; border:0; margin:0 auto;">
+            </td>
+          </tr>
+
+          <!-- Heading -->
+          <tr>
+            <td>
+              <h2 style="color:#fff; text-align:center;">Latest Breaking News</h2>
+            </td>
+          </tr>
+
+          <!-- News Items -->
+          <tr>
+            <td>
+              <ul style="color:#666; line-height:1.5; padding-left:20px;">
+                {% for post in news_items %}
+                  <li style="margin-bottom: 10px;">
+                    {% if post.featured_image %}
+                    <img src="{{ post.featured_image }}" alt="{{ post.title }}" width="120" style="display:block;margin-bottom:5px;" />
+                    {% endif %}
+                    <a href="https://www.superiornews.app/post/{{ post.slug }}" style="color:#1a73e8; text-decoration:none;">{{ post.title }}
+                    </a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </td>
+          </tr>
+
+          <!-- Footer / Unsubscribe -->
+          <tr>            
+            <td class="footer" style="font-size: 12px;
+            color: #888;
+            margin-top: 20px;
+            text-align: center;">
+              <p>You are receiving this email because you subscribed to Superior News.</p>
+              <p>
+                <a href="https://www.superiornews.app/unsubscribe/{{ subscriber.unsubscribe_token }}">
+                  Unsubscribe
+                </a>
+              </p>
+              <p>© {{ now.year }} Superior News</p>
+            </td>
+            
+          </tr>
+
+        </table>
+        <!-- End main container -->
+
+      </td>
+    </tr>
+  </table>
+  <!-- End outer wrapper -->
+
+</body>
+</html>

@@ -105,3 +105,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.add('hidden'));
+    document.getElementById(`tab-${tab}`).classList.remove('hidden');
+  });
+});
+
+item.addEventListener('click', () => {
+  captions.classList.toggle('show');
+});

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ subject or "Superior News Digest" }}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: #777;
+      background-color: #000;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background-color: #1F2937;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3 {
+      color: #fff;
+    }
+    a {
+      color: #1d72b8;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .button {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 15px 0;
+      background-color: #1d72b8;
+      color: #fff;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+    .footer {
+      font-size: 12px;
+      color: #888;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .news-item {
+      margin-bottom: 15px;
+    }
+    .news-item img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin-bottom: 5px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Logo -->
+    <div style="text-align:center; margin-bottom:20px;">
+      <img src="https://www.superiornews.app/static/Img/New.png" alt="Superior News Logo" width="150">
+    </div>
+
+    <!-- Email Heading -->
+    <h1>{{ subject or "Superior News Digest" }}</h1>
+
+    <!-- Optional custom intro -->
+    {% if intro %}
+      <p>{{ intro }}</p>
+    {% endif %}
+
+    <!-- News items -->
+    {% if news_items %}
+      {% for post in news_items %}
+        <div class="news-item">
+          {% if post.featured_image %}
+            <img src="{{ post.featured_image }}" alt="{{ post.title }}">
+          {% endif %}
+          <h3><a href="{{ post.url or 'https://www.superiornews.app/post/' + post.slug }}">{{ post.title }}</a></h3>
+          {% if post.excerpt %}
+            <p>{{ post.excerpt }}</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Call to action button -->
+    {% if cta_url and cta_text %}
+      <p style="text-align:center;">
+        <a href="{{ cta_url }}" class="button">{{ cta_text }}</a>
+      </p>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>You are receiving this email because you subscribed to Superior News.</p>
+      <p>
+        <a href="https://www.superiornews.app/unsubscribe/{{ subscriber.unsubscribe_token }}">
+          Unsubscribe
+        </a>
+      </p>
+      <p>© {{ now.year }} Superior News</p>
+    </div>
+  </div>
+</body>
+</html>

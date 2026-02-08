@@ -106,6 +106,13 @@ def generate_caption(text: str, tone=None, length="short", user=None, platforms=
         caption = caption[:max_length]
 
         confidence = ai_confidence_score(caption, platform, user_is_premium=getattr(user, "is_premium", False))
+        """confidence_map = {
+            "0": "calm",
+            "1": "assertive",
+            "2": "bold"
+        }
+        confidence = confidence_map.get(request.form["confidence"], "calm")
+        """
 
       # Store results and DB logging
         multi_captions.append({

@@ -15,15 +15,10 @@ class Config:
     SQLALCHEMY_DATABASE_URI = None
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    MAIL_SERVER = 'smtp.gmail.com'
-    MAIL_PORT = 587
-    MAIL_USE_TLS = True
-    MAIL_USE_SSL = False
-
-    MAIL_USERNAME = os.getenv("MAIL_USERNAME")
-    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER = MAIL_USERNAME
-    MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2MB
+    # Brevo / Sendinblue
+    BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+    EMAIL_PROVIDER = "brevo"
+    DEFAULT_EMAIL_SENDER = os.getenv("DEFAULT_EMAIL_SENDER", "noreply@superiornews.app")
 
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
@@ -34,4 +29,4 @@ cloudinary.config(
 
 CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-REDIRECT_URI = "http://localhost:5000/public/login/google/callback"
+REDIRECT_URI = os.getenv("REDIRECT_URI", "http://localhost:5000/login/google/callback")

@@ -5,25 +5,20 @@ from flask import (
 from datetime import datetime
 from flask_login import (
     login_user, logout_user,
-    login_required
-)
-from flask_mail import Message as MailMessage
-from app.utils.admin_email import (
-    send_weekly_digest_to_all,
-    send_welcome_email, send_latest_news
+    login_required, current_user
 )
 from app.utils.db_helpers import safe_commit
-from app.utils.email import send_email, send_bulk_email
+from app.utils.email import send_email
 from app.models import Post, AppSettings, CaptionHistory, User, ContactMessage, Repost, Subscriber, DigestDraft, BreakingNews, Tag, Comment
-from app.extensions import db, csrf, mail
-from flask_login import current_user
+from app.extensions import db, csrf
 from werkzeug.security import check_password_hash, generate_password_hash
+from app.utils.admin_email import send_latest_breaking_news, send_weekly_digest_to_all, send_welcome_email, log_email
 from app.utils.analytics import analytics_block
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
 from slugify import slugify
 import os
-from app.forms import LoginForm, PostForm, ChangePasswordForm, PrivacyTermsForm
+from app.forms import LoginForm, PostForm, ChangePasswordForm
 
 admin_bp = Blueprint(
     "admin",
@@ -163,19 +158,36 @@ def reject_post(id):
     next_page = request.referrer or url_for("admin.dashboard")
     return redirect(next_page)
 
-@admin_bp.route("/messages")
-@login_required
-def admin_messages():
-    messages = ContactMessage.query.order_by(ContactMessage.created_at.desc()).all()
-    message = ContactMessage.query.filter_by(type="report")
-    mess = ContactMessage.query.filter_by(is_replied=False)
-    return render_template("admin/messages.html", mess=mess, message=message, messages=messages)
-
 @admin_bp.route('/admin/subscribers')
 @login_required
 def list_subscribers():
     subscribers = Subscriber.query.all()
     return render_template("admin/subscribers.html", subscribers=subscribers)
+
+@admin_bp.route('/admin/subscriber/<int:id>/toggle-digest', methods=['POST'])
+@csrf.exempt
+def toggle_digest(id):
+    subscriber = Subscriber.query.get_or_404(id)
+    subscriber.receive_digest = not subscriber.receive_digest
+    if not safe_commit():
+        print("Failed to reject post")
+
+    flash("Subscriber preference updated")
+    return redirect(url_for('admin.list_subscribers'))
+
+@admin_bp.route('/admin/email/welcome/<int:id>', methods=['POST'])
+@csrf.exempt
+def resend_welcome(id):
+    subscriber = Subscriber.query.get_or_404(id)
+    send_welcome_email(subscriber.email, subscriber.unsubscribe_token)
+    flash("Welcome email resent")
+    return redirect(url_for('admin.list_subscribers'))
+
+@admin_bp.route('/admin/drafts')
+@login_required
+def list_drafts():
+    drafts = DigestDraft.query.order_by(DigestDraft.id.desc()).all()
+    return render_template('admin/drafts.html', drafts=drafts)
 
 @admin_bp.route('/admin/draft/preview/<int:id>') 
 @login_required 
@@ -221,14 +233,9 @@ def send_draft_digest(id):
   ).all()
 
   for s in subscribers:
-    html = draft.html_content + f"""
-    <p style='font-size:12px'>
-      <a href='https://yourdomain.com/unsubscribe/{s.unsubscribe_token}'>
-        Unsubscribe
-      </a>
-    </p>
-    """
-    send_bulk_email(s.email, draft.subject, html)
+    html_content = render_template("emails/admin_draft.html",  subscriber=s)
+    send_email(s.email, draft.subject, html_content)
+    log_email(s.email, "Admin Message", success)
 
   draft.is_sent = True
   if not safe_commit():
@@ -237,30 +244,6 @@ def send_draft_digest(id):
   flash('Digest sent successfully')
   return redirect(url_for('admin.dashboard'))
 
-@admin_bp.route('/admin/draft/send/<int:id>', methods=['POST'])
-@login_required
-@csrf.exempt
-def send_draft(id):
-    draft = DigestDraft.query.get_or_404(id)
-    if draft.is_sent:
-        flash("This draft was already sent")
-        return redirect(url_for('admin.dashboard'))
-
-    subscribers = Subscriber.query.filter_by(is_active=True, receive_digest=True).all()
-    for s in subscribers:
-        html = draft.html_content + f"""
-        <p style='font-size:12px'>
-        <a href='https://yourdomain.com/unsubscribe/{s.unsubscribe_token}'>Unsubscribe</a>
-        </p>
-        """
-        send_bulk_email(s.email, draft.subject, html)
-
-    draft.is_sent = True
-    if not safe_commit():
-        print("Failed to send draft")
-    flash("Digest sent successfully")
-    return redirect(url_for('admin.dashboard'))
-
 @admin_bp.route('/admin/email/send-digest', methods=['POST'])
 @csrf.exempt
 def send_digest():
@@ -268,30 +251,13 @@ def send_digest():
     flash("Weekly digest sent successfully")
     return redirect(url_for('admin.dashboard'))
 
-@admin_bp.route('/admin/email/welcome/<int:id>', methods=['POST'])
-@csrf.exempt
-def resend_welcome(id):
-    subscriber = Subscriber.query.get_or_404(id)
-    send_welcome_email(subscriber.email, subscriber.unsubscribe_token)
-    flash("Welcome email resent")
-    return redirect(url_for('admin.list_subscribers'))
-
-@admin_bp.route('/admin/subscriber/<int:id>/toggle-digest', methods=['POST'])
-@csrf.exempt
-def toggle_digest(id):
-    subscriber = Subscriber.query.get_or_404(id)
-    subscriber.receive_digest = not subscriber.receive_digest
-    if not safe_commit():
-        print("Failed to reject post")
-
-    flash("Subscriber preference updated")
-    return redirect(url_for('admin.list_subscribers'))
-
-@admin_bp.route('/admin/drafts')
+@admin_bp.route("/messages")
 @login_required
-def list_drafts():
-    drafts = DigestDraft.query.order_by(DigestDraft.id.desc()).all()
-    return render_template('admin/drafts.html', drafts=drafts)
+def admin_messages():
+    messages = ContactMessage.query.order_by(ContactMessage.created_at.desc()).all()
+    reports = ContactMessage.query.filter_by(type="report")
+    unreplied = ContactMessage.query.filter_by(is_replied=False)
+    return render_template("admin/messages.html", unreplied=unreplied, reports=reports, messages=messages)
 
 @admin_bp.route("/messages/<int:id>/reply", methods=["POST"])
 @login_required
@@ -301,19 +267,16 @@ def reply_message(id):
 
     reply_text = request.form.get("reply")
 
-    """mail_msg = MailMessage(
-        subject=f"Re: {msg.subject or 'Your message'}",
-        recipients=[msg.email],
-        body=reply_text
-    )
+    if not reply_text:
+        flash("Reply message cannot be empty.", "danger")
+        return redirect(url_for("admin.admin_messages"))
 
-    mail.send(mail_msg)"""
-    
     success = send_email(
-        msg.email,
-        f"Re: {msg.subject or 'Your message'}",
-        reply_text
+        to=msg.email,
+        subject=f"Re: {msg.subject or 'Your message'}",
+        html_content=reply_text
     )
+    log_email(msg.email, msg.subject, True)
 
     if success:
       msg.is_replied = True

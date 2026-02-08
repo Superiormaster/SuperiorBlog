@@ -1,0 +1,109 @@
+{% extends "user/base.html" %}
+{% block title %}Premium pricing – SuperiorNews{% endblock %}
+
+{% block content %}
+  <div class="flex space-x-8">
+    <!-- Silver Plan -->
+    <div class="bg-[#1a1a1a] rounded-lg p-8 w-80 text-center relative">
+      <h3 class="text-xl font-semibold mb-2">SILVER</h3>
+      <p class="text-sm text-gray-400 mb-1">Perfect For Personal Projects And Freelancers</p>
+      <div class="text-3xl font-bold mb-4">₹499 <span class="text-sm text-gray-400">Per Month</span></div>
+      <ul class="text-left space-y-2 mb-6 text-sm">
+        <li class="flex items-center"><span class="mr-2">✔</span> Perfect For Solo Creators</li>
+        <li class="flex items-center"><span class="mr-2">✔</span> Manage Your Essential Work Easily</li>
+        <li class="flex items-center"><span class="mr-2">✔</span> Get Help When You Need It</li>
+      </ul>
+      <button class="bg-gray-700 text-white py-2 px-4 rounded-md w-full hover:bg-gray-600">Get Started</button>
+    </div>
+
+    <!-- Gold Plan -->
+    <div class="bg-[   ">                                                                           
+      <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-orange-500 text-xs px-2 py-1 rounded-full">MOST POPULAR</span>
+      <h3 class="text-xl font-semibold mb-2 text-orange-500">GOLD</h3>
+      <p class="text-sm text-gray-400 mb-1">Power And Flexibility For Growing Teams</p>
+      <div class="text-3xl font-bold mb-4">₹1499 <span class="text-sm text-gray-400">Per Month</span></div>
+      <ul class="text-left space-y-2 mb-6 text-sm">
+        <li class="flex items-center"><span class="mr-2">✔</span> Collaborate And Grow Together</li>
+        <li class="flex items-center"><span class="mr-2">✔</span> No Limits, Total Freedom</li>
+        <li class="flex items-center"><span class="mr-2">✔</span> Fast Answers, Fast Progress</li>
+      </ul>
+      <button class="bg-orange-500 text-white py-2 px-4 rounded-md w-full hover:bg-orange-600">Get Started</button>
+    </div>
+
+    <!-- Platinum Plan -->
+    <div class="bg-[#1a1a1a] rounded-lg p-8 w-80 text-center relative">
+      <h3 class="text-xl font-semibold mb-2">PLATINUM</h3>
+      <p class="text-sm text-gray-400 mb-1">Tailored Solutions For Enterprise Success</p>
+      <div class="text-3xl font-bold mb-4">₹4999 <span class="text-sm text-gray400">Per Month</span></div>
+      <ul class="text-left space-y-2 mb-6 text-sm">
+        <li class="flex items-center"><span class="mr-2">✔</span> For Large Teams And Organizations</li>
+        <li class="flex items-center"><span class="mr-2">✔</span> Personalized Onboarding & Support</li>
+        <li class="flex items-center"><span class="mr-2">✔</span> Deep Integrations For Your Workflow</li>
+      </ul>
+      <button class="bg-gray-700 text-white py-2 px-4 rounded-md w-full hover:bg-gray-600">Get Started</button>
+    </div>
+  </div>
+
+  <div class="min-h-screen flex flex-col items-center justify-center p-4">
+    <!-- Header -->
+    <header class="w-full max-w-6xl mx-auto py-6 flex justify-between items-center">
+      <div class="text-xl font-bold">UNDOCK</div>
+      <nav class="flex space-x-6 text-sm">
+        <a href="#" class="hover:text-gray-400">Home</a>
+        <a href="     ">                                      
+        <a href="#" class="hover:text-gray-400">Pricing</a>
+        <a href="          ">                                
+      </nav>
+      <div class="flex space-x-4">
+        <button class="text-sm">Sign In</button>
+        <button class="text-sm bg-blue-600 px-4 py-2 rounded">Create an account</button>
+      </div>
+    </header>
+
+    <!-- Pricing Section -->
+    <section class="w-full max-w-6xl mx-auto text-center py-16">
+      <h2 class="text-4xl font-bold mb-4">SIMPLE, TRANSPARENT PRICING</h2>
+      <p class="text-gray-400 mb-12">Choose the plan that fits your needs</p>
+
+      <div class="flex justify-center space-x-8">
+        <!-- Basic Plan -->
+        <div class="bg-black p-8 rounded-lg w-80 relative">
+          <h3 class="text-2xl font-semibold mb-2">Basic</h3>
+          <p class="text-gray-400 mb-4">Free</p>
+          <ul class="text-left text-gray-300 mb-6 space-y-2">
+            <li>✔️ Calendar and scheduling</li>
+            <li>✔️ Broadcasts</li>
+            <li>✔️ Conferencing</li>
+          </ul>
+          <button class="w-full py-3 bg-gray-800 rounded text-white hover:bg-gray-700">Select plan</button>
+        </div>
+
+        <!-- Premium Plan -->
+        <div class="bg-black p-8 rounded-lg w-80 border-2 border-yellow-500 relative glow-effect">
+          <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-4 py-1 rounded-full text-sm">MOST POPULAR</div>
+          <h3 class="text-2xl font-semibold mb-2">Premium</h3>
+          <p class="text-gray-400 mb-4">$10 <span class="text-sm">/ month</span></p>
+          <ul class="text-left text-gray-300 mb-6 space-y-2">
+            <li>✔️ Calendar and scheduling</li>
+            <li>✔️ Conferencing</li>
+            <li>✔️ Unlimited Data Removal</li>
+          </ul>
+          <button class="w-full py-3 bg-yellow-500 rounded text-black font-semibold hover:bg-yellow-400">Upgrade to Premium</button>
+        </div>
+
+        <!-- Unlimited Plan -->
+        <div class="bg-black p-8 rounded-lg w-80 relative">
+          <h3 class="text-2xl font-semibold mb-2">Unlimited</h3>
+          <p class="text-gray-400 mb-4">$25 <span class="text-sm">/ month</span></p>
+          <ul class="text-left text-gray-300 mb-6 space-y-2">
+            <li>✔️ Unlimited Plans</li>
+            <li>✔️ Unlimited Events</li>
+            <li>✔️ Unlimited Video Conferencing</li>
+          </ul>
+          <button class="w-full py-3 bg-green-500 rounded text-black font-semibold hover:bg-green400">Upgrade to Unlimited</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+{% endblock %}

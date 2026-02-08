@@ -1,0 +1,52 @@
+{% extends "user/base.html" %}
+{% block title %}X Content Engine – SuperiorNews{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto mt-12 p-6 rounded-2xl
+            bg-gray-900 text-gray-100 shadow-xl">
+
+  <h1 class="text-3xl font-bold mb-2">
+    Turn News Into Monetizable X Content
+  </h1>
+  <p class="text-gray-400 mb-6">
+    Built for creators who want engagement, replies & revenue — not generic tweets.
+  </p>
+
+  <!-- INPUT -->
+  <textarea id="text"
+    class="w-full h-36 p-4 rounded-xl bg-gray-800 text-white"
+    placeholder="Paste headline or article here..."></textarea>
+
+  <!-- CONTROLS -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+
+    <select id="intent" class="bg-gray-800 rounded p-2">
+      <option value="inform">Inform</option>
+      <option value="question">Question</option>
+      <option value="challenge">Challenge</option>
+      <option value="explain">Explain</option>
+    </select>
+
+    <select id="mode" class="bg-gray-800 rounded p-2">
+      <option value="breaking">Breaking</option>
+      <option value="thread">Thread Starter</option>
+      <option value="reply">Reply Optimized</option>
+      <option value="engagement">Engagement Hook</option>
+    </select>
+
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" id="avoid_clickbait">
+      Avoid clickbait
+    </label>
+
+    <button id="generateBtn"
+      class="bg-blue-600 hover:bg-blue-700 rounded-xl px-4 py-2">
+      Generate X Content
+    </button>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="mt-8 space-y-4"></div>
+
+</div>
+{% endblock %}

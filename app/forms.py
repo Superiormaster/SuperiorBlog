@@ -75,19 +75,6 @@ class UserLoginForm(FlaskForm):
     remember_me = BooleanField("Remember Me")
     submit = SubmitField("Login")
 
-class PrivacyTermsForm(FlaskForm):
-    privacy_policy = TextAreaField(
-        "Privacy Policy",
-        validators=[DataRequired()]
-    )
-
-    terms_conditions = TextAreaField(
-        "Terms & Conditions",
-        validators=[DataRequired()]
-    )
-
-    submit = SubmitField("Save")
-
 class ProfileForm(FlaskForm):
     username = StringField(
         "Username",

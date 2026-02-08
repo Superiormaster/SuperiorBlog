@@ -140,6 +140,58 @@ form > div {
   min-height: 0;
 }
 
+/* Caption generator */
+.captions-container {
+  transition: max-height 0.3s ease;
+  overflow: hidden;
+}
+
+.captions-container.show {
+  max-height: 1000px; /* arbitrary large value */
+}
+
+body {
+  color: #e6e6e6;
+  font-family: system-ui, sans-serif;
+}
+
+.tool-header {
+  margin-bottom: 24px;
+}
+
+.card {
+  background: #171a21;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.input-card textarea {
+  width: 100%;
+  min-height: 140px;
+  background: #0f1115;
+  color: #fff;
+  border: 1px solid #2a2f3a;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.primary-btn {
+  background: #4f46e5;
+  border: none;
+  color: white;
+  padding: 12px;
+  border-radius: 10px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.output-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
 /* CRITICAL: prevents Chrome auto-white background */
 textarea:focus {
   color: #e5e7eb !important;

@@ -16,6 +16,10 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
     <h1 class="text-3xl font-bold tracking-tight">📰 News & Social Caption Generator</h1>
     <p class="text-gray-400 mt-2">Generate professional headlines and viral captions for news, sports & breaking stories</p>
   </div>  
+  <section class="tool-header">
+  <h1>One Story → Every Platform</h1>
+  <p>Turn one idea into platform-native content instantly.</p>
+  </section>
   
   <div class="border-2 border-yellow-400 bg-yellow-50 p-4 rounded-xl">
     <span class="text-xs font-bold text-yellow-600">BEST CAPTION</span>
@@ -25,6 +29,20 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
     <div class="bg-green-500 h-2 rounded-full" style="width: 87%"></div>
   </div>
   <div class="max-w-5xl mx-auto mt-14">
+
+  <div class="flex gap-4 mb-4">
+  <button class="tab-btn active" data-tab="free">Free Captions</button>
+  <button class="tab-btn" data-tab="premium">Premium Captions</button>
+</div>
+
+<div id="tab-free" class="tab-content">Free captions here...</div>
+<div id="tab-premium" class="tab-content hidden">Premium captions here...</div>
+
+{% for caption in editor_picks %}
+<pre class="bg-gray-800 dark:bg-gray-900 text-green-400 p-4 rounded-xl overflow-x-auto">
+{{ caption.caption | e }}
+</pre>
+{% endfor %}
 
   {% if editor_picks %}
     <div class="space-y-4">
@@ -82,6 +100,44 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
   
   <!-- Results -->  
   <div id="results" class="mt-10 space-y-4"></div>  
+  
+  {% if captions %}
+<section class="output-grid">
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Instagram Caption</h3>
+      <button onclick="copyText('ig')">Copy</button>
+    </div>
+    <p id="ig">{{ captions.instagram }}</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Facebook Caption</h3>
+      <button onclick="copyText('fb')">Copy</button>
+    </div>
+    <p id="fb">{{ captions.facebook }}</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>WhatsApp Status</h3>
+      <button onclick="copyText('wa')">Copy</button>
+    </div>
+    <p id="wa">{{ captions.whatsapp }}</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>X (Twitter) Post</h3>
+      <button onclick="copyText('x')">Copy</button>
+    </div>
+    <p id="x">{{ captions.x }}</p>
+  </div>
+
+</section>
+{% endif %}
   
   <!-- CTA -->  
   <div class="mt-12 p-6 rounded-xl bg-gradient-to-r from-blue-600/20 to-cyan-500/20 border border-blue-500/20">
