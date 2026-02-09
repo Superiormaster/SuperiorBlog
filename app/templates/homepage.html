@@ -66,6 +66,49 @@
   <button class="px-4 rounded-r bg-[#c89a1a] text-white py-2 rounded-r-lg"><i class="fa fa-search" aria-hidden="true"></i></button>
 </form>
 
+  <!-- Football Live Scores -->
+  <!--<div class="bg-gray-800 rounded-lg p-4 mb-4">
+    <div class="flex justify-between items-center mb-2">
+      <h2 class="text-green-500 font-bold">Live Matches</h2>-->
+      <!--<span class="text-gray-400 text-sm">Updated every 10 mins</span>-->
+    <!--</div>
+
+    {% if live_matches %}
+      {% for match in live_matches %}
+        <div class="flex justify-between mb-2 p-2 bg-gray-700 rounded">
+          <div>
+            <p class="text-sm">{{ match['homeTeam']['name'] }} vs {{ match['awayTeam']['name'] }}</p>
+            <p class="text-white font-bold text-lg">
+              {{ match['score']['fullTime']['home'] if match['score']['fullTime']['home'] is not none else 0 }} -
+              {{ match['score']['fullTime']['away'] if match['score']['fullTime']['away'] is not none else 0 }}
+            </p>
+          </div>
+          <div class="text-sm text-gray-400">
+            {{ match['competition']['name'] }}
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>No live matches right now.</p>
+    {% endif %}
+  </div>-->
+
+  <!-- League Table -->
+  <!--<div class="bg-gray-800 rounded-lg p-4 mb-4">
+    <div class="flex justify-between items-center mb-2">
+      <h2 class="text-yellow-500 font-bold">League Table (EPL)</h2>
+      <span class="text-gray-400 text-sm">Top teams</span>
+    </div>
+    <div class="grid grid-cols-1 gap-2 text-sm">
+      {% for team in league_table[:10] %}
+        <div class="flex justify-between p-2 bg-gray-700 rounded">
+          <span>{{ team['position'] }}. {{ team['team']['name'] }}</span>
+          <span>{{ team['points'] }} pts</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>-->
+
 {% for t in trending_posts %}
 <div class="p-3 rounded-lg bg-gray-800">
   <h3 class="text-center text-4xl mb-4 bg-red-600 text-white px-2 py-1 uppercase font-bold">
@@ -263,13 +306,13 @@
     Don’t have an account?
     <a href="{{ url_for('public.user_register') }}" class="text-blue-400">Sign up</a>
   </p>
-  <!--<div class="text-center text-sm mt-2">Or SignUp With</div>
+  <div class="text-center text-sm mt-2">Or SignUp With</div>
       <div class="space-x-4 bg-blue-600 rounded-full font-semibold mt-2 w-full">
       <a id="googleBtn" href="{{ url_for('public.google_login') }}"
           class="flex items-center justify-center gap-3 w-full h-12 rounded-full border border-yellow-500 text-gray-700 font-medium hover:bg-gray-50 transition"
-        >-->
+        >
           <!-- Official Google SVG -->
-          <!--<svg
+          <svg
             id="googleIcon"
             class="w-5 h-5"
             viewBox="0 0 48 48"
@@ -290,7 +333,7 @@
          <p id="googleError" class="hidden text-sm text-red-500">
             Something went wrong. Please try again.
           </p>
-      </div>-->
+      </div>
 </form>
 
 <button onclick="closeLoginModal()" class="absolute top-3 right-4 text-gray-400 text-xl">×</button>
@@ -361,10 +404,10 @@
     </div>
 
     <!-- Optional Extra / Generate Captions -->
-    <div class="md:hidden flex flex-col space-y-2">
+    <!--<div class="md:hidden flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">Tools</h4>
       <a href="{{ url_for('caption.caption_page') }}" class="hover:text-white">Generate Captions</a>
-    </div>
+    </div>-->
   </div>
 
   <!-- Brand & Copyright -->
@@ -380,7 +423,7 @@
 (function () {
   const FEEDBACK_KEY = "feedback_shown";
   const SCROLL_THRESHOLD = 0.8;
-  const TIME_THRESHOLD = 150000;
+  const TIME_THRESHOLD = 200000;
 
   if (localStorage.getItem(FEEDBACK_KEY)) return;
 

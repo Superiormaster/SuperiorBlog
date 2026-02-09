@@ -1,4 +1,4 @@
-from datetime import datetime 
+from datetime import datetime, UTC
 from app.extensions import db, login_manager
 from sqlalchemy import JSON, event
 from app.utils.read_time import calculate_read_time
@@ -37,6 +37,9 @@ class User(db.Model, UserMixin):
     profile_visits = db.Column(db.Integer, default=0)
     is_deleted = db.Column(db.Boolean, default=False)
     deleted_at = db.Column(db.DateTime, nullable=True)
+    login_count = db.Column(db.Integer, default=0)
+    last_login = db.Column(db.DateTime)
+    last_seen = db.Column(db.DateTime)
     profile_completed = db.Column(db.Boolean, default=False)
     full_name = db.Column(db.String(120))
     location = db.Column(db.String(50))
@@ -60,7 +63,7 @@ class User(db.Model, UserMixin):
     is_blocked = db.Column(db.Boolean, default=False)
     is_subscribed = db.Column(db.Boolean, default=True)
     posts = db.relationship("Post", back_populates="author", lazy=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(UTC))
     # Optional: profile image, bio, etc.
 
     def generate_reset_token(self, expires_sec=3600):
@@ -94,6 +97,14 @@ class User(db.Model, UserMixin):
     def is_active(self, value):
         self._is_active = value
 
+class PageView(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    session_id = db.Column(db.String(100), index=True)
+    path = db.Column(db.String(255))
+    ip_address = db.Column(db.String(45))
+    created_at = db.Column(db.DateTime, default=datetime.now(UTC))
+
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
@@ -103,7 +114,7 @@ class Category(db.Model):
     meta_description = db.Column(db.String(255))
     views = db.Column(db.Integer, default=0)
     posts = db.relationship('Post', back_populates='category', lazy="dynamic")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
 @event.listens_for(Category.slug, "set", retval=True)
 def receive_category_slug_set(target, value, oldvalue, initiator):
@@ -135,12 +146,12 @@ class ProfileVisit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     visited_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     visitor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # nullable=True for anonymous visits
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime.now(UTC))
 
     # Relationships (optional, convenient)
     visited_user = db.relationship("User", foreign_keys=[visited_user_id], backref="profile_visits_received")
     visitor = db.relationship("User", foreign_keys=[visitor_id], backref="profile_visits_made")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
     def __repr__(self):
         return f"<ProfileVisit {self.visitor_id} -> {self.visited_user_id} at {self.timestamp}>"
@@ -183,8 +194,8 @@ class Post(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(
         db.DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow
+        default=datetime.now(UTC),
+        onupdate=datetime.now(UTC)
     )
     comments = db.relationship("Comment", backref="post", lazy=True)
     like_count = db.Column(db.Integer, default=0) 
@@ -224,20 +235,20 @@ class Repost(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     post_id = db.Column(db.Integer, db.ForeignKey("post.id"))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
 class AppSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     privacy_policy = db.Column(db.Text, nullable=True)
     terms_conditions = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(UTC))
+    updated_at = db.Column(db.DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC))
 
 class Subscriber(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     is_active = db.Column(db.Boolean, default=True)
-    subscribed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    subscribed_at = db.Column(db.DateTime, default=datetime.now(UTC))
     unsubscribe_token = db.Column(db.String(64), unique=True, nullable=False)
     receive_digest = db.Column(db.Boolean, default=True)
 
@@ -246,13 +257,13 @@ class DigestDraft(db.Model):
   subject = db.Column(db.String(255), nullable=False) 
   html_content = db.Column(db.Text, nullable=False) 
   is_sent = db.Column(db.Boolean, default=False) 
-  created_at = db.Column(db.DateTime, default=datetime.utcnow)
+  created_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
 class BreakingNews(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     headline = db.Column(db.String(500), nullable=False)
     url = db.Column(db.String(500), nullable=True)
-    published_at = db.Column(db.DateTime, default=datetime.utcnow)
+    published_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
 class ContactMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -270,8 +281,8 @@ class ContactMessage(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(
         db.DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow
+        default=datetime.now(UTC),
+        onupdate=datetime.now(UTC)
     )
     resolved = db.Column(db.Boolean, default=False)
 
@@ -285,7 +296,7 @@ class EmailLog(db.Model):
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(UTC))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref='comments')
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
@@ -294,7 +305,7 @@ class Comment(db.Model):
 class Reply(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(UTC))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', backref='replies')
     comment_id = db.Column(db.Integer, db.ForeignKey('comment.id'))
@@ -344,8 +355,10 @@ class FootballCache(db.Model):
     data_type = db.Column(db.String(50))  # e.g., "live", "table"
     league = db.Column(db.String(10))     # e.g., "PL"
     json_data = db.Column(db.JSON)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
 @login_manager.user_loader
 def load_user(user_id):
+    if not user_id or user_id == 'None':
+        return None  #
     return User.query.get(int(user_id))

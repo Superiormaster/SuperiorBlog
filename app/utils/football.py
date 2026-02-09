@@ -19,10 +19,18 @@ def get_upcoming_matches(league_code="PL"):
     if response.status_code == 200:
         return response.json().get("matches", [])
     return []
-
+"""
 def get_league_table(league_code="PL"):
     url = f"{BASE_URL}/competitions/{league_code}/standings"
     response = requests.get(url, headers=HEADERS)
     if response.status_code == 200:
         return response.json().get("standings", [])
-    return []
+    return []"""
+def get_league_table(league_code="PL"):
+    url = f"{BASE_URL}/competitions/{league_code}/standings"
+    r = requests.get(url, headers=HEADERS)
+
+    print("STATUS:", r.status_code)
+    print("RAW RESPONSE:", r.text[:300])
+
+    return r.json().get("standings", []) if r.status_code == 200 else []

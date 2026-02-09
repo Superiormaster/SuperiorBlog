@@ -18,30 +18,41 @@
 
 </head>
 <body class="w-full bg-gray-900 transition-opacity duration-700 min-h-screen text-gray-500">
-    <div class="xl:max-w-[1280px] w-full">
-    <header class="flex justify-between items-center h-24 navbar shadow-l bg-gray-900 border-b text-white shadow-lg fixed w-full transition-all duration-300 z-50">
-      <img src="{{ url_for('static', filename='Img/New.png') }}" class="h-6" alt="Superior icon">
+  <div class="xl:max-w-[1280px] w-full">
+<header class="h-24 fixed w-full top-0 flex items-center justify-between bg-gray-900 border-b shadow-lg px-4 z-30">
+  
+  <!-- Left: Logo -->
+  <div class="flex items-center gap-4">
+    <img src="{{ url_for('static', filename='Img/New.png') }}" class="h-6" alt="Superior icon">
+  </div>
 
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <nav class="hidden md:flex space-x-6 text-sm font-medium">
-          {% if current_user.is_authenticated %}
-            <a href="{{ url_for('admin.dashboard') }}" data-redirect class="btn-primary p-1 text-xl btn-danger"> Admin Dashboard</a>
-            <a href="{{ url_for('admin.settings') }}" data-redirect class="btn-primary text-xl p-1 btn-danger"> Settings</a></li>
-            <a href="{{ url_for('admin.change_password') }}" data-redirect class="btn-primary p-1 text-xl btn-danger hover:underline">Change Password</a>
-            <a href="{{ url_for('admin.logout') }}" data-safe data-redirect class="btn-primary btn-danger text-xl border rounded p-1">Logout</a>
-          {% else %}
-            <a href="{{ url_for('admin.login') }}" data-safe data-redirect class="btn-primary btn-danger text-xl border rounded p-1">Login</a>
-          {% endif %}
-          </nav>
-        </div>
-    
-        <div class="menu-btn cursor-pointer relative md:hidden" id="openDrawer" aria-controls="mainDrawer" aria-expanded="false" aria-label="Open menu">
-            <svg class="w-10 h-6 mr-2" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-        </div>
-    </header>
-    
+  <!-- Center: Categories (desktop only) -->
+  <nav class="hidden md:flex flex-1 justify-center items-center space-x-6 text-xl font-medium">
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('admin.dashboard') }}" data-redirect class="btn-primary p-1 text-xl btn-danger"> Admin Dashboard</a>
+      <a href="{{ url_for('admin.settings') }}" data-redirect class="btn-primary text-xl p-1 btn-danger"> Settings</a></li>
+      <a href="{{ url_for('admin.change_password') }}" data-redirect class="btn-primary p-1 text-xl btn-danger hover:underline">Change Password</a>
+    {% endif %}
+  </nav>
+
+  <!-- Right: Auth & Hamburger -->
+  <div class="flex items-center gap-4">
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('admin.logout') }}" data-redirect class="btn-primary btn-danger text-sm border rounded p-1">Logout</a>
+    {% else %}
+      <a href="{{ url_for('admin.login') }}" data-redirect class="btn-primary btn-danger text-sm border rounded p-1">Login</a>
+    {% endif %}
+
+    <!-- Hamburger menu (mobile) -->
+    <div id="openDrawer" aria-controls="mainDrawer" aria-expanded="false" aria-label="Open menu" class="md:hidden menu-btn cursor-pointer relative z-50 bg-gray-900 px-3 py-2 rounded">
+      <svg class="w-8 h-6" viewBox="0 0 24 24" fill="none">
+        <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+
+</header>
+
     <main class="text-white w-full max-w-7xl mx-auto py-6">
       {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}

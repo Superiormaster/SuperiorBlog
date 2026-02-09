@@ -110,3 +110,12 @@ def generate_caption_route():
   except Exception as e:
         print("❌ SERVER ERROR:", e)
         return jsonify({"error": "Server error occurred. Please try again."}), 500
+
+@caption_bp.route("/lab")
+@login_required
+def lab():
+    if not current_user.is_premium:
+        flash("⚠️ Only premium users can access the caption generator.", "error")
+        return redirect(url_for("pricing_page"))
+
+    return render_template("caption_lab.html")

@@ -6,16 +6,18 @@ from app.routes.admin import admin_bp
 from app.routes.caption import caption_bp
 from app.routes.billing import billing_bp
 from app.routes.comment import comments_bp
+from uuid import uuid4
 from app.extensions import db, login_manager, cache, csrf, mail
 from flask_login import current_user
 from flask_migrate import Migrate
-from app.models import AppSettings, Category, Post
+from app.models import AppSettings, Category, Post, PageView
 from app.forms import UserLoginForm
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.utils.helper import publish_scheduled_posts
 from .utils.scheduler import start_scheduler
 import os
-from datetime import datetime
+from app.utils.db_helpers import safe_commit
+from datetime import datetime, UTC
 
 migrate = Migrate()
 
@@ -68,52 +70,76 @@ def create_app():
     def inject_year():
         return {'year': datetime.now().year}
 
+    @app.before_request
+    def update_last_seen():
+        if current_user.is_authenticated:
+            current_user.last_seen = datetime.now(UTC)
+            safe_commit()
+    
+    @app.before_request
+    def track_page_view():
+        if request.endpoint in ("static",):
+            return
+    
+        session_id = session.get("sid")
+        if not session_id:
+            session["sid"] = session_id = str(uuid4())
+    
+        view = PageView(
+            user_id=current_user.id if current_user.is_authenticated else None,
+            session_id=session_id,
+            path=request.path,
+            ip_address=request.remote_addr
+        )
+        db.session.add(view)
+        safe_commit()
+
     @app.context_processor
     def inject_login_form():
-        if not has_request_context():
-            return {}
-        return dict(login_form=UserLoginForm())
-
+      if not has_request_context():
+        return {}
+      return dict(login_form=UserLoginForm())
+    
     @app.before_request
     def require_profile_completion():
-        # Not logged in? No restriction.
-        if not current_user.is_authenticated:
-            return
+    # Not logged in? No restriction.
+      if not current_user.is_authenticated:
+        return
     
-        # Profile already completed? No restriction.
-        if current_user.profile_completed:
-            return
+      # Profile already completed? No restriction.
+      if current_user.profile_completed:
+        return
     
-        # Safety: request.endpoint can be None
-        if request.endpoint is None:
-            return
+      # Safety: request.endpoint can be None
+      if request.endpoint is None:
+        return
     
-        allowed_endpoints = {
-            "public.profile_setup",
-            "public.logout",
-            "public.user_login",
-            "public.google_one_tap",
-            "public.google_callback",
-            "public.google_login",
-            "public.upload_image_route"
-        }
+      allowed_endpoints = {
+        "public.profile_setup",
+        "public.logout",
+        "public.user_login",
+        "public.google_one_tap",
+        "public.google_callback",
+        "public.google_login",
+        "public.upload_image_route"
+      }
     
-        if request.endpoint in allowed_endpoints:
-            return
+      if request.endpoint in allowed_endpoints:
+        return
     
-        # Allow static files
-        if request.endpoint.startswith("static"):
-            return
+      # Allow static files
+      if request.endpoint.startswith("static"):
+        return
     
-        # Allow auth & admin blueprints entirely
-        if request.blueprint == "admin":
-            return
+      # Allow auth & admin blueprints entirely
+      if request.blueprint == "admin":
+        return
     
-        # Otherwise force profile setup
-        return redirect(url_for("public.profile_setup"))
-
+      # Otherwise force profile setup
+      return redirect(url_for("public.profile_setup"))
+    
     @app.context_processor
     def inject_settings():
-        return dict(AppSettings=AppSettings)
-
+      return dict(AppSettings=AppSettings)
+    
     return app

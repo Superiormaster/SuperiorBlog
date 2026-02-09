@@ -2,22 +2,22 @@ from flask import (
     Blueprint, render_template, request,
     redirect, current_app, url_for, flash, jsonify
 )
-from datetime import datetime
 from flask_login import (
     login_user, logout_user,
     login_required, current_user
 )
 from app.utils.db_helpers import safe_commit
 from app.utils.email import send_email
-from app.models import Post, AppSettings, CaptionHistory, User, ContactMessage, Repost, Subscriber, DigestDraft, BreakingNews, Tag, Comment
+from app.models import Post, AppSettings, CaptionHistory, User, ContactMessage, Repost, Subscriber, DigestDraft, BreakingNews, Tag, Comment, PageView
 from app.extensions import db, csrf
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.utils.admin_email import send_latest_breaking_news, send_weekly_digest_to_all, send_welcome_email, log_email
-from app.utils.analytics import analytics_block
+from app.utils.analytics import analytics_block, get_range, percentage_growth, safe_list, active_users_by_day, active_users, track_login
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
 from slugify import slugify
 import os
+from datetime import datetime, timedelta
 from app.forms import LoginForm, PostForm, ChangePasswordForm
 
 admin_bp = Blueprint(
@@ -302,8 +302,6 @@ def view_message(id):
 
     return render_template("admin/message_detail.html", msg=msg)
 
-def safe_list(value):
-    return value if isinstance(value, list) else []
 @admin_bp.route("/analytics")
 @login_required
 def analytics():
@@ -318,24 +316,49 @@ def analytics():
         Post, Post.created_at, range_days
     )
     
+    # TOTAL UNIQUE USERS
     unique_visitors = db.session.query(
-        func.count(func.distinct(Post.user_id))
+        func.count(func.distinct(PageView.session_id))
+    ).filter(
+        PageView.created_at >= datetime.utcnow() - timedelta(days=range_days)
     ).scalar() or 0
     
-    #total_registered_users = User.query.count()
-    total_registered_users, total_registered_users_growth = analytics_block(
-        User, User.created_at, range_days
+    # TOTAL REGISTERED USERS
+    total_registered_users = User.query.count()
+    new_users_in_range = User.query.filter(
+        User.created_at >= datetime.utcnow() - timedelta(days=range_days)
+    ).count()
+
+    total_registered_users_growth = percentage_growth(
+        new_users_in_range,
+        total_registered_users
     )
-    total_deleted_accounts = User.query.filter_by(is_deleted=True).count()
-    total_caption_users = CaptionHistory.query.distinct(CaptionHistory.user_id).count()
     
+    # TOTAL TIME ON PAGE
+    total_time_on_page = db.session.query(
+        func.count(PageView.id) * 0.5  # avg 30 sec per view
+    ).filter(
+        PageView.created_at >= datetime.utcnow() - timedelta(days=range_days)
+    ).scalar() or 0
+    
+    
+    # TOTAL DELETED ACCOUNTS
+    total_deleted_accounts = User.query.filter_by(is_deleted=True).count()
+
+    total_caption_users = CaptionHistory.query.distinct(CaptionHistory.user_id).count()
+
+    #-----------------------------
+    # AVG POSTS AND AVG CAPTIONS
+    #-----------------------------
+    total_users = User.query.count()
+
     total_avg_posts = round(
-    total_posts / total_registered_users, 2
-    ) if total_registered_users > 0 else 0
+        Post.query.count() / total_users, 2
+    ) if total_users else 0
     
     total_avg_caption = round(
-        total_caption_users / total_registered_users, 2
-    ) if total_registered_users > 0 else 0
+        CaptionHistory.query.count() / total_users, 2
+    ) if total_users else 0
     
     total_avg_posts_growth = growth_defaults
     total_avg_caption_growth = growth_defaults
@@ -345,19 +368,61 @@ def analytics():
     total_replies = Comment.query.count()
     total_repost = Repost.query.count()
 
+    #-----------------------------
+    # DAU, MAU AND WAU INDUSTRIAL CALCULATION
+    #-----------------------------
+    now = datetime.utcnow()
+    DAU = active_users(1)
+    WAU = active_users(7)
+    MAU = active_users(30)
+    dau_labels, dau_values = active_users_by_day(7)
+
+    DAU = db.session.query(
+        func.count(func.distinct(User.id))
+    ).filter(User.last_login >= now - timedelta(days=1)).scalar()
+    
+    WAU = db.session.query(
+        func.count(func.distinct(User.id))
+    ).filter(User.last_login >= now - timedelta(days=7)).scalar()
+    
+    MAU = db.session.query(
+        func.count(func.distinct(User.id))
+    ).filter(User.last_login >= now - timedelta(days=30)).scalar()
+    DAU_prev = active_users(2)
+    WAU_prev = db.session.query(
+        func.count(func.distinct(User.id))
+    ).filter(
+        User.last_login.between(
+            now - timedelta(days=14),
+            now - timedelta(days=7)
+        )
+    ).scalar() or 0
+    
+    MAU_prev = db.session.query(
+        func.count(func.distinct(User.id))
+    ).filter(
+        User.last_login.between(
+            now - timedelta(days=60),
+            now - timedelta(days=30)
+        )
+    ).scalar() or 0
+    
+    DAU_growth = percentage_growth(DAU, DAU_prev)
+    WAU_growth = percentage_growth(WAU, WAU_prev)
+    MAU_growth = percentage_growth(MAU, MAU_prev)
+
     # -----------------------------
     # VIEWS & ENGAGEMENT
     # -----------------------------
     total_views = db.session.query(db.func.sum(Post.views)).scalar() or 0
-    views_data = [
-        post.views for post in Post.query.order_by(Post.created_at.asc()).all()
-    ]
     posts = Post.query.order_by(Post.created_at.asc()).all()
-    likes_data = [post.likes.count() for post in posts]
     total_impressions = db.session.query(db.func.sum(Post.impressions)).scalar() or 0
     total_profile_visits = db.session.query(db.func.sum(User.profile_visits)).scalar() or 0
     total_shares = db.session.query(db.func.sum(Post.shares)).scalar() or 0
 
+    #-----------------------------
+    # ENGAGEMENT
+    #-----------------------------
     total_engagements = total_likes + total_replies + total_shares
     total_engagement_rate = (
         round((total_engagements / total_impressions) * 100, 2)
@@ -371,17 +436,52 @@ def analytics():
         db.func.sum(Post.read_time)
     ).scalar() or 0
 
-    total_active_users = db.session.query(
+    #-----------------------------
+    # NUMBER OF CREATORS AND ACTIVENESS
+    #-----------------------------
+    total_content_creators = db.session.query(
         db.func.count(db.func.distinct(Post.user_id))
     ).scalar() or 0
+    total_logged_in_users = User.query.filter(User.last_login.isnot(None)).count()
+    active_last_7_days = User.query.filter(
+        User.last_login >= datetime.utcnow() - timedelta(days=7)
+    ).count()
 
     # -----------------------------
     # PLATFORM CHART DATA
     # -----------------------------
+    post_counts = db.session.query(
+        func.date(Post.created_at),
+        func.count(Post.id)
+    ).group_by(func.date(Post.created_at)).all()
+    
+    labels = [str(d[0]) for d in post_counts]
+    post_data = [d[1] for d in post_counts]
+    
+    like_counts = db.session.query(
+        func.date(Post.created_at), func.count(Post.id)
+    ).group_by(func.date(Post.created_at)).all()
+    
+    likes_labels = [str(d[0]) for d in like_counts]  # date
+    likes_data = [d[1] for d in like_counts]        # count
+    #like_counts = [post.likes.count() for post in posts]
+    
+    view_counts = db.session.query(
+        func.date(PageView.created_at),
+        func.count(PageView.id)
+    ).group_by(func.date(PageView.created_at)).all()
+    
+    views_labels = [str(d[0]) for d in view_counts]
+    views_data = [d[1] for d in view_counts]
+    
     platforms = db.session.query(
         CaptionHistory.platform,
-        db.func.count()
+        func.count(CaptionHistory.id)
     ).group_by(CaptionHistory.platform).all()
+    
+    platform_labels = [p[0] for p in platforms]
+    caption_data = [p[1] for p in platforms]
+
 
     return render_template(
         "admin/analytics.html",
@@ -390,7 +490,18 @@ def analytics():
         # Totals
         total_views=total_views,
         total_read_time=total_read_time,
-        total_active_users=total_active_users,
+        total_active_users=total_logged_in_users,
+        total_time_on_page=total_time_on_page,
+        DAU=DAU,
+        WAU=WAU,
+        MAU=MAU,
+        DAU_growth=DAU_growth,
+        WAU_growth=WAU_growth,
+        MAU_growth=MAU_growth,
+        dau_labels=dau_labels,
+        dau_values=dau_values,
+        total_content_creators=total_content_creators,
+        active_last_7_days=active_last_7_days,
         total_registered_users=total_registered_users,
         total_likes=total_likes,
         total_replies=total_replies,
@@ -407,6 +518,10 @@ def analytics():
         total_impressions=total_impressions,
         views_data=safe_list(views_data),
         likes_data=safe_list(likes_data),
+        labels=labels,
+        post_data=post_data,
+        platform_labels=platform_labels,
+        caption_data=caption_data,
         total_profile_visits=total_profile_visits,
         total_shares=total_shares,
         total_engagements=total_engagements,
@@ -428,8 +543,6 @@ def analytics():
         total_shares_growth=growth_defaults,
         total_engagements_growth=growth_defaults,
         total_engagement_rate_growth=growth_defaults,
-
-        platforms=platforms
     )
 
 @admin_bp.route("/tags")

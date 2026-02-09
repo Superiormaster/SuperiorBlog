@@ -1,11 +1,11 @@
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, current_app, flash, make_response
-from app.models import Post, Comment, Like, Subscriber, ContactMessage, CaptionHistory, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit, FootballCache
-import os, traceback, re, base64, requests, secrets
+from app.models import Post, Comment, Like, Subscriber, ContactMessage, CaptionHistory, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit, FootballCache, PageView
+import os, traceback, re, base64, requests, secrets, uuid
 from requests.exceptions import ConnectionError
-from sqlalchemy import distinct, func, or_
+from sqlalchemy import distinct, func, or_, and_
 from collections import defaultdict
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
+from datetime import datetime, UTC, timedelta
 from app.moderation.engine import auto_moderate
 from cloudinary.exceptions import Error as CloudinaryError
 from app.moderation.rules import CATEGORY_RULES
@@ -18,8 +18,9 @@ from app.utils.email import send_email
 from app.utils.decorators import generate_unique_slug
 from app.utils.db_helpers import safe_commit
 from app.extensions import db, cache, csrf
-#from google.oauth2 import id_token
-#from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from oauthlib.oauth2 import WebApplicationClient
 from config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
 from sqlalchemy import func, desc
 from flask_login import login_user, logout_user, current_user, login_required
@@ -30,6 +31,11 @@ public_bp = Blueprint(
     __name__, 
     template_folder="../templates/user"
 )
+
+def track_login(user):
+    user.login_count = (user.login_count or 0) + 1
+    user.last_login = datetime.now(UTC)
+    safe_commit()
 
 @public_bp.route('/register', methods=['GET', 'POST'])
 def user_register():
@@ -69,6 +75,7 @@ def user_login():
         # User exists and password is correct
         if user and user.check_password(form.password.data) and not user.is_admin:
             login_user(user, remember=form.remember_me.data)
+            track_login(user)
 
             # AJAX modal login
             if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -830,7 +837,8 @@ def google_callback():
     idinfo = id_token.verify_oauth2_token(
         id_token_value,
         google_requests.Request(),
-        CLIENT_ID
+        CLIENT_ID,
+        clock_skew_in_seconds=5
     )
 
     # idinfo contains user info
@@ -839,14 +847,15 @@ def google_callback():
     oauth_id = idinfo["sub"]
 
     # Save or get user from DB
-    user = User.query.filter_by(oauth_id=oauth_id).first()
+    user = User.query.filter_by(email=user_email).first()
     if not user:
-        user = User(email=user_email, username=user_name, oauth_provider="google", oauth_id=oauth_id)
+        user = User(email=user_email, username=user_name, oauth_provider="google", oauth_id=oauth_id, is_active=1)
         db.session.add(user)
         if not safe_commit():
           print("Failed to login user")
 
     login_user(user)
+    track_login(user)
     flash("Logged in successfully", "success")
     if user.profile_completed:
         return redirect(url_for("public.user_dashboard"))
@@ -948,7 +957,17 @@ def index():
         .limit(5)
         .all()
     )
-        
+
+        # Get cached data
+    live = FootballCache.query.filter_by(data_type="live", league="PL").first()
+    table = FootballCache.query.filter_by(data_type="table", league="PL").first()
+
+    live_matches = live.json_data if live else []
+
+    league_table = []
+    if table and isinstance(table.json_data, list) and len(table.json_data) > 0:
+        league_table = table.json_data[0].get("table", [])
+
     popular_tags = (
         Tag.query
         .join(post_tags)
@@ -964,7 +983,10 @@ def index():
         .filter(CaptionHistory.style == "editor_pick") \
         .order_by(desc(CaptionHistory.confidence)) \
         .limit(5).all()
-    return render_template("homepage.html", posts=posts, trending_posts=trending_posts, popular_tags=popular_tags, breaking_posts=breaking_posts, Post=Post, editor_picks=editor_picks)
+
+    print("Live Matches:", live_matches)
+    print("League Table:", league_table)
+    return render_template("homepage.html", posts=posts, trending_posts=trending_posts, popular_tags=popular_tags, breaking_posts=breaking_posts, Post=Post, live_matches=live_matches, league_table=league_table, editor_picks=editor_picks)
 
 @public_bp.route("/post/<slug>", endpoint='post_detail')
 def post_detail(slug):
@@ -975,18 +997,35 @@ def post_detail(slug):
     # ---------------------------
     # VIEW COUNT (SAFE)
     # ---------------------------
-    viewed_posts = session.get("viewed_posts", set())
+    session_id = session.get("session_id")
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        session["session_id"] = session_id
 
-    # Flask session can't store set directly
-    if isinstance(viewed_posts, list):
-        viewed_posts = set(viewed_posts)
+    # Get user IP (simple way)
+    ip_address = request.remote_addr
 
-    if post.id not in viewed_posts:
-        post.views = (post.views or 0) + 1
-        viewed_posts.add(post.id)
-        session["viewed_posts"] = list(viewed_posts)
-        db.session.commit()
+    # Check if this session/user/IP has already viewed this post
+    already_viewed = PageView.query.filter(
+        and_(
+            PageView.path == f"/post/{slug}",
+            PageView.session_id == session_id,
+            PageView.created_at >= datetime.now(UTC) - timedelta(hours=24)
+        )
+    ).first()
   
+    if not already_viewed:
+        # Increment post view count
+        post.views = (post.views or 0) + 1
+        db.session.add(PageView(
+            user_id=getattr(current_user, "id", None),
+            session_id=session_id,
+            path=f"/post/{slug}",
+            ip_address=ip_address,
+            created_at=datetime.now(UTC)
+        ))
+        safe_commit()
+
     latest_posts = (
         Post.query
         .filter_by(is_published=True)
@@ -1118,6 +1157,10 @@ def load_more():
         "html": html,
         "has_more": pagination.has_next
     })
+
+@public_bp.route("/pricing", endpoint="pricing")
+def pricing_page():
+    return render_template("pricing.html")
 
 @public_bp.route("/subscribe", methods=["POST"])
 @csrf.exempt
@@ -1310,27 +1353,6 @@ def privacy():
 def terms():
     settings = AppSettings.query.first()
     return render_template("terms.html", settings=settings)
-
-@public_bp.route("/football")
-def football_page():
-    live = FootballCache.query.filter_by(data_type="live", league="PL").first()
-    table = FootballCache.query.filter_by(data_type="table", league="PL").first()
-    return render_template("football.html", live=live.json_data if live else [], table=table.json_data if table else [])
-
-@public_bp.route("/explore")
-def explore_page():
-    # Get cached data
-    live = FootballCache.query.filter_by(data_type="live", league="PL").first()
-    table = FootballCache.query.filter_by(data_type="table", league="PL").first()
-
-    live_matches = live.json_data if live else []
-    league_table = table.json_data[0]["table"] if table else []
-
-    return render_template(
-        "tools/explore.html",
-        live_matches=live_matches,
-        league_table=league_table
-    )
 
 # Sitemap for Google News
 @public_bp.route("/sitemap.xml")

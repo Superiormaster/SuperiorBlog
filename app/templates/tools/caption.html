@@ -16,10 +16,15 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
     <h1 class="text-3xl font-bold tracking-tight">📰 News & Social Caption Generator</h1>
     <p class="text-gray-400 mt-2">Generate professional headlines and viral captions for news, sports & breaking stories</p>
   </div>  
-  <section class="tool-header">
+<section class="tool-header">
   <h1>One Story → Every Platform</h1>
   <p>Turn one idea into platform-native content instantly.</p>
-  </section>
+</section>
+{% if current_user.is_premium %}
+  <div class="premium-badge">🌟 Premium User</div>
+{% else %}
+  <div>Upgrade to premium for extra features</div>
+{% endif %}
   
   <div class="border-2 border-yellow-400 bg-yellow-50 p-4 rounded-xl">
     <span class="text-xs font-bold text-yellow-600">BEST CAPTION</span>
@@ -58,6 +63,13 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
   {% endif %}
 </div>
 
+<!-- Premium Plan button -->
+<form id="premiumForm" method="POST" action="{{ url_for('billings.init_payment') }}">
+  <button type="submit"
+          class="w-full py-3 bg-yellow-500 rounded text-black font-semibold hover:bg-yellow-400">
+    Upgrade to Premium
+  </button>
+</form>
   <!-- Input -->  
 
   <div class="space-y-4">

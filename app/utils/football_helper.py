@@ -2,6 +2,7 @@ from app.utils.football import get_live_matches, get_league_table, get_upcoming_
 from app.models import FootballCache
 from app.extensions import db
 from datetime import datetime
+from app.utils.db_helpers import safe_commit
 
 def update_football_cache():
     leagues = ["PL"]  # Add more if needed
@@ -24,4 +25,4 @@ def update_football_cache():
         cache.json_data = table
         cache.updated_at = datetime.utcnow()
 
-    db.session.commit()
+    safe_commit()

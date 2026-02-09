@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/Blog_App/venv/bin/python3
+#!/data/data/com.termux/files/home/Blog_App/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

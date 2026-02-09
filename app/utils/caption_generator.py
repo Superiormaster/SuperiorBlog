@@ -30,12 +30,12 @@ PLATFORM_PRESETS = {
 # Detect Platform Automatically
 # ------------------------------
 def detect_platform(text):
-    text_lower = text.lower()
-    if "#" in text_lower:
-        return "instagram"
-    if "breaking" in text_lower or "🚨" in text_lower:
+    t = text.lower()
+    if "thread" in t or "🚨" in t or "breaking" in t:
         return "x"
-    if any(word in text_lower for word in ["linkedin", "professional", "career"]):
+    if "#" in t:
+        return "instagram"
+    if any(word in t for word in ["career", "hiring", "professional"]):
         return "linkedin"
     return "facebook"
 
@@ -54,6 +54,15 @@ def generate_caption(text: str, tone=None, length="short", user=None, platforms=
     # Default platform
     if not platforms:
         platforms = [detect_platform(text)]
+
+    if any(word in text.lower() for word in [
+        "breaking", "just in", "this changes", "here’s why", "thread", "full-time"
+    ]):
+        score += 15
+
+    if platform != "x":
+      emoji_count = sum(1 for c in text if c in "🔥🚨⚽")
+      score += min(emoji_count * 5, 10)
 
     # Free users get only one platform
     if user and not getattr(user, "is_premium", False):
@@ -98,10 +107,11 @@ def generate_caption(text: str, tone=None, length="short", user=None, platforms=
         if length == "short":
             caption = caption[:120]
 
-        if style == "viral":
-            caption += " 🔥"
-        elif style == "editor_pick":
-            caption += " — Editor's choice"
+        if platform != "x":
+            if style == "viral":
+                caption += " 🔥"
+            elif style == "editor_pick":
+                caption += " — Editor's choice"
 
         caption = caption[:max_length]
 

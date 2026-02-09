@@ -12,7 +12,7 @@
   <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
     <div class="flex justify-between text-xs">
       <h3 class="text-sm text-gray-400">Total Views(Unique views)</h3>
-      <span class="text-emerald-400">↑ {{ growth_percentage }}%</span>
+      <span class="text-emerald-400">↑ {{ total_views_growth }}%</span>
     </div>
     <p class="text-2xl font-bold">{{ total_views }}</p>
   </div>
@@ -60,7 +60,7 @@
     <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
     <div class="flex justify-between text-xs">
       <h3 class="text-sm text-gray-400">Unique Visitors</h3>
-      <span class="text-emerald-400">↑ {{ total_replies_growth }}%</span>
+      <span class="text-emerald-400">↑ {{ unique_visitors_growth }}%</span>
     </div>
     <p class="text-2xl font-bold">{{ unique_visitors }}</p>
   </div>
@@ -76,9 +76,9 @@
     <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
     <div class="flex justify-between text-xs">
       <h3 class="text-sm text-gray-400">Total time on page</h3>
-      <span class="text-emerald-400">↑ {{ total_replies_growth }}%</span>
+      <span class="text-emerald-400">↑ {{ total_time_on_page_growth }}%</span>
     </div>
-    <p class="text-2xl font-bold">{{ total_replies }}</p>
+    <p class="text-2xl font-bold">{{ total_time_on_page }}</p>
   </div>
 
   <div class="panel bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1">
@@ -89,17 +89,23 @@
     <p class="text-2xl font-bold">{{ total_deleted_accounts }}</p>
   </div>
 
-  <div class="panel hidden md:block bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Shares</h3>
+      <span class="text-emerald-400">↑ {{ total_shares_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_shares }}</p>
+  </div>
+  
+  <div class="panel md:hidden bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
     <div class="flex justify-between text-xs">
       <h3 class="text-sm text-gray-400">Caption Users</h3>
       <span class="text-emerald-400">↑ {{ total_caption_users_growth }}%</span>
     </div>
     <p class="text-2xl font-bold">{{ total_caption_users }}</p>
   </div>
-</div>
-
-<div class="mb-6 mt-6 px-4">
-  <div class="panel md:hidden bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+  
+  <div class="panel hidden md:block bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
     <div class="flex justify-between text-xs">
       <h3 class="text-sm text-gray-400">Caption Users</h3>
       <span class="text-emerald-400">↑ {{ total_caption_users_growth }}%</span>
@@ -139,9 +145,55 @@
       <h2 class="panel-title">Avg Caption</h2>
       <span class="text-emerald-400">↑ {{ total_avg_caption_growth }}%</span>
     </div>
-    <div class="h-20 bg-black/80 rounded mt-6">
-      <p class="text-2xl font-bold">{{ total_avg_caption }}</p>
+    <p class="text-2xl font-bold">{{ total_avg_caption }}</p>
+  </div>
+
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Engagements</h3>
+      <span class="text-emerald-400">↑ {{ total_engagements_growth }}%</span>
     </div>
+    <p class="text-2xl font-bold">{{ total_engagements }}</p>
+  </div>
+  
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Engagement rate</h3>
+      <span class="text-emerald-400">↑ {{ total_engagement_rate_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ total_engagement_rate }}%</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 hidden md:block md:grid-cols-3 gap-6 space-y-6 mb-6 mt-12 px-4">
+  <div class="panel bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs"> 
+      <p class="text-sm text-gray-400">DAU</p>    
+      <p class="{% if DAU_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+        ↑ {{ DAU_growth }}%
+      </p>
+    </div>
+    <h3 class="text-3xl font-bold">{{ DAU }}</h3>
+  </div>
+
+  <div class="panel bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <p class="text-sm text-gray-400">WAU</p>
+      <p class="{% if WAU_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+        ↑ {{ WAU_growth }}%
+      </p>
+    </div>
+    <h3 class="text-3xl font-bold">{{ WAU }}</h3>
+  </div>
+
+  <div class="panel bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <p class="text-sm text-gray-400">MAU</p>
+      <p class="{% if MAU_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+        ↑ {{ MAU_growth }}%
+      </p>
+    </div>
+    <h3 class="text-3xl font-bold">{{ MAU }}</h3>
   </div>
 </div>
 
@@ -170,36 +222,44 @@
     <p class="text-2xl font-bold">{{ total_profile_visits }}</p>
   </div>
 
-  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+  <div class="panel md:hidden bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
     <div class="flex justify-between text-xs">
-      <h3 class="text-sm text-gray-400">Shares</h3>
-      <span class="text-emerald-400">↑ {{ total_shares_growth }}%</span>
+      <p class="text-sm text-gray-400">DAU</p>
+      <p class="{% if DAU_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+        {{ DAU_growth }}%
+      </p>
     </div>
-    <p class="text-2xl font-bold">{{ total_shares }}</p>
+    <h3 class="text-3xl font-bold">{{ DAU }}</h3>
   </div>
 
-  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+  <div class="panel md:hidden bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
     <div class="flex justify-between text-xs">
-      <h3 class="text-sm text-gray-400">Engagements</h3>
-      <span class="text-emerald-400">↑ {{ total_engagements_growth }}%</span>
+      <p class="text-sm text-gray-400">WAU</p>
+      <p class="{% if WAU_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+        {{ WAU_growth }}%
+      </p>
     </div>
-    <p class="text-2xl font-bold">{{ total_engagements }}</p>
+    <h3 class="text-3xl font-bold">{{ WAU }}</h3>
   </div>
-  
-  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+
+  <div class="panel md:hidden bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
     <div class="flex justify-between text-xs">
-      <h3 class="text-sm text-gray-400">Engagement rate</h3>
-      <span class="text-emerald-400">↑ {{ total_engagement_rate_growth }}%</span>
+      <p class="text-sm text-gray-400">MAU</p>
+      <p class="{% if MAU_growth >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+        {{ MAU_growth }}%
+      </p>
     </div>
-    <p class="text-2xl font-bold">{{ total_engagement_rate }}%</p>
+    <h3 class="text-3xl font-bold">{{ MAU }}</h3>
   </div>
 </div>
+
+<canvas id="userActivityChart"></canvas>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-const labels = {{ platforms | map(attribute=0) | list | tojson }};
-const values = {{ platforms | map(attribute=1) | list | tojson }};
+const labels = {{ labels | tojson }};
+const platformLabels = {{ platform_labels | tojson }};
 
 new Chart(document.getElementById("postChart"), {
   type: 'bar',
@@ -208,19 +268,19 @@ new Chart(document.getElementById("postChart"), {
     datasets: [
       {
         label: "Posts",
-        data: values,
+        data: {{ post_data|tojson }},
         borderWidth: 2,
         tension: 0.4
       },
       {
         label: "Views",
-        data: values,
+        data: {{ views_data|tojson }},
         borderWidth: 2,
         tension: 0.4
       },
       {
         label: "Likes",
-        data: values,
+        data: {{ likes_data|tojson }},
         borderWidth: 2,
         tension: 0.4
       }
@@ -250,11 +310,11 @@ new Chart(document.getElementById("postChart"), {
 new Chart(document.getElementById("captionChart"), {
   type: 'bar',
   data: {
-    labels: labels,
+    labels: platformLabels,
     datasets: [
       {
         label: "Captions",
-        data: values,
+        data: {{ caption_data | tojson }},
         borderWidth: 2,
         tension: 0.4
       },
@@ -271,6 +331,32 @@ new Chart(document.getElementById("captionChart"), {
         tension: 0.4
       }
     ]
+  }
+});
+
+new Chart(document.getElementById("userActivityChart"), {
+  type: "line",
+  data: {
+    labels: {{ dau_labels | tojson }},
+    datasets: [
+      {
+        label: "Daily Active Users",
+        data: {{ dau_values | tojson }},
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { labels: { color: "#9ca3af" } }
+    },
+    scales: {
+      x: { ticks: { color: "#9ca3af" } },
+      y: { ticks: { color: "#9ca3af" } }
+    }
   }
 });
 </script>

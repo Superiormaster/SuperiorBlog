@@ -1,8 +1,8 @@
 import os, json
 from dotenv import load_dotenv
 import cloudinary
-#from google.oauth2 import id_token
-#from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 load_dotenv()
 
@@ -29,4 +29,4 @@ cloudinary.config(
 
 CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-REDIRECT_URI = os.getenv("REDIRECT_URI", "http://localhost:5000/login/google/callback")
+REDIRECT_URI = os.getenv("REDIRECT_URI")
