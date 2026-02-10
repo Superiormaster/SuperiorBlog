@@ -312,7 +312,9 @@
     <!-- General Links -->
     <div class="flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">General</h4>
-      <a href="{{ url_for('public.contact') }}" class="hover:text-white">Contact Us</a>
+      <a href="{{ url_for('public.contact', type='contact') }}" class="hover:text-white">Contact Us</a>
+      <a href="{{ url_for('public.contact', type='feedback') }}" class="hover:text-white">Write a feedback</a>
+      <a href="{{ url_for('public.contact', type='report') }}" class="hover:text-white">Report a problem</a>
       <a href="{{ url_for('public.privacy') }}" class="hover:text-white">Privacy Policy</a>
       <a href="{{ url_for('public.terms') }}" class="hover:text-white">Terms & Conditions</a>
     </div>
@@ -320,10 +322,11 @@
     <!-- Categories -->
     <div class="flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">Categories</h4>
-      <a href="{{ url_for('public.category', slug='world') }}" class="hover:text-white">World</a>
-      <a href="{{ url_for('public.category', slug='sports') }}" class="hover:text-white">Sports</a>
-      <a href="{{ url_for('public.category', slug='politics') }}" class="hover:text-white">Politics</a>
-      <a href="{{ url_for('public.category', slug='business') }}" class="hover:text-white">Business</a>
+      {% for cat in nav_categories %}
+        <a data-redirect href="{{ url_for('public.category', slug=cat.slug) }}" class="capitalize btn-primary btn-danger">
+          {{ cat.name }}
+        </a>
+      {% endfor %}
     </div>
 
     <!-- Social Links -->

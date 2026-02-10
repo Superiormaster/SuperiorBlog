@@ -17,6 +17,13 @@ categories = [
     ("Politics", "politics"),
     ("Business", "business"),
     ("Sports", "sports"),
+    ("Education", "education"),
+    ("Lifestyle", "lifestyle"),
+    ("Nigeria", "nigeria"),
+    ("Technology", "technology"),
+    ("Health", "health"),
+    ("Entertainment", "entertainment"),
+    ("Personal Finance", "personal-finance"),
 ]
 
 # Default labels

@@ -3,6 +3,7 @@ from app.models import Post, Comment, Like, Subscriber, ContactMessage, CaptionH
 import os, traceback, re, base64, requests, secrets, uuid
 from requests.exceptions import ConnectionError
 from sqlalchemy import distinct, func, or_, and_
+from uuid import uuid4
 from collections import defaultdict
 from bs4 import BeautifulSoup
 from datetime import datetime, UTC, timedelta
@@ -21,7 +22,6 @@ from app.extensions import db, cache, csrf
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from oauthlib.oauth2 import WebApplicationClient
-from config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
 from sqlalchemy import func, desc
 from flask_login import login_user, logout_user, current_user, login_required
 from app.forms import UserLoginForm, UserRegisterForm, ChangePasswordForm, PostForm, ProfileForm, DeletePostForm, SubmitPostForm, ResetPasswordForm, ForgotPasswordForm
@@ -107,7 +107,8 @@ def user_login():
         return jsonify({"success": False, "message": "Form validation failed."})
 
     # GET request → show login page
-    return render_template('user/login.html', form=form)
+    return render_template('user/login.html', form=form, GOOGLE_CLIENT_ID=current_app.config["GOOGLE_CLIENT_ID"]
+    )
 
 @public_bp.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
@@ -799,12 +800,14 @@ def delete_post(id):
 
 @public_bp.route("/login/google")
 def google_login():
+    client_id = current_app.config["GOOGLE_CLIENT_ID"]
+    redirect_uri = current_app.config["REDIRECT_URI"]
     # Google OAuth URL
     google_auth_url = (
         "https://accounts.google.com/o/oauth2/v2/auth"
         "?response_type=code"
-        f"&client_id={CLIENT_ID}"
-        f"&redirect_uri={REDIRECT_URI}"
+        f"&client_id={client_id}"
+        f"&redirect_uri={redirect_uri}"
         "&scope=openid%20email%20profile"
         "&prompt=select_account"
         "&include_granted_scopes=true" 
@@ -813,31 +816,35 @@ def google_login():
 
 @public_bp.route("/login/google/callback")
 def google_callback():
+    client_id = current_app.config["GOOGLE_CLIENT_ID"]
+    redirect_uri = current_app.config["REDIRECT_URI"]
+    client_secret = current_app.config["CLIENT_SECRET"]
     code = request.args.get("code")
     if not code:
-        return "No code provided", 400
+        flash("Google login failed: no code", "error")
+        return redirect(url_for("public.user_login"))
 
     # Exchange code for tokens
     token_url = "https://oauth2.googleapis.com/token"
     data = {
         "code": code,
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "redirect_uri": REDIRECT_URI,
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "redirect_uri": redirect_uri,
         "grant_type": "authorization_code"
     }
     token_response = requests.post(token_url, data=data).json()
     # 🚨 Ensure id_token exists
     id_token_value = token_response.get("id_token")
     if not id_token_value:
-        flash("Google did not return id_token", "error")
+        flash("Google could not log you in. Try again", "error")
         return redirect(url_for("public.user_login"))
 
     # ✅ Verify token
     idinfo = id_token.verify_oauth2_token(
         id_token_value,
         google_requests.Request(),
-        CLIENT_ID,
+        client_id,
         clock_skew_in_seconds=5
     )
 
@@ -847,9 +854,13 @@ def google_callback():
     oauth_id = idinfo["sub"]
 
     # Save or get user from DB
-    user = User.query.filter_by(email=user_email).first()
-    if not user:
-        user = User(email=user_email, username=user_name, oauth_provider="google", oauth_id=oauth_id, is_active=1)
+    user = User.query.filter((User.email==user_email) | (User.oauth_id == oauth_id)).first()
+    if user:
+        # Update login info only
+        user.last_login = datetime.utcnow()
+        user.login_count = (user.login_count or 0) + 1
+    else:
+        user = User(email=user_email, username=f"user_{uuid4().hex[:8]}", oauth_provider="google", oauth_id=oauth_id, is_active=1, created_at=datetime.utcnow(), last_login=datetime.utcnow(), login_count=1,)
         db.session.add(user)
         if not safe_commit():
           print("Failed to login user")
@@ -873,7 +884,7 @@ def google_one_tap():
         idinfo = id_token.verify_oauth2_token(
             token,
             google_requests.Request(),
-            CLIENT_ID
+            GOOGLE_CLIENT_ID
         )
     except ValueError:
         return jsonify({"error": "Invalid token"}), 400

@@ -52,6 +52,8 @@
           ></span>
         </a>
       </div>
+      <!-- DEBUG -->
+<p style="display:none">{{ GOOGLE_CLIENT_ID }}</p>
       <p id="googleError" class="hidden text-sm text-red-500">
         Something went wrong. Please try again.
       </p>
@@ -61,6 +63,7 @@
       </form>
     </div>
   </div>
+
 <div
   id="g_id_onload"
   data-client_id="{{ GOOGLE_CLIENT_ID }}"
@@ -70,6 +73,7 @@
   data-auto_prompt="true">
 </div>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 function show_pass() {
   const password = document.getElementById("password");
@@ -81,6 +85,7 @@ function show_pass() {
 </script>
 <script>
 function handleGoogleOneTap(response) {
+    if (!response || !response.credential) return;
     fetch("/auth/google/onetap", {
         method: "POST",
         headers: {
@@ -95,9 +100,14 @@ function handleGoogleOneTap(response) {
     .then(data => {
         if (data.success) {
             window.location.href = "/dashboard";
+        } else {
+          flash("Could not log you in. Try again.");
         }
     })
-    .catch(err => console.error(err));
+    .catch(err => {
+      console.error(err);
+      flash("Network error. Please check your connection.");
+    }
 }
 </script>
 

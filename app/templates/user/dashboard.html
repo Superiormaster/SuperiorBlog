@@ -26,6 +26,7 @@
   
     <div class="hidden md:block w-full bg-gray-900 mx-0 mt-2 text-white transform transition-transform duration-300 z-50">
     <nav class="flex justify-between p-4 space-y-3">
+      <a href="{{ url_for('public.index') }}" data-redirect class="btn-primary btn-danger px-4 py-2">Home</a>
       <!--<a href="{{ url_for('caption.caption_page') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Caption Generator</a>-->
       <a href="{{ url_for('public.create_post') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Create</a>
       <a href="{{ url_for('public.user_analysis') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Analysis</a>
