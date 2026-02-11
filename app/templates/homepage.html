@@ -348,9 +348,12 @@
   <!-- Newsletter -->
   <div class="p-6 rounded-xl bg-gradient-to-r from-gray-700/20 to-neutral-500/20 border border-yellow-500/20">
     <h3 class="font-semibold mb-3 text-center">Stay ahead. Get the top stories every morning</h3>
+    <input type="hidden" name="csrf_token" value="...">
     <form action="{{ url_for('public.subscribe') }}" method="post" class="flex flex-col md:flex-row gap-3">
-      <input type="email" name="email" placeholder="Enter your email to stay informed" class="flex-1 p-3 rounded-lg text-white w-full border border-[#c89a1a] focus:outline-none"/>
-      <button class="px-6 py-3 rounded-lg font-medium text-black bg-[#c89a1a]">Subscribe</button>
+      {{ form.hidden_tag() }}
+      {{ form.email(class="form-control flex-1 p-3 rounded-lg text-white w-full border border-[#c89a1a] focus:outline-none", placeholder="Enter your email to stay informed") }}
+      {{ form.submit(class="btn btn-primary px-6 py-3 rounded-lg font-medium text-black bg-[#c89a1a]") }}
+      
     </form>
   </div>
 

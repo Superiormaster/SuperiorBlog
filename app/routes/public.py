@@ -16,6 +16,7 @@ from app.moderation.duplicate import is_duplicate
 from app.utils.helper import process_tags, get_related_posts, publish_scheduled_posts
 from app.utils.cloudinary_helper import upload_image_file
 from app.utils.email import send_email
+from app.utils.admin_email import send_welcome_email
 from app.utils.decorators import generate_unique_slug
 from app.utils.db_helpers import safe_commit
 from app.extensions import db, cache, csrf
@@ -24,7 +25,7 @@ from google.auth.transport import requests as google_requests
 from oauthlib.oauth2 import WebApplicationClient
 from sqlalchemy import func, desc
 from flask_login import login_user, logout_user, current_user, login_required
-from app.forms import UserLoginForm, UserRegisterForm, ChangePasswordForm, PostForm, ProfileForm, DeletePostForm, SubmitPostForm, ResetPasswordForm, ForgotPasswordForm
+from app.forms import UserLoginForm, UserRegisterForm, ChangePasswordForm, PostForm, ProfileForm, DeletePostForm, SubmitPostForm, ResetPasswordForm, ForgotPasswordForm, SubscribeForm
 
 public_bp = Blueprint(
     "public",
@@ -754,7 +755,7 @@ def submit_user_post(id):
             if first_img:
                 post.featured_image = first_img.get("src")
 
-        db.session.commit()
+        safe_commit()
         flash(f"Post submitted: {status.upper()}" + (f" ({reason})" if reason else ""), "success")
     except Exception as e:
         db.session.rollback()
@@ -921,6 +922,7 @@ def user_logout():
 
 @public_bp.route("/")
 def index():
+    form = SubscribeForm()
     three_days_ago = datetime.utcnow() - timedelta(days=3)
     seven_days_ago = datetime.utcnow() - timedelta(days=7)
     six_hours_ago = datetime.utcnow() - timedelta(hours=6)
@@ -997,10 +999,11 @@ def index():
 
     print("Live Matches:", live_matches)
     print("League Table:", league_table)
-    return render_template("homepage.html", posts=posts, trending_posts=trending_posts, popular_tags=popular_tags, breaking_posts=breaking_posts, Post=Post, live_matches=live_matches, league_table=league_table, editor_picks=editor_picks)
+    return render_template("homepage.html", posts=posts, trending_posts=trending_posts, popular_tags=popular_tags, breaking_posts=breaking_posts, Post=Post, live_matches=live_matches, league_table=league_table, form=form, editor_picks=editor_picks)
 
 @public_bp.route("/post/<slug>", endpoint='post_detail')
 def post_detail(slug):
+    form = SubscribeForm()
     post = Post.query.filter_by(slug=slug, is_published=True).first_or_404()
     # Convert to HTML
     content_html = post.content
@@ -1071,7 +1074,7 @@ def post_detail(slug):
     if not safe_commit():
         print("Failed to view post")
 
-    return render_template("post.html", post=post, content_html=content_html, latest_posts=latest_posts, related_posts=related_posts, section_title=section_title)
+    return render_template("post.html", post=post, content_html=content_html, latest_posts=latest_posts, related_posts=related_posts, form=form, section_title=section_title)
 
 @public_bp.route("/track-related-click", methods=["POST"])
 def track_related_click():
@@ -1174,12 +1177,17 @@ def pricing_page():
     return render_template("pricing.html")
 
 @public_bp.route("/subscribe", methods=["POST"])
-@csrf.exempt
 def subscribe():
-    email = request.form.get("email")
+    form = SubscribeForm()
+
+    if not form.validate_on_submit():
+        flash("Invalid email submission.", "error")
+        return redirect(request.referrer)
+
+    email = form.email.data.lower().strip()
 
     if not email:
-        flash("Please enter a valid email address.", "error")
+        flash("Please enter an email address.", "error")
         return redirect(request.referrer)
 
     existing = Subscriber.query.filter_by(email=email).first()
@@ -1202,6 +1210,11 @@ def subscribe():
     db.session.add(subscriber)
     if not safe_commit():
         print("Failed to add subscribers")
+        flash("Something went wrong. Try again.", "error")
+        return redirect(request.referrer)
+
+    # ✅ SEND WELCOME EMAIL HERE
+    send_welcome_email(email, token)
 
     flash("Thanks for subscribing", "success")
     return redirect(url_for("public.index"))
@@ -1230,6 +1243,7 @@ def tag(slug):
 
 @public_bp.route("/category/<string:slug>")
 def category(slug):
+    form = SubscribeForm()
     category = Category.query.filter_by(slug=slug).first_or_404()
 
     posts = (
@@ -1265,6 +1279,7 @@ def category(slug):
         "category.html",
         category=category,
         posts=posts,
+        form=form,
         trending_posts=trending_posts
     )
 
