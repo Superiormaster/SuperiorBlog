@@ -12,9 +12,6 @@ from flask_login import current_user
 from flask_migrate import Migrate
 from app.models import AppSettings, Category, Post, PageView, User
 from app.forms import UserLoginForm
-from apscheduler.schedulers.background import BackgroundScheduler
-from app.utils.helper import publish_scheduled_posts
-from .utils.scheduler import start_scheduler
 import os
 from app.utils.db_helpers import safe_commit
 from datetime import datetime, UTC, date
@@ -40,7 +37,6 @@ def create_app():
     csrf.init_app(app)
     cache.init_app(app) 
     mail.init_app(app)
-    start_scheduler(app)
 
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp)
