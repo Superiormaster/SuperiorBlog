@@ -29,12 +29,13 @@ def upgrade():
         batch_op.create_foreign_key('fk_emaillog_subscriber_id', 'subscriber', ['subscriber_id'], ['id'])
         batch_op.drop_column('recipient')
 
-    email_log = table(
-        'email_log',
-        column('id', Integer),
-        column('subscriber_id', Integer),
-        column('email', String)
-    )
+    from app.extensions import db
+    from app.models import EmailLog
+
+    session = db.session
+    for row in session.query(EmailLog).filter(EmailLog.email.is_(None)):
+    row.email = f'unknown+{row.id}@example.com'
+    session.commit()
 
     with op.batch_alter_table('email_log', schema=None) as batch_op:
         batch_op.alter_column('email', existing_type=sa.String(length=255), nullable=False)
