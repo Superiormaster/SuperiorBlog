@@ -34,7 +34,7 @@ def upgrade():
 
     session = db.session
     for row in session.query(EmailLog).filter(EmailLog.email.is_(None)):
-    row.email = f'unknown+{row.id}@example.com'
+        row.email = f'unknown+{row.id}@example.com'
     session.commit()
 
     with op.batch_alter_table('email_log', schema=None) as batch_op:
