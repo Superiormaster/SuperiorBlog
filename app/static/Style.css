@@ -140,6 +140,31 @@ form > div {
   min-height: 0;
 }
 
+/* Breaking news banner */
+.breaking-banner {
+  background-color: #dc2626; /* Tailwind red-600 */
+  color: white;
+  font-weight: bold;
+  width: 100%;
+  overflow: hidden;
+  position: relative; /* instead of fixed */
+  z-index: 10;
+  transition: transform 0.3s ease, max-height 0.3s ease;
+}
+
+/* Hide/show effect */
+.breaking-banner.hidden {
+  max-height: 0;
+  padding: 0;
+  transform: scaleY(0);
+}
+.breaking-banner.visible {
+  max-height: 80px; /* enough for your text */
+  transform: scaleY(1);
+}
+
+/* Add spacing for nav automatically handled by flow */
+
 /* Caption generator */
 .captions-container {
   transition: max-height 0.3s ease;

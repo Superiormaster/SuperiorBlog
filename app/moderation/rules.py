@@ -1,6 +1,6 @@
 CATEGORY_RULES = {
     "news": {
-        "min_words": 300,
+        "min_words": 150,
         "auto_publish": False
     },
     "opinion": {

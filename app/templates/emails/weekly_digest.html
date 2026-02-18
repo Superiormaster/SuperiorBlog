@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weekly Digest</title>
 </head>
-<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#000;">
+<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#1F2937;">
 
   <!-- Outer wrapper -->
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -39,15 +39,34 @@
             <td>
               <ul style="color:#666; line-height:1.5; padding-left:20px;">
                 {% for post in posts %}
-                  <li style="margin-bottom: 10px;">
+                  <li style="margin-bottom: 10px; list-style: none;">
                     {% if post.featured_image %}
-                    <img src="{{ post.featured_image }}" alt="{{ post.title }}" width="120" />
+                    <img src="{{ post.featured_image }}" alt="{{ post.title }}" width="100%"
+                  style="
+                        display:block;
+                        width:100%;
+                        max-width:560px;
+                        height:auto;
+                        border-radius:6px;
+                        margin-bottom:10px;"
+                       alt="{{ post.title }}" />
                     {% endif %}<br>
                     <a href="https://www.superiornews.app/post/{{ post.slug }}" 
-                       style="color:#1a73e8; text-decoration:none; font-weight:bold;">
+                    style="
+                      color:#FACC15;
+                      font-size:16px;
+                      font-weight:bold;
+                      text-decoration:none;
+                      line-height:1.4;
+                      display:block;
+                      margin-bottom:6px;
+                    ">
                       {{ post.title }}
                     </a>
-                    <p style="margin:5px 0 15px 0; color:#555555;">{{ post.excerpt }}</p>
+                    <p style="margin:0 0 15px 0; 
+                    color:#CCCCCC; 
+                    font-size:14px; 
+                    line-height:1.5;">{{ post.excerpt }}</p>
                   </li>
                 {% endfor %}
               </ul>
@@ -72,11 +91,12 @@
             text-align: center;">
               <p>You are receiving this email because you subscribed to Superior News.</p>
               <p>
-                <a href="https://www.superiornews.app/unsubscribe/{{ unsubscribe_token }}">
+                <a style="color:#FACC15;" href="https://www.superiornews.app/unsubscribe/{{ subscriber.unsubscribe_token }}">
                   Unsubscribe
                 </a>
               </p>
               <p>© {{ now.year }} Superior News</p>
+               <p>Superior News Team</p>
             </td>
           </tr>
 

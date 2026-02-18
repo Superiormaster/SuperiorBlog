@@ -23,8 +23,16 @@
     h1, h2, h3 {
       color: #fff;
     }
+    news-item h3 {
+      font-size:16px;
+      font-weight:bold;
+      text-decoration:none;
+      line-height:1.4;
+      display:block;
+      margin-bottom:6px;
+    }
     a {
-      color: #1d72b8;
+      color:#FACC15;
       text-decoration: none;
     }
     a:hover {
@@ -50,8 +58,10 @@
     }
     .news-item img {
       max-width: 100%;
+      display:block;
+      width:100%;
+      max-width:560px;
       height: auto;
-      display: block;
       margin-bottom: 5px;
       border-radius: 4px;
     }
@@ -81,7 +91,7 @@
           {% endif %}
           <h3><a href="{{ post.url or 'https://www.superiornews.app/post/' + post.slug }}">{{ post.title }}</a></h3>
           {% if post.excerpt %}
-            <p>{{ post.excerpt }}</p>
+            <p style="margin:0 0 15px 0; color:#CCCCCC; font-size:14px; line-height:1.5;">{{ post.excerpt }}</p>
           {% endif %}
         </div>
       {% endfor %}
@@ -98,7 +108,7 @@
     <div class="footer">
       <p>You are receiving this email because you subscribed to Superior News.</p>
       <p>
-        <a href="https://www.superiornews.app/unsubscribe/{{ unsubscribe_token }}">
+        <a href="https://www.superiornews.app/unsubscribe/{{ subscriber.unsubscribe_token }}">
           Unsubscribe
         </a>
       </p>

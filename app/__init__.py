@@ -1,4 +1,4 @@
-from flask import Flask, request, url_for, redirect, session, has_request_context
+from flask import Flask, request, url_for, redirect, session, flash, has_request_context
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
 from app.routes.public import public_bp
@@ -10,14 +10,14 @@ from uuid import uuid4
 from app.extensions import db, login_manager, cache, csrf, mail
 from flask_login import current_user
 from flask_migrate import Migrate
-from app.models import AppSettings, Category, Post, PageView
+from app.models import AppSettings, Category, Post, PageView, User
 from app.forms import UserLoginForm
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.utils.helper import publish_scheduled_posts
 from .utils.scheduler import start_scheduler
 import os
 from app.utils.db_helpers import safe_commit
-from datetime import datetime, UTC
+from datetime import datetime, UTC, date
 
 migrate = Migrate()
 
@@ -47,6 +47,18 @@ def create_app():
     app.register_blueprint(caption_bp)
     app.register_blueprint(billing_bp)
     app.register_blueprint(comments_bp)
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        if not user_id or user_id == "None":
+            return None
+        return User.query.get(int(user_id))
+
+    # Unauthorized handler
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        flash("Please log in to continue.", "warning")
+        return redirect(url_for("public.user_login"))
 
     # SAFE context processors (no crash)
     @app.context_processor
@@ -93,6 +105,15 @@ def create_app():
         )
         db.session.add(view)
         safe_commit()
+
+    @app.before_request
+    def reset_daily_tokens():
+        if current_user.is_authenticated:
+            today = date.today()
+            if current_user.last_token_reset != today:
+                current_user.tokens = 5
+                current_user.last_token_reset = today
+                safe_commit()
 
     @app.context_processor
     def inject_login_form():

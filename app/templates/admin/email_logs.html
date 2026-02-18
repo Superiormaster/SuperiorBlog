@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Email History</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Subject</th>
+            <th>Status</th>
+            <th>Sent At</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.email }}</td>
+            <td>{{ log.subject }}</td>
+            <td>
+                {% if log.success %}
+                    ✅ Success
+                {% else %}
+                    ❌ Failed
+                {% endif %}
+            </td>
+            <td>{{ log.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Email History</h2>
+
+<form method="GET">
+    <input type="text" name="subject" placeholder="Filter by subject" value="{{ subject }}">
+    <input type="text" name="email" placeholder="Search by email" value="{{ email_search }}">
+    <input type="date" name="start_date" value="{{ start_date }}">
+    <input type="date" name="end_date" value="{{ end_date }}">
+    <button type="submit">Filter</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Subject</th>
+            <th>Status</th>
+            <th>Sent At</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs.items %}
+        <tr>
+            <td>
+                {{ log.subscriber.name if log.subscriber else "N/A" }}
+            </td>
+            <td>{{ log.email }}</td>
+            <td>{{ log.subject }}</td>
+            <td>
+                {% if log.success %}
+                    ✅ Success
+                {% else %}
+                    ❌ Failed
+                {% endif %}
+            </td>
+            <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div>
+    {% if logs.has_prev %}
+        <a href="?page={{ logs.prev_num }}">Previous</a>
+    {% endif %}
+
+    Page {{ logs.page }} of {{ logs.pages }}
+
+    {% if logs.has_next %}
+        <a href="?page={{ logs.next_num }}">Next</a>
+    {% endif %}
+</div>
+
+{% endblock %}

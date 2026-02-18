@@ -1,64 +1,109 @@
 # duplicate.py
 from app.models import Post
-from ..utils.openai_client import openai_chat
+import hashlib, json
+from difflib import SequenceMatcher
+from ..utils.openai_client import openai_chat  # optional AI fallback
 
-def is_duplicate(content, existing_posts):
+SIMILARITY_THRESHOLD = 0.90  # high similarity
+AI_THRESHOLD_LOW = 0.75
+AI_THRESHOLD_HIGH = 0.89
+
+def hash_content(text: str) -> str:
+    """Generate a SHA256 hash of the content."""
+
+    if not isinstance(text, str):
+        text = ""
+
+    text = text.strip()
+    text = text.lower()
+
+    return hashlib.sha256(
+        text.encode("utf-8")
+    ).hexdigest()
+
+def similarity(a, b) -> float:
+    """Return similarity ratio between 0 and 1."""
+    if not a or not b:   
+        return 0.0
+
+    a = str(a or "").strip().lower()
+    b = str(b or "").strip().lower()
+    return SequenceMatcher(None, a, b).ratio()
+
+def check_post_duplicates(user_id: int, title: str, content: str, category=None, post_id=None):
     """
-    Uses AI to check if the content is a duplicate of any existing posts.
-    
-    Args:
-        content (str): New content to check.
-        existing_posts (list[Post]): List of Post objects to compare with.
-    
-    Returns:
-        bool: True if AI considers content duplicate.
+    Returns dict:
+    {
+        "exact_duplicate": bool,
+        "high_similarity": bool,
+        "ai_duplicate": bool
+    }
     """
-    if not existing_posts:
-        return False
+    review_flags = {
+        "exact_duplicate": False,
+        "high_similarity": False,
+        "ai_duplicate": False
+    }
 
-    # Extract text from existing posts
-    existing_texts = [p.content for p in existing_posts]
+    # 1️⃣ Check content hash (exact duplicate)
+    content_hash = hash_content(content)
+    if Post.query.filter_by(content_hash=content_hash).first():
+        review_flags["exact_duplicate"] = True
+        return review_flags  # stop immediately
 
-    # Build AI prompt
-    prompt = (
-        "You are a content moderation assistant.\n"
-        "Determine if the following new content is a duplicate or "
-        "too similar to any of the existing content. "
-        "Respond only with 'DUPLICATE' or 'UNIQUE'.\n\n"
-        f"New Content:\n{content}\n\n"
-        f"Existing Content:\n" + "\n---\n".join(existing_texts)
-    )
+    # 2️⃣ Get posts to compare
+    query = Post.query
+    # Filter by category if provided
+    if category:
+        if hasattr(category, "id"):
+            query = query.filter(Post.category_id == category.id)
+        elif isinstance(category, int):
+            query = query.filter(Post.category_id == category)
 
-    try:
-        response = openai_chat(prompt)
-        if not response:
-            return False
+    # Optionally skip current post (when editing)
+    if post_id:
+        query = query.filter(Post.id != post_id)
 
-        return "duplicate" in response.strip().lower()
-    
-    except Exception as e:
-        print(f"[AI Duplicate Check] Error: {e}")
-        return False
+    existing_posts = query.order_by(Post.id.desc()).limit(50).all()
 
+    # 3️⃣ Title similarity
+    for post in existing_posts:
+        title_score = similarity(title, post.title)
+        if title_score >= SIMILARITY_THRESHOLD:
+            review_flags["high_similarity"] = True
+            break
 
-def check_post_duplicates(user_id, content):
-    """
-    Check for duplicates for both:
-      1. Posts by the same user
-      2. Posts by other users
-    Returns:
-        dict: { "self_duplicate": bool, "cross_user_duplicate": bool }
-    """
-    review_flags = {"self_duplicate": False, "cross_user_duplicate": False}
-
-    # Get posts by same user
-    user_posts = Post.query.filter_by(user_id=user_id).all()
-    if is_duplicate(content, user_posts):
-        review_flags["self_duplicate"] = True
-
-    # Get posts by other users
-    other_posts = Post.query.filter(Post.user_id != user_id).all()
-    if is_duplicate(content, other_posts):
-        review_flags["cross_user_duplicate"] = True
+    # 4️⃣ Content similarity
+    for post in existing_posts:
+        content_score = similarity(content, post.content)
+        if content_score >= SIMILARITY_THRESHOLD:
+            review_flags["high_similarity"] = True
+            break
+        elif AI_THRESHOLD_LOW <= content_score <= SIMILARITY_THRESHOLD:
+            # optional: semantic AI check
+            ai_result = ai_check_duplicate(content, post.content)
+            if ai_result:
+                review_flags["ai_duplicate"] = True
+                break
 
     return review_flags
+
+def ai_check_duplicate(new_content: str, existing_content: str) -> bool:
+    """
+    Calls OpenAI to check semantic similarity. 
+    Only used if difflib similarity is borderline.
+    """
+    prompt = (
+        "You are a content moderation assistant. "
+        "Determine if the NEW content is semantically the same story as the EXISTING content. "
+        "Respond ONLY with DUPLICATE or UNIQUE.\n\n"
+        f"NEW CONTENT:\n{new_content[:1500]}\n\n"
+        f"EXISTING CONTENT:\n{existing_content[:1500]}\n"
+    )
+    try:
+        response = openai_chat(prompt)
+        clean = response.strip().lower()
+        return "duplicate" in clean
+    except Exception as e:
+        print(f"[AI Check Error] {e}")
+        return False

@@ -39,13 +39,7 @@ def send_email(to, subject, html_content, cc=None, bcc=None):
         "sender": {"name": "Superior News", "email": sender_email},
         "to": normalize(to),
         "subject": subject,
-        "htmlContent": f"""
-            <div style="font-family: Arial, sans-serif;">
-                {html_content}
-                <br><br>
-                <p>— Superior News Team</p>
-            </div>
-        """
+        "htmlContent": html_content
     }
 
     if cc:

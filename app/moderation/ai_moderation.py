@@ -20,6 +20,11 @@ Article:
         return {"spam": False, "toxicity": 0, "quality": 60}
 
     try:
-        return json.loads(result)
-    except:
+        start = result.find("{")
+        end = result.rfind("}") + 1
+        clean = result[start:end]
+        return json.loads(clean)
+    except Exception as e:
+        print("AI JSON ERROR:", e)
+        print("RAW AI RESPONSE:", result)
         return {"spam": False, "toxicity": 0, "quality": 60}

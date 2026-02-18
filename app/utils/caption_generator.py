@@ -2,7 +2,7 @@ from datetime import datetime
 import random
 from app.models import CaptionHistory
 from app.extensions import db
-from app.utils.openai_caption import generate_ai_caption, ai_confidence_score
+from app.utils.openai_caption import generate_x_post, confidence_score
 
 # ------------------------------
 # Daily Usage Tracker

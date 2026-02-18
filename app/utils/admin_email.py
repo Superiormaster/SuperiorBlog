@@ -9,9 +9,10 @@ from datetime import datetime, timedelta
 # ---------------------------
 # Email logging helper
 # ---------------------------
-def log_email(recipient, subject, success):
+def log_email(recipient, subject, success, subscriber=None):
     db.session.add(EmailLog(
-        recipient=recipient,
+        subscriber_id=subscriber.id if subscriber else None,
+        email=subscriber.email if subscriber else "unknown",
         subject=subject,
         status="sent" if success else "failed"
     ))
@@ -23,6 +24,9 @@ def log_email(recipient, subject, success):
 # Welcome email (new subscriber)
 # ---------------------------
 def send_welcome_email(subscriber_email, token):
+
+    subscriber = Subscriber.query.filter_by(email=subscriber_email).first()
+
     html_content = render_template(
         "emails/welcome_email.html",
         unsubscribe_token=token,
@@ -30,7 +34,7 @@ def send_welcome_email(subscriber_email, token):
     )
 
     success = send_email(subscriber_email, "Welcome to Superior News", html_content)
-    log_email(subscriber_email, "Welcome to Superior News", success)
+    log_email(subscriber_email, "Welcome to Superior News", success, subscriber=subscriber)
 
 
 # ---------------------------
@@ -45,6 +49,9 @@ def send_daily_news():
         return
 
     for subscriber in subscribers:
+      if subscriber.last_email_sent and subscriber.last_email_sent.date() >= datetime.utcnow().date():
+        continue  # Already sent today
+
       html_content = render_template(
           "emails/daily_news.html",
           posts=posts,
@@ -52,14 +59,19 @@ def send_daily_news():
           now=datetime.utcnow()
       )
 
-    success = send_email(
+      success = send_email(
         to=subscriber.email,
         subject="📰 Superior Daily News",
         html_content=html_content
-    )
+      )
 
-    for email in subscribers:
-        log_email(email, "Daily News", success)
+    subscriber.last_email_sent = datetime.utcnow()
+    db.session.add(subscriber)
+    if not safe_commit():
+      print(f"Failed to update last_email_sent for {subscriber.email}")
+
+    log_email(subscriber.email, "Daily News", success, subscriber=subscriber)
+    print(f"Daily News sent to {subscriber.email} at {subscriber.last_email_sent}")
 
 
 # ---------------------------
@@ -79,10 +91,20 @@ def send_latest_breaking_news():
 
     subscribers = Subscriber.query.filter_by(is_active=True, receive_digest=True).all()
 
-    for s in subscribers:
-        html_content = render_template("emails/breaking_news.html", news_items=news_items,  subscriber=s, now=datetime.utcnow())
-        success = send_email(to=s.email, subject="Breaking News Today", html_content=html_content)
-        log_email(s.email, "Breaking News Today", success)
+    for sub in subscribers:
+        if sub.last_email_sent and sub.last_email_sent.date() >= datetime.utcnow().date():
+            continue  # Already sent today
+
+        html_content = render_template("emails/breaking_news.html", news_items=news_items,  subscriber=sub, now=datetime.utcnow())
+
+        success = send_email(to=sub.email, subject="Breaking News Today", html_content=html_content)
+        sub.last_email_sent = datetime.utcnow()
+        db.session.add(sub)
+        if not safe_commit():
+            print(f"Failed to update last_email_sent for {sub.email}")
+
+        log_email(sub.email, "Breaking News Today", success, subscriber=sub)
+        print(f"Breaking News sent to {sub.email} at {sub.last_email_sent}")
 
 
 # ---------------------------
@@ -90,6 +112,11 @@ def send_latest_breaking_news():
 # ---------------------------
 def send_weekly_digest(subscriber, posts):
     """Send weekly digest to a single subscriber."""
+
+    if subscriber.last_email_sent and \
+       subscriber.last_email_sent.date() >= datetime.utcnow().date():
+        return
+
     html_content = render_template(
         "emails/weekly_digest.html",
         posts=posts,
@@ -98,7 +125,12 @@ def send_weekly_digest(subscriber, posts):
     )
 
     success = send_email(subscriber.email, "Weekly Digest", html_content)
-    log_email(subscriber.email, "Weekly Digest", success)
+
+    if success:
+        subscriber.last_email_sent = datetime.utcnow()
+        safe_commit()
+
+    log_email(subscriber.email, "Weekly Digest", success, subscriber=subscriber)
 
 
 def send_weekly_digest_to_all():

@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, UTC, date
 from app.extensions import db, login_manager
 from sqlalchemy import JSON, event
 from app.utils.read_time import calculate_read_time
@@ -8,6 +8,9 @@ from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
 from app.utils.decorators import generate_unique_slug
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import Text
+import sqlalchemy as sa
+from sqlalchemy import event
 
 def generate_slug(target, value, oldvalue, initiator):
     if not value:
@@ -58,6 +61,8 @@ class User(db.Model, UserMixin):
     scheduled_at = db.Column(db.DateTime, nullable=True)
     approved_posts = db.Column(db.Integer, default=0)
     rejected_posts = db.Column(db.Integer, default=0, nullable=False)
+    tokens = db.Column(db.Integer, default=5)  # starts with 5 tokens
+    last_token_reset = db.Column(db.Date, default=date.today)
     daily_limit = db.Column(db.Integer, default=5)  
     _is_active = db.Column("is_active", db.Boolean, default=True)
     is_blocked = db.Column(db.Boolean, default=False)
@@ -96,12 +101,16 @@ class User(db.Model, UserMixin):
     @is_active.setter
     def is_active(self, value):
         self._is_active = value
+    @property
+    def is_active(self):
+        return self._is_active and not self.is_blocked and not self.is_deleted
 
 class PageView(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     session_id = db.Column(db.String(100), index=True)
     path = db.Column(db.String(255))
+    read_time = db.Column(db.Float, default=0)
     ip_address = db.Column(db.String(45))
     created_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
@@ -356,6 +365,107 @@ class FootballCache(db.Model):
     league = db.Column(db.String(10))     # e.g., "PL"
     json_data = db.Column(db.JSON)
     updated_at = db.Column(db.DateTime, default=datetime.now(UTC))
+
+class Request(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_input = db.Column(db.Text, nullable=False)
+    output = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class XPost(db.Model):
+    __tablename__ = 'x_posts'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    style = db.Column(db.String(20), default='safe')  # safe / viral / editor
+    text = db.Column(db.String(280), nullable=False)
+    confidence_score = db.Column(db.Integer)
+    predicted_engagement = db.Column(JSONB)  # {"likes": 100, "retweets": 20, "replies": 10}
+    suggested_replies = db.Column(JSONB)    # ["reply 1", "reply 2"]
+    best_post_time = db.Column(TIME)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship to metrics
+    metrics = db.relationship('XPostMetrics', backref='x_post', lazy=True)
+
+class XThread(db.Model):
+    __tablename__ = 'x_threads'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    thread = db.Column(JSONB, nullable=False)  # ["tweet1", "tweet2", ...]
+    confidence_score = db.Column(db.Integer)
+    predicted_engagement = db.Column(JSONB)    # {"likes": 100, "retweets": 20, "replies": 10}
+    suggested_replies = db.Column(JSONB)      # ["reply 1", "reply 2"]
+    best_post_time = db.Column(TIME)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class XPostMetrics(db.Model):
+    __tablename__ = 'x_post_metrics'
+
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('x_posts.id'), nullable=False)
+    likes = db.Column(db.Integer, default=0)
+    retweets = db.Column(db.Integer, default=0)
+    replies = db.Column(db.Integer, default=0)
+    engagement_score = db.Column(db.Integer)  # derived from AI + UX
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# ===== AI Hooks for automatic analysis =====
+@event.listens_for(XPost, 'before_insert')
+def populate_xpost_ai_fields(mapper, connection, target):
+    """
+    Auto-fill AI-generated fields before inserting a new post.
+    """
+    from app.utils.openai_service import generate_x_post_ai, predict_engagement, suggest_replies, best_post_time_for_growth
+    # Generate confidence score
+    target.confidence_score = generate_x_post_ai(target.text, style=target.style, return_confidence=True)
+
+    # Predict engagement metrics
+    target.predicted_engagement = predict_engagement(target.text, target.style)
+
+    # Suggested replies
+    target.suggested_replies = suggest_replies(target.text, target.style)
+
+    # Best post time
+    target.best_post_time = best_post_time_for_growth(target.text, target.style)
+
+
+@event.listens_for(XThread, 'before_insert')
+def populate_xthread_ai_fields(mapper, connection, target):
+    """
+    Auto-fill AI-generated fields before inserting a new thread.
+    """
+    from app.utils.openai_service import generate_x_post_ai, predict_engagement, suggest_replies, best_post_time_for_growth
+    # Generate confidence score
+    target.confidence_score = generate_x_post_ai(" ".join(target.thread), style='editor', return_confidence=True)
+
+    # Predict engagement metrics
+    target.predicted_engagement = predict_engagement(" ".join(target.thread), 'editor')
+
+    # Suggested replies
+    target.suggested_replies = suggest_replies(" ".join(target.thread), 'editor')
+
+    # Best post time
+    target.best_post_time = best_post_time_for_growth(" ".join(target.thread), 'editor')
+
+class Ad(db.Model):
+    __tablename__ = "ads"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    image_url = db.Column(db.String(500), nullable=True)  # optional
+    target_url = db.Column(db.String(500), nullable=False)
+    location = db.Column(db.String(50), default="sidebar")  # sidebar, header, footer, in-post
+    active = db.Column(db.Boolean, default=False)  # hidden by default
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class AdClick(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ad_id = db.Column(db.Integer, db.ForeignKey("ads.id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)  # optional for logged-in users
+    clicked_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):

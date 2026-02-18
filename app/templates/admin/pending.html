@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10 bg-white dark:bg-gray-800 shadow rounded p-6">
+
+  <h1 class="text-3xl font-bold mb-4">{{ post.title }}</h1>
+
+  <p class="text-sm text-gray-500 mb-4">
+    By {{ post.author.username }} |
+    {{ post.created_at.strftime('%B %d, %Y') }} |
+    Status: {{ post.status }}
+  </p>
+
+  <hr class="my-4">
+
+  <div style="white-space: pre-wrap;" class="text-gray-800 dark:text-gray-200 leading-relaxed">
+    {{ post.content | safe }}
+  </div>
+
+  <hr class="my-6">
+</div>
+{% endblock %}<

@@ -1,8 +1,6 @@
 {% extends 'user/base.html' %} 
 
-{% block title %}
-Caption Generator – SuperiorNews
-{% endblock %}
+{% block title %}X Caption Engine – SuperiorNews{% endblock %}
 
 {% block meta_description %}
 Generate engaging social media captions instantly using SuperiorNews AI caption generator.
@@ -10,21 +8,32 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
 
 {% block content %}
 
-<div class="max-w-5xl mx-auto mt-14 bg-white/5 backdrop-blur rounded-2xl shadow-lg p-8">  
+<div class="max-w-5xl mx-auto mt-12 bg-white/5 backdrop-blur rounded-2xl shadow-lg px-5">
+  <div class="flex justify-end mb-2">
+    {% if current_user.tokens > 0 %}
+        <div class="token-badge">
+            🎟️ Tokens left: {{ current_user.tokens }}
+        </div>
+    {% else %}
+        <!-- Just a link to upgrade -->
+        <a href="{{ url_for('public.pricing') }}"
+           class="w-full py-3 px-3 bg-yellow-100 rounded text-black font-semibold hover:bg-yellow-400 text-center block">
+            Upgrade to Premium 🌟
+        </a>
+    {% endif %}
+  </div>
+  
+  {% if current_user.is_authenticated %}
+    <div class="ml-4">
+        🎟️ Tokens: {{ current_user.tokens }}
+    </div>
+  {% endif %}
+
 <!-- Header -->  
-  <div class="mb-8 text-center">
-    <h1 class="text-3xl font-bold tracking-tight">📰 News & Social Caption Generator</h1>
-    <p class="text-gray-400 mt-2">Generate professional headlines and viral captions for news, sports & breaking stories</p>
-  </div>  
-<section class="tool-header">
-  <h1>One Story → Every Platform</h1>
-  <p>Turn one idea into platform-native content instantly.</p>
-</section>
-{% if current_user.is_premium %}
-  <div class="premium-badge">🌟 Premium User</div>
-{% else %}
-  <div>Upgrade to premium for extra features</div>
-{% endif %}
+  <div class="text-center">
+    <h1 class="text-3xl font-bold mb-2 tracking-tight">Generate Viral X Content Instantly</h1>
+    <p class="text-gray-400 mb-2">Turn news, sports highlights, and events into high-performing X posts & threads.</p>
+  </div>
   
   <div class="border-2 border-yellow-400 bg-yellow-50 p-4 rounded-xl">
     <span class="text-xs font-bold text-yellow-600">BEST CAPTION</span>
@@ -33,15 +42,7 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
   <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
     <div class="bg-green-500 h-2 rounded-full" style="width: 87%"></div>
   </div>
-  <div class="max-w-5xl mx-auto mt-14">
-
-  <div class="flex gap-4 mb-4">
-  <button class="tab-btn active" data-tab="free">Free Captions</button>
-  <button class="tab-btn" data-tab="premium">Premium Captions</button>
-</div>
-
-<div id="tab-free" class="tab-content">Free captions here...</div>
-<div id="tab-premium" class="tab-content hidden">Premium captions here...</div>
+<div class="max-w-5xl mx-auto mt-14">
 
 {% for caption in editor_picks %}
 <pre class="bg-gray-800 dark:bg-gray-900 text-green-400 p-4 rounded-xl overflow-x-auto">
@@ -63,100 +64,104 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
   {% endif %}
 </div>
 
-<!-- Premium Plan button -->
-<form id="premiumForm" method="POST" action="{{ url_for('billings.init_payment') }}">
-  <button type="submit"
-          class="w-full py-3 bg-yellow-500 rounded text-black font-semibold hover:bg-yellow-400">
-    Upgrade to Premium
-  </button>
-</form>
   <!-- Input -->  
-
   <div class="space-y-4">
     <textarea
       id="text"
       class="w-full h-40 p-4 rounded-xl bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      placeholder="Paste article content, breaking news details, or key talking points here…"></textarea>
-      <div class="flex flex-col md:flex-row gap-4">
-  <select id="tone" class="flex-1 p-3 rounded-xl bg-gray-900 text-white">
-    <option value="neutral">Neutral</option>
-    <option value="breaking">Breaking</option>
-    <option value="professional">Professional</option>
-    <option value="emotional">Emotional</option>
-    <option value="viral">Viral</option>
-  </select>
-  
-  <select id="platform" class="p-3 rounded-xl bg-gray-900 text-white">
-    <option value="general">General</option>
-    <option value="x">X (Twitter)</option>
-    <option value="facebook">Facebook</option>
-    <option value="instagram">Instagram</option>
-  </select>
+      placeholder="Paste article content, or key points here…"></textarea>
 
-  <select id="length" class="flex-1 p-3 rounded-xl bg-gray-900 text-white">
-    <option value="short">Short</option>
-    <option value="medium">Medium</option>
-    <option value="long">Long</option>
-  </select>
+  <!-- CONTROLS -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+    <select id="tone" class="bg-gray-800 rounded p-2">
+      <option value="neutral">Neutral</option>
+      <option value="breaking">Breaking</option>
+      <option value="viral">Viral</option>
+      <option value="emotional">Emotional</option>
+      <option value="professional">Professional</option>
+    </select>
 
-  <button
-    id="generateBtn"
-    class="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 font-semibold transition">
-    Generate
-  </button>
-</div>
+    <select id="mode" class="bg-gray-800 rounded p-2">
+      <option value="single">Single Post</option>
+      <option value="thread">Thread</option>
+      <option value="reply">Reply Optimized</option>
+      <option value="engagement">Engagement Hook</option>
+    </select>
 
-<p id="charCount" class="text-sm text-gray-400">Characters: 0</p>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" id="avoid_clickbait">
+      Avoid clickbait
+    </label>
+
+    <button id="generateBtn"
+      class="bg-blue-600 hover:bg-blue-700 rounded-xl px-4 py-2">
+      Generate X Content
+    </button>
+  </div>
+
+  <p id="charCount" class="text-sm text-gray-400 mb-4">Characters: 0</p>
 
   </div>  
-  
-  <!-- Results -->  
-  <div id="results" class="mt-10 space-y-4"></div>  
-  
-  {% if captions %}
-<section class="output-grid">
 
-  <div class="card">
-    <div class="card-header">
-      <h3>Instagram Caption</h3>
-      <button onclick="copyText('ig')">Copy</button>
-    </div>
-    <p id="ig">{{ captions.instagram }}</p>
+  <!-- TABS -->
+  <div class="flex space-x-2 border-b border-gray-600 mb-4">
+    <button class="tab-btn px-4 py-2 font-semibold active bg-gray-700 rounded-t" data-tab="free">Free Captions</button>
+    <button class="tab-btn px-4 py-2 font-semibold bg-gray-700 rounded-t" data-tab="premium">Premium Captions</button>
+    <button class="tab-btn px-4 py-2 font-semibold bg-gray-700 rounded-t" data-tab="thread">Thread</button>
   </div>
 
-  <div class="card">
-    <div class="card-header">
-      <h3>Facebook Caption</h3>
-      <button onclick="copyText('fb')">Copy</button>
-    </div>
-    <p id="fb">{{ captions.facebook }}</p>
-  </div>
+  <!-- RESULTS -->
+  <div id="results" class="mt-8 space-y-4">
+    {% if captions %}
+      {% if captions.type == 'single' %}
+        <div class="bg-gray-800 p-4 rounded-xl shadow-md">
+          <p class="text-white text-lg">{{ captions.captions[0].text }}</p>
+          <p class="text-gray-400 text-sm">
+            Style: {{ captions.captions[0].style }}, Confidence: {{ captions.captions[0].confidence_score }}%
+          </p>
+          <p class="text-gray-400 text-sm">
+            Suggested Replies: {{ captions.captions[0].suggested_replies | join(', ') }}
+          </p>
+          <p class="text-gray-400 text-sm">
+            Best Posting Time: {{ captions.captions[0].best_post_time }}
+          </p>
+        </div>
+      {% else %}
+        <!-- Premium: multiple styles + thread -->
+        {% for post in captions.captions %}
+          <div class="bg-gray-800 p-4 rounded-xl shadow-md">
+            <p class="text-white text-lg">{{ post.text }}</p>
+            <p class="text-gray-400 text-sm">
+              Style: {{ post.style }}, Confidence: {{ post.confidence_score }}%
+            </p>
+            <p class="text-gray-400 text-sm">
+              Suggested Replies: {{ post.suggested_replies | join(', ') }}
+            </p>
+            <p class="text-gray-400 text-sm">
+              Best Posting Time: {{ post.best_post_time }}
+            </p>
+          </div>
+        {% endfor %}
 
-  <div class="card">
-    <div class="card-header">
-      <h3>WhatsApp Status</h3>
-      <button onclick="copyText('wa')">Copy</button>
-    </div>
-    <p id="wa">{{ captions.whatsapp }}</p>
+        <div class="mt-4 p-4 border-l-4 border-blue-500 bg-gray-800 rounded-xl">
+          <h3 class="text-lg font-bold mb-2">Generated Thread</h3>
+          {% for tweet in captions.thread.thread.tweets %}
+            <p class="text-white mb-1">• {{ tweet }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% else %}
+      <p class="text-gray-400">No X content generated yet. Paste text above and click Generate.</p>
+    {% endif %}
   </div>
-
-  <div class="card">
-    <div class="card-header">
-      <h3>X (Twitter) Post</h3>
-      <button onclick="copyText('x')">Copy</button>
-    </div>
-    <p id="x">{{ captions.x }}</p>
-  </div>
-
-</section>
-{% endif %}
   
   <!-- CTA -->  
   <div class="mt-12 p-6 rounded-xl bg-gradient-to-r from-blue-600/20 to-cyan-500/20 border border-blue-500/20">
     <p class="font-semibold mb-3">🚀 Want more creator & newsroom tools?</p>
     <form action="{{ url_for('public.subscribe') }}" method="post" class="flex flex-col md:flex-row gap-3">
-      <input type="email" name="email" placeholder="Your email address" class="flex-1 p-3 rounded-lg bg-gray-900 text-white" />
-      <button class="px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700">Subscribe</button>
+      {{ form.hidden_tag() }}
+      {{ form.email(class="form-control flex-1 p-3 rounded-lg bg-gray-900 text-white", placeholder="Your email address") }}
+      {{ form.submit(class="btn btn-primary font-medium text-black px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700") }}
     </form>
   </div>
 </div>

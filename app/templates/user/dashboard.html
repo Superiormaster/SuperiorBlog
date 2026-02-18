@@ -2,10 +2,10 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="px-4 w-full bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+<div class="px-4 w-full mt-14 bg-white dark:bg-gray-800 shadow-lg overflow-hidden">
 
-  <aside id="sidebar" class="fixed inset-y-auto md:hidden min-h-screen left-0 w-64 bg-gray-800 text-white transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50">
-    <div class="p-5 text-xl font-bold border-b border-gray-700">Dashboard</div>
+  <aside id="sidebar" class="fixed inset-y-auto md:hidden min-h-screen left-0 w-64 bg-white dark:bg-gray-800 -translate-x-full md:translate-x-0 transition-transform duration-300 z-50">
+    <div class="p-5 text-xl text-gray-700 dark:text-gray-200 font-bold border-b border-gray-700">Dashboard</div>
     <nav class="p-4 space-y-3">
      <!-- <a href="{{ url_for('caption.caption_page') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Caption Generator</a>-->
       <a href="{{ url_for('public.create_post') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Create</a>
@@ -17,16 +17,16 @@
 
   <div class="flex justify-between items-center">
     <button id="menuBtn" class="text-gray-600 text-2xl md:hidden"><i class="fa fa-arrow-right" aria-hidden="true"></i></button>
-    <h1 class="text-2xl font-bold">Dashboard</h1>
+    <h1 class="text-2xl text-gray-700 dark:text-gray-200 font-bold">Dashboard</h1>
     <a href="{{ url_for('public.create_post') }}"
-       class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+       class="bg-blue-600 text-white px-4 py-2 mt-1 rounded hover:bg-blue-700">
       New Post
     </a>
   </div>
   
-    <div class="hidden md:block w-full bg-gray-900 mx-0 mt-2 text-white transform transition-transform duration-300 z-50">
+    <div class="hidden md:block w-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white mx-0 mt-2 text-white transform transition-transform duration-300 z-50">
     <nav class="flex justify-between p-4 space-y-3">
-      <a href="{{ url_for('public.index') }}" data-redirect class="btn-primary btn-danger px-4 py-2">Home</a>
+      <a href="{{ url_for('public.index') }}" data-redirect class="btn-primary btn-danger block px-4 py-2">Home</a>
       <!--<a href="{{ url_for('caption.caption_page') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Caption Generator</a>-->
       <a href="{{ url_for('public.create_post') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Create</a>
       <a href="{{ url_for('public.user_analysis') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Analysis</a>
@@ -45,38 +45,42 @@
            name="q"
            value="{{ q }}"
            placeholder="Search posts..."
-           class="w-full sm:flex-1 border rounded px-3 py-2 text-sm">
+           class="w-full sm:flex-1 border border-gray-300 dark:border-gray-600 text-sm text-black bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 rounded px-3 py-2 text-sm">
 
-    <select name="status" class="w-full border sm:w-40 rounded px-3 py-2 text-sm">
+    <select name="status" class="w-full border sm:w-40 border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm dark:bg-gray-700 text-gray-800 dark:text-gray-100">
       <option value="all" {{ 'selected' if status == 'all' }}>All</option>
       <option value="published" {{ 'selected' if status == 'published' }}>Published</option>
       <option value="draft" {{ 'selected' if status == 'draft' }}>Drafts</option>
     </select>
 
-    <button class="w-full sm:w-auto bg-yellow-600 text-white px-4 py-2 border rounded text-sm">
+    <button class="w-full sm:w-auto bg-yellow-600 text-white px-4 py-2 border rounded text-sm hover:bg-yellow-700 dark:hover:bg-yellow-500 transition-colors">
       Filter
     </button>
   </form>
   
-        <div class="flex justify-center items-center gap-4 my-6">
-        <a href="{{ url_for('public.user_dashboard', status='all') }}" class="px-3 py-1 bg-gray-200 rounded {% if status=='all' %}bg-blue-500 text-white{% endif %}">All</a>
-        <a href="{{ url_for('public.user_dashboard', status='draft') }}" class="px-3 py-1 bg-gray-200 rounded {% if status=='draft' %}bg-blue-500 text-white{% endif %}">Drafts</a>
-        <a href="{{ url_for('public.user_dashboard', status='rejected') }}" class="px-3 py-1 bg-gray-200 rounded {% if status=='rejected' %}bg-blue-500 text-white{% endif %}">Rejected</a>
-        <a href="{{ url_for('public.user_dashboard', status='published') }}" class="px-3 py-1 bg-gray-200 rounded {% if status=='published' %}bg-blue-500 text-white{% endif %}">Published</a>
-    </div>
+  <!-- Status Tabs -->
+  <div class="flex justify-center items-center gap-4 my-6">
+    {% for tab in ['all','draft','rejected','published'] %}
+      <a href="{{ url_for('public.user_dashboard', status=tab) }}"
+         class="px-3 py-1 rounded transition-colors
+                {% if status==tab %}bg-blue-500 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100{% endif %}">
+        {{ tab.capitalize() }}
+      </a>
+    {% endfor %}
+  </div>
   
   <!-- Sidebar -->
-  <div class="flex h-fit hidden md:block bg-gray-700 shadow rounded-lg overflow-hidden">
-    <aside class="bg-gray-700 w-full shadow rounded-lg p-4 h-fit border">
+  <div class="flex h-fit hidden md:block bg-white dark:bg-gray-700 shadow rounded-lg overflow-hidden">
+    <aside class="w-full shadow rounded-lg p-4 h-fit border">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-semibold">Posts</h2>
+        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">Posts</h2>
       </div>
 
     <section class="flex-1">
 
-    <div class="bg-gray-700 shadow rounded-lg overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-gray-600 text-left">
+    <div class="shadow rounded-lg overflow-hidden">
+      <table class="w-full text-gray-900 dark:text-gray-100 text-sm">
+        <thead class="bg-gray-200 dark:bg-gray-700 text-left text-gray-700 dark:text-gray-300">
           <tr>
             <th class="px-4 py-3">Title</th>
             <th class="px-4 py-3">Status</th>
@@ -87,28 +91,28 @@
 
         <tbody>
           {% for post in posts %}
-          <tr class="border-t hover:bg-gray-50">
-            <td class="px-4 py-3 font-medium">
+          <tr class="border-t hover:bg-gray-50 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <td class="px-4 dark:text-gray-800 py-3 font-medium">
               {{ post.title }}
             </td>
             
             <td class="px-4 py-3">
-            <span class="px-2 py-1 rounded text-xs mt-2
+            <span class="py-1 rounded text-xs mt-2
                 {% if post.status == 'published' %}
-                  bg-green-100 text-green-700
+                  bg-green-100 dark:bg-green-700 text-green-700 dark:text-green-100
                 {% elif post.status == 'draft' %}
-                  bg-gray-100 text-gray-600
+                  bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-100
                 {% elif post.status == 'pending' %}
-                  bg-yellow-100 text-yellow-700
+                  bg-yellow-100 dark:bg-yellow-700 text-yellow-700 dark:text-yellow-100
                 {% elif post.status == 'rejected' %}
-                  bg-red-100 text-red-700
+                  bg-red-100 dark:bg-red-700 text-red-700 dark:text-red-100
                 {% endif %}
             ">
               {{ post.status|capitalize }}
             </span>
           </td>
 
-            <td class="px-4 py-3 text-gray-400">
+            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">
               {{ post.created_at.strftime('%B %d, %Y') }}
             </td>
 
@@ -124,28 +128,28 @@
                 </form>
                 <form action="{{ url_for('public.delete_post', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
                   {{ delete_form.hidden_tag() }}
-                  <button type="submit" class="text-sm rounded bg-gray-400 px-3 py-1 text-red-500 hover:underline">Delete</button>
+                  <button type="submit" class="text-sm rounded px-3 py-1 bg-gray-400 dark:bg-gray-600 text-red-500 dark:text-red-400 text-red-500 hover:underline">Delete</button>
               </form>
               {% elif post.status in ['pending', 'pending_review'] %}
-                <span class="text-gray-400 text-sm rounded px-3 py-1 bg-white">Waiting for Review</span>
+                <span class="text-sm bg-white text-gray-500 dark:text-gray-300 rounded px-3 py-1 bg-white dark:bg-gray-700">Waiting for Review</span>
                 {% elif post.status == 'published' %}
                   <form action="{{ url_for('public.delete_post', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
                   {{ delete_form.hidden_tag() }}
-                  <button type="submit" class="text-sm rounded bg-gray-400 px-3 py-1 text-red-500 hover:underline">Delete</button>
+                  <button type="submit" class="text-sm rounded bg-gray-400 dark:bg-gray-600 px-3 py-1 text-red-500 dark:text-red-400 hover:underline">Delete</button>
               </form>
-              <span class="text-gray-400 text-sm rounded px-3 py-1 bg-white">Locked</span>
+              <span class="text-gray-500 dark:text-gray-300 text-sm rounded px-3 py-1 bg-white dark:bg-gray-700">Locked</span>
               {% else %}
-                <span class="text-gray-400 text-sm rounded px-3 py-1 bg-white">Locked</span>
+                <span class="text-gray-500 dark:text-gray-300 text-sm rounded px-3 py-1 bg-white dark:bg-gray-700 bg-white">Locked</span>
               {% endif %}
       
               {% if post.status == 'rejected' and post.resubmission_count >= 2 %}
-                <span class="px-3 py-1 bg-gray-300 text-gray-600 rounded">Max Resubmissions Reached</span>
+                <span class="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-100 rounded">Max Resubmissions Reached</span>
               {% endif %}
             </td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="4" class="text-center py-6 text-gray-500">
+            <td colspan="4" class="text-center py-6 text-gray-500 dark:text-gray-400">
               No posts yet. Start by creating one!
             </td>
           </tr>
@@ -159,29 +163,29 @@
   
   <div class="md:hidden space-y-4">
     {% for post in posts %}
-    <div class="bg-gray-700 rounded-lg p-4 shadow">
+    <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow">
       
-      <h3 class="font-semibold text-lg">
+      <h3 class="font-semibold text-gray-800 dark:text-gray-100 text-lg">
         {{ post.title }}
       </h3>
-      <p class="text-sm text-gray-500">Category: {{ post.category.name if post.category else 'None' }}</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Category: {{ post.category.name if post.category else 'None' }}</p>
   
       <div class="flex justify-between text-sm mb-2">
         <span class="px-2 py-1 rounded text-xs mt-2
             {% if post.status == 'published' %}
-              bg-green-100 text-green-700
+              bg-green-100 dark:bg-green-700 text-green-700 dark:text-green-100
             {% elif post.status == 'draft' %}
-              bg-gray-100 text-gray-600
-            {% elif post.status == 'pending' %}
-              bg-yellow-100 text-yellow-700
+              bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-100
+            {% elif post.status == 'pending_review' %}
+              bg-yellow-100 dark:bg-yellow-700 text-yellow-700 dark:text-yellow-100
             {% elif post.status == 'rejected' %}
-              bg-red-100 text-red-700
+              bg-red-100 dark:bg-red-700 text-red-700 dark:text-red-100
             {% endif %}
         ">
           Status: {{ post.status|capitalize }}
         </span>
 
-        <span class="text-gray-400">
+        <span class="text-gray-500 dark:text-gray-400">
           {{ post.created_at.strftime('%b %d, %Y') }}
         </span>
       </div>
@@ -198,38 +202,38 @@
           </form>
           <form action="{{ url_for('public.delete_post', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
             {{ delete_form.hidden_tag() }}
-            <button type="submit" class="text-sm rounded bg-gray-400 px-3 py-1 text-red-500 hover:underline">Delete</button>
+            <button type="submit" class="text-sm rounded bg-gray-400 dark:bg-gray-600 px-3 py-1 text-red-500 dark:text-red-400 hover:underline">Delete</button>
         </form>
               {% elif post.status in ['pending', 'pending_review'] %}
-                <span class="text-gray-400 text-sm rounded px-3 py-1 bg-white">Waiting for Review</span>
+                <span class="text-gray-500 dark:text-gray-300 text-sm rounded px-3 py-1 bg-white dark:bg-gray-700">Waiting for Review</span>
                 {% elif post.status == 'published' %}
                   <form action="{{ url_for('public.delete_post', id=post.id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
                   {{ delete_form.hidden_tag() }}
-                  <button type="submit" class="text-sm rounded bg-gray-400 px-3 py-1 text-red-500 hover:underline">Delete</button>
+                  <button type="submit" class="text-sm rounded bg-gray-400 dark:bg-gray-600 px-3 py-1 text-red-500 dark:text-red-400 hover:underline">Delete</button>
               </form>
-              <span class="text-gray-400 text-sm rounded px-3 py-1 bg-white">Locked</span>
+              <span class="text-gray-500 dark:text-gray-300 text-sm rounded px-3 py-1 bg-white dark:bg-gray-700">Locked</span>
               {% else %}
-          <span class="text-gray-400 text-sm rounded px-3 py-1 bg-white">Locked</span>
+          <span class="text-gray-500 dark:text-gray-300 text-sm rounded px-3 py-1 bg-white dark:bg-gray-700">Locked</span>
         {% endif %}
 
         {% if post.status == 'rejected' and post.resubmission_count >= 2 %}
-          <span class="px-3 py-1 bg-gray-300 text-gray-600 rounded">Max Resubmissions Reached</span>
+          <span class="px-3 py-1 bg-gray-300 text-gray-600 dark:text-gray-400 rounded">Max Resubmissions Reached</span>
         {% endif %}
       </div>
   
     </div>
     {% else %}
-      <div class="text-center py-6 text-gray-500">
+      <div class="text-center py-6 text-gray-500 dark:text-gray-400">
         No posts yet. Start by creating one!
       </div>
     {% endfor %}
   </div>
 
   <!-- Pagination -->
-  <div class="flex justify-center my-3 gap-2">
+  <div class="flex justify-center my-3 gap-2 text-gray-900 dark:text-gray-100">
     {% if posts.has_prev %}
       <a href="{{ url_for('public.user_dashboard', page=posts.prev_num, q=q, status=status) }}"
-         class="px-3 py-1 border rounded">Prev</a>
+         class="px-3 py-1 border hover:bg-gray-200 dark:hover:bg-gray-700 rounded">Prev</a>
     {% endif %}
 
     <span class="px-3 py-1 text-gray-500">
@@ -238,7 +242,8 @@
 
     {% if posts.has_next %}
       <a href="{{ url_for('public.user_dashboard', page=posts.next_num, q=q, status=status) }}"
-         class="px-3 py-1 border rounded">Next</a>
+         class="px-3 py-1 border hover:bg-gray-200
+         dark:hover:bg-gray-700 rounded">Next</a>
     {% endif %}
   </div>
 </div>

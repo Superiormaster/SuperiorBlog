@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Breaking News</title>
 </head>
-<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#000;">
+<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#1F2937;">
 
   <!-- Outer wrapper -->
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -38,11 +38,26 @@
             <td>
               <ul style="color:#666; line-height:1.5; padding-left:20px;">
                 {% for post in news_items %}
-                  <li style="margin-bottom: 10px;">
+                  <li style="margin-bottom: 10px; list-style: none;">
                     {% if post.featured_image %}
-                    <img src="{{ post.featured_image }}" alt="{{ post.title }}" width="120" style="display:block;margin-bottom:5px;" />
+                    <img src="{{ post.featured_image }}" alt="{{ post.title }}" width="100%" style="
+                      color:#FACC15;
+                      font-size:16px;
+                      font-weight:bold;
+                      text-decoration:none;
+                      line-height:1.4;
+                      display:block;
+                      margin-bottom:6px;
+                    "/>
                     {% endif %}
-                    <a href="https://www.superiornews.app/post/{{ post.slug }}" style="color:#1a73e8; text-decoration:none;">{{ post.title }}
+                    <a href="https://www.superiornews.app/post/{{ post.slug }}" style="color:#FACC15; text-decoration:none;
+                      display:block;
+                      width:100%;
+                      max-width:560px;
+                      height:auto;
+                      border-radius:6px;
+                      margin-bottom:10px;
+                    ">{{ post.title }}
                     </a>
                   </li>
                 {% endfor %}
@@ -57,12 +72,13 @@
             margin-top: 20px;
             text-align: center;">
               <p>You are receiving this email because you subscribed to Superior News.</p>
-              <p>
-                <a href="https://www.superiornews.app/unsubscribe/{{ unsubscribe_token }}">
+              <p>                
+                <a style="color:#FACC15;" href="https://www.superiornews.app/unsubscribe/{{ subscriber.unsubscribe_token }}">
                   Unsubscribe
                 </a>
               </p>
               <p>© {{ now.year }} Superior News</p>
+               <p>Superior News Team</p>
             </td>
             
           </tr>

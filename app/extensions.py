@@ -11,9 +11,5 @@ db = SQLAlchemy()
 mail = Mail()
 login_manager = LoginManager()
 
-@login_manager.unauthorized_handler
-def unauthorized():
-    flash("Please log in to continue.", "warning")
-    return redirect(url_for("public.user_login"))
-
-login_manager.login_view = "public.user_login" 
+login_manager.login_view = "public.user_login"
+login_manager.session_protection = "strong"

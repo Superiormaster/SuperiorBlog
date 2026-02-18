@@ -24,6 +24,7 @@ categories = [
     ("Health", "health"),
     ("Entertainment", "entertainment"),
     ("Personal Finance", "personal-finance"),
+    #("Editorial | Pan-African Affairs")
 ]
 
 # Default labels

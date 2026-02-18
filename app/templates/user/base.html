@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +13,7 @@
     <meta property="og:title" content="{{ post.title }}">
     <meta property="og:description"
           content="{{ post.meta_description if post.meta_description else post.content[:150] }}">
-    <meta property="og:image" content="{{ post.featured_image }}">
+    <meta property="og:image" content="https://www.superiornews.app/static/New.png">
     <meta property="og:type" content="article">
 
   {% elif category %}
@@ -42,20 +42,14 @@
   <meta property="og:site_name" content="SuperiorNews">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <style type="text/tailwindcss">
-      darkMode: 'class',
-      @theme {
-        --color-clifford: #da373d;
-      }
-    </style>
+    <link href="{{ url_for('static', filename='css/tailwind.css') }}" rel="stylesheet">
   
     <!-- Your custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='Style.css') }}">
 
 </head>
-<body class="bg-gray-900 w-full duration-700 text-gray-500">
-<header class="h-24 fixed w-full top-0 flex items-center justify-between bg-gray-900 border-b shadow-lg px-4 z-30">
+<body class="bg-white dark:bg-gray-900 w-full duration-700 text-black dark:text-gray-500 bg-lightBg text-lightText transition-colors duration-300">
+<header class="h-18 fixed w-full top-0 flex items-center justify-between border-b shadow-lg px-4 z-30 bg-headerBgDark text-darkText">
   
   <!-- Left: Logo -->
   <div class="flex items-center gap-4">
@@ -71,7 +65,7 @@
     {% endif %}
 
     <!-- Hamburger menu (mobile) -->
-    <div id="openDrawer" aria-controls="mainDrawer" aria-expanded="false" aria-label="Open menu" class="md:hidden menu-btn cursor-pointer relative z-50 bg-gray-900 px-3 py-2 rounded">
+    <div id="openDrawer" aria-controls="mainDrawer" aria-expanded="false" aria-label="Open menu" class="md:hidden menu-btn cursor-pointer relative z-50 bg-gray-800 px-3 py-2 rounded">
       <svg class="w-8 h-6" viewBox="0 0 24 24" fill="none">
         <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
@@ -98,7 +92,7 @@
             </div>
           {% endif %}
         {% endwith %}
-        <button class="fixed right-10 bottom-15 text-gray-100 text-2xl border rounded-xl py-2 px-1 text-white z-50" id="btn">↑</button>
+        <button class="fixed right-10 bottom-0 text-gray-100 text-2xl border rounded-xl py-2 px-1 text-white z-50" id="btn">↑</button>
         {% block content %}{% endblock %}
     </main>
 
@@ -135,7 +129,6 @@
         {% if current_user.is_authenticated %}
         <li><a href="{{ url_for('public.user_dashboard') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-dashboard mr-2"></i> Dashboard</a></li>
         <li><a href="{{ url_for('public.user_change_password') }}" data-redirect class="btn-primary btn-danger text-blue-500 hover:underline"><i class="fa fa-eraser mr-2" aria-hidden="true"></i>Change Password</a></li>
-        <!--<li><a href="" data-redirect class="btn-primary btn-danger"><i class="fa fa-cogs mr-2" aria-hidden="true"></i> Settings</a></li>-->
         <li><a href="{{ url_for('public.user_logout') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-out mr-2" aria-hidden="true"></i>Logout</a></li>
         {% else %}
           <li><a href="{{ url_for('public.user_login') }}" data-redirect class="btn-primary btn-danger "><i class="fa fa-sign-in mr-2"></i> Login</a></li>
@@ -184,6 +177,11 @@
               <i class="fa fa-file-alt mr-2" aria-hidden="true"></i> Terms & Conditions
             </a></li>
           {% endif %}
+          <button id="toggle-dark" class="p-2 rounded-full focus:outline-none bg-gray-200 dark:bg-gray-700">
+            <svg id="moon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-800 dark:text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M17.293 13.293a8 8 0 01-10.586-10.586 8 8 0 1010.586 10.586z"/>
+            </svg>
+          </button>
         </ul>
       </div>
     </div>
@@ -241,6 +239,31 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
+<!-- Dark Mode Script -->
+    <script>
+        const html = document.documentElement;
+        const toggleBtn = document.getElementById('toggle-dark');
+
+        // Apply system preference on first load if no user preference
+        if (!localStorage.getItem('theme')) {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                html.classList.add('dark');
+            }
+        } else {
+            if (localStorage.getItem('theme') === 'dark') html.classList.add('dark');
+            if (localStorage.getItem('theme') === 'light') html.classList.remove('dark');
+        }
+
+        // Toggle dark mode on button click
+        toggleBtn.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            if (html.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

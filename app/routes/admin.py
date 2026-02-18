@@ -116,6 +116,12 @@ def dashboard():
         status=status
     )
 
+@admin_bp.route("/admin/post/<int:id>")
+@login_required
+def view_post(id):
+    post = Post.query.get_or_404(id)
+    return render_template("admin/pending.html", post=post)
+
 @admin_bp.route("/post/<int:id>/approve", methods=["POST"])
 @admin_bp.route("/approve/<int:id>", methods=["POST"])
 @login_required
@@ -162,7 +168,8 @@ def reject_post(id):
 @login_required
 def list_subscribers():
     subscribers = Subscriber.query.all()
-    return render_template("admin/subscribers.html", subscribers=subscribers)
+    subs = Subscriber.query.order_by(Subscriber.last_email_sent.desc()).all()
+    return render_template("admin/subscribers.html", subscribers=subscribers, subs=subs)
 
 @admin_bp.route('/admin/subscriber/<int:id>/toggle-digest', methods=['POST'])
 @csrf.exempt
@@ -251,6 +258,42 @@ def send_digest():
     flash("Weekly digest sent successfully")
     return redirect(url_for('admin.dashboard'))
 
+@admin_bp.route('/email-logs')
+@login_required
+def email_logs():
+    page = request.args.get('page', 1, type=int)
+    subject = request.args.get('subject', '')
+    email_search = request.args.get('email', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
+    query = EmailLog.query
+
+    # Filter by subject
+    if subject:
+        query = query.filter(EmailLog.subject.ilike(f"%{subject}%"))
+
+    # Search by email
+    if email_search:
+        query = query.filter(EmailLog.email.ilike(f"%{email_search}%"))
+
+    # Filter by date range
+    if start_date:
+        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+        query = query.filter(EmailLog.created_at >= start_date_obj)
+    
+    if end_date:
+        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+        query = query.filter(EmailLog.created_at <= end_date_obj)
+
+    logs = EmailLog.query.order_by(EmailLog.created_at.desc()).paginate(page=page, per_page=20)
+
+    return render_template("admin/email_logs.html", logs=logs,
+        subject=subject,
+        email_search=email_search,
+        start_date=start_date,
+        end_date=end_date)
+
 @admin_bp.route("/messages")
 @login_required
 def admin_messages():
@@ -334,13 +377,17 @@ def analytics():
         total_registered_users
     )
     
-    # TOTAL TIME ON PAGE
-    total_time_on_page = db.session.query(
-        func.count(PageView.id) * 0.5  # avg 30 sec per view
+    total_time_minutes = db.session.query(
+        func.coalesce(func.sum(PageView.read_time), 0)
     ).filter(
         PageView.created_at >= datetime.utcnow() - timedelta(days=range_days)
-    ).scalar() or 0
+    ).scalar()
     
+    total_time_on_page = db.session.query(
+        func.coalesce(func.sum(PageView.read_time), 0)
+    ).filter(
+        PageView.created_at >= datetime.utcnow() - timedelta(days=range_days)
+    ).scalar()
     
     # TOTAL DELETED ACCOUNTS
     total_deleted_accounts = User.query.filter_by(is_deleted=True).count()
@@ -492,6 +539,7 @@ def analytics():
         total_read_time=total_read_time,
         total_active_users=total_logged_in_users,
         total_time_on_page=total_time_on_page,
+        total_time_minutes=total_time_minutes,
         DAU=DAU,
         WAU=WAU,
         MAU=MAU,

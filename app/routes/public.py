@@ -12,7 +12,7 @@ from cloudinary.exceptions import Error as CloudinaryError
 from app.moderation.rules import CATEGORY_RULES
 from app.moderation.spam import is_spam
 from app.moderation.grammar import grammar_score
-from app.moderation.duplicate import is_duplicate
+from app.moderation.duplicate import hash_content
 from app.utils.helper import process_tags, get_related_posts, publish_scheduled_posts
 from app.utils.cloudinary_helper import upload_image_file
 from app.utils.email import send_email
@@ -55,9 +55,22 @@ def user_register():
         user = User(username=form.username.data.strip(), email=form.email.data.strip().lower())
         user.set_password(form.password.data)
         db.session.add(user)
+        db.session.flush()
+
+        existing_subscriber = Subscriber.query.filter_by(email=user.email).first()
+        if not existing_subscriber:
+          subscriber = Subscriber(email=user.email, user_id=user.id, is_active=True)
+          db.session.add(subscriber)
+        elif not existing_subscriber.is_active:
+            existing_subscriber.is_active = True
+            db.session.add(existing_subscriber)
+
         if not safe_commit():
           print("Failed to register user")
-        flash("Account created! Please log in.", "success")
+          flash("Error creating account. Try again.", "danger")
+          return redirect(url_for('public.user_register'))
+
+        flash("Account created! and subscribed successfully! Please log in.", "success")
         return redirect(url_for('public.user_login'))
     return render_template('user/register.html', form=form)
 
@@ -248,18 +261,20 @@ def calculate_growth(current, previous):
         return round(((current - previous) / previous) * 100, 2)
     return 0
 
-@public_bp.route('/analysis')
+@public_bp.route("/analysis/", defaults={"page_path": None})
+@public_bp.route('/analysis/<path:page_path>')
 @login_required
-def user_analysis():
-    range_days = request.args.get("range", "30")
+def user_analysis(page_path):
+    try:
+      range_days = int(request.args.get("range", "30"))
+    except (TypeError, ValueError):
+       range_days = 7
     now = datetime.utcnow()
 
-    if range_days == "7":
-        start_date = now - timedelta(days=7)
-    elif range_days == "30":
-        start_date = now - timedelta(days=30)
-    else:
-        start_date = None
+    if range_days not in [7, 30]:
+        range_days = 30
+    
+    start_date = now - timedelta(days=range_days)
 
     query = Post.query.filter_by(user_id=current_user.id)
 
@@ -272,21 +287,23 @@ def user_analysis():
     total_views = sum(p.views or 0 for p in posts)
     total_likes = sum(p.likes.count() for p in posts)
     total_read_time = sum(p.read_time or 0 for p in posts)
-    avg_read_time = sum(p.read_time or 0 for p in posts)
     profile_visits = ProfileVisit.query.filter_by(
         visited_user_id=current_user.id
     ).count()
     total_shares = sum(p.shares or 0 for p in posts)
     total_replies = sum(len(c.replies) for p in posts for c in p.comments)
 
-    # Avg per post
-    avg_read_time = round(total_read_time / no_of_posts, 2) if no_of_posts else 0
-
     # ✅ Average time per view
-    if total_views > 0:
-        avg_time_per_view = round(total_read_time / total_views, 2)
-    else:
-        avg_time_per_view = 0
+    pageview_query = db.session.query(
+        func.coalesce(func.sum(PageView.read_time), 0)
+    )
+    
+    if page_path:
+        pageview_query = pageview_query.filter(PageView.path == page_path)
+
+    total_time_minutes = pageview_query.filter(
+        PageView.created_at >= datetime.utcnow() - timedelta(days=range_days)
+    ).scalar()
 
     # Previous period
     previous_views = previous_likes = previous_read_time =  previous_posts_count = 0
@@ -331,7 +348,11 @@ def user_analysis():
           engagement_rate,
           previous_engagement_rate
       )
+    avg_read_time = round(total_read_time / no_of_posts, 2) if no_of_posts else 0
     avg_read_time_growth = calculate_growth(avg_read_time, previous_avg_read_time)
+    avg_time_per_view = round(
+        total_time_minutes / total_views, 2
+    ) if total_views else 0
     posts_growth = calculate_growth(no_of_posts, previous_posts_count)
     total_engagements = total_likes  + total_replies + total_shares
     growth_percentage = calculate_growth(total_engagements, previous_total_engagements)
@@ -382,6 +403,7 @@ def user_analysis():
         total_views=total_views,
         total_likes=total_likes,
         total_read_time=total_read_time,
+        total_time_minutes=total_time_minutes,
         no_of_posts=no_of_posts,
         posts_per_day=posts_per_day,
         best_post=best_post,
@@ -407,7 +429,7 @@ def user_analysis():
         avg_read_time_growth=avg_read_time_growth,
         avg_time_per_view=avg_time_per_view,
         
-        engagements_growth=likes_growth,
+        engagements_growth=engagements_growth,
         impressions_growth=views_growth,
         shares_growth=shares_growth
     )
@@ -550,6 +572,7 @@ def user_create_or_edit(id=None):
                 content=content_html.strip(),
                 featured_image=featured_image,
                 slug=generate_unique_slug(form.title.data),
+                content_hash=hash_content(content_html),
                 resubmission_count=0,
                 status="draft",
                 is_published=False
@@ -559,6 +582,7 @@ def user_create_or_edit(id=None):
             post.title = form.title.data
             post.content = content_html.strip()
             post.featured_image = request.form.get("featured_image")
+            post.content_hash = hash_content(content_html)
             # Only increment resubmission count if rejected
             if post.status == "rejected":
                 post.resubmission_count = (post.resubmission_count or 0) + 1
@@ -583,36 +607,38 @@ def user_create_or_edit(id=None):
             flash("Post content cannot be empty.", "danger")
             return render_template("user/create.html", form=form, rules=rules, post=post)
 
-        db.session.add(post)
-        if not safe_commit():
-          print("Failed to save post")
-
         try:
           result = auto_moderate(post, current_user) if post else None
           status = result["status"]
           reason = result.get("reason")
   
+          post.status = status
+          post.rejection_reason = reason
+          post.is_published = False   # admin approval required
+
+          db.session.add(post)
+          if not safe_commit():
+              flash("Failed to save post. Please try again.", "danger")
+              return render_template("user/create.html", form=form, post=post, rules=rules)
+      
+          # Flash messages based on moderation result
           if status == "rejected":
-              post.status = "rejected"
-              flash(reason, "error")
-              if not safe_commit():
-                print("Failed to save post")
-              return redirect(url_for("public.edit_post", id=post.id))
-          
-          if status == "pending_review":
-              post.status = "pending_review"
-              flash(reason or "Post requires editorial review", "warning")
-              if not safe_commit():
-                print("Failed to save post")
+              flash(f"Post rejected: {reason}", "error")
+              return render_template("user/create.html", form=form, post=post)
+          elif status == "pending_review":
+              flash(f"{reason or 'Pending review'}", "warning")
               return redirect(url_for("public.user_dashboard"))
-          # ✅ Auto-approve
-          post.status = "approved"
-          post.is_published = False
         except ConnectionError:
           # Handle network issues gracefully
-          flash("⚠️ Network error: Unable to reach the moderation service. Please check your internet connection.", "error")
-          result = None  # Or handle as you need
-        
+          flash("⚠️ Network error: Unable to reach the moderation service. "
+        "Your post was saved as draft. Please try submitting again.",
+        "error")
+        post.status = "draft"
+        post.is_published = False
+        db.session.add(post)
+        safe_commit()
+        return redirect(url_for("public.user_dashboard"))
+
         # ✅ ONLY approved posts reach here
         submit_status = request.form.get("status", "draft")
 
@@ -732,28 +758,30 @@ def submit_user_post(id):
         reason = result.get("reason")
         post.status = status
         post.rejection_reason = reason
-        post.is_published = (status == "published") 
+        post.is_published = False
         post.is_locked = True
+
+        # Extract first image if no featured image
+        if not post.featured_image:
+            soup = BeautifulSoup(post.content, "html.parser")
+            first_img = soup.find("img")
+            if first_img:
+                post.featured_image = first_img.get("src")
+
+        # Save immediately
+        db.session.add(post)
+        if not safe_commit():
+            flash("Failed to save post. Please try again.", "danger")
+            return redirect(url_for("public.user_dashboard"))
 
         if status == "rejected":
             post.status = "rejected"
             flash(f"Post rejected: {reason}", "error")
         elif status == "pending_review":
             post.status = "pending_review"
-            flash(f"Post requires editorial review: {reason or ''}", "warning")
-        elif status == "approved":
-            # ✅ Auto-publish if approved
-            post.status = "published"
-            post.is_published = True
-            post.published_at = datetime.utcnow()
-            flash("Post submitted and published successfully!", "success")
-
-        # extract first image if no featured_image
-        if not post.featured_image:
-            soup = BeautifulSoup(post.content, "html.parser")
-            first_img = soup.find("img")
-            if first_img:
-                post.featured_image = first_img.get("src")
+            flash(f"Post submitted for editorial review: {reason or 'Pending review'}", "warning")
+        else:
+          flash(f"Post submitted and sent for moderation: {status.upper()}", "info")
 
         safe_commit()
         flash(f"Post submitted: {status.upper()}" + (f" ({reason})" if reason else ""), "success")
@@ -863,6 +891,15 @@ def google_callback():
     else:
         user = User(email=user_email, username=f"user_{uuid4().hex[:8]}", oauth_provider="google", oauth_id=oauth_id, is_active=1, created_at=datetime.utcnow(), last_login=datetime.utcnow(), login_count=1,)
         db.session.add(user)
+        db.session.flush()
+
+        existing_subscriber = Subscriber.query.filter_by(email=user.email).first()
+        if not existing_subscriber:
+          subscriber = Subscriber(email=user.email, user_id=user.id, is_active=True)
+          db.session.add(subscriber)
+        elif not existing_subscriber.is_active:
+            existing_subscriber.is_active = True
+            db.session.add(existing_subscriber)
         if not safe_commit():
           print("Failed to login user")
 
@@ -926,20 +963,48 @@ def index():
     three_days_ago = datetime.utcnow() - timedelta(days=3)
     seven_days_ago = datetime.utcnow() - timedelta(days=7)
     six_hours_ago = datetime.utcnow() - timedelta(hours=6)
+    one_day_ago = datetime.utcnow() - timedelta(days=1)
+
+    # Latest posts (3)
+    latest_posts = (
+        Post.query
+        .filter(Post.is_published == True, Post.status == "published", Post.created_at >= one_day_ago)
+        .order_by(Post.created_at.desc())
+        .limit(3)
+        .all()
+    )
+
+    latest_posts = [p for p in latest_posts if p is not None]
+    latest_ids = [p.id for p in latest_posts]
+
+    # Popular / most reach posts (excluding the latest 3)
+    popular_posts = (
+        db.session.query(Post, (Post.views + Post.like_count + func.count(Comment.id)).label("popularity"))
+        .filter(Post.is_published == True, Post.status == "published", ~Post.id.in_(latest_ids), Post.created_at >= three_days_ago)
+        .order_by(desc("popularity"))
+        .all()
+    )
+
+    popular_posts = [p for p, _ in popular_posts if p is not None]
+    popular_ids = [p.id for p in popular_posts]
 
     posts = (
         Post.query
         .filter(
             Post.is_published == True,
             Post.status == "published",
+            ~Post.id.in_(latest_ids),
+            ~Post.id.in_(popular_ids),
             Post.created_at >= seven_days_ago
         )
         .order_by(Post.created_at.desc())
         .all()
     )
 
+    posts = [p for p in posts if p is not None]
+
     trending_posts = (
-        Post.query
+        db.session.query(Post, (Post.views + Post.like_count + func.count(Comment.id)).label("popularity"))
         .outerjoin(Comment)
         .filter(
             Post.is_published == True,
@@ -952,10 +1017,12 @@ def index():
         )
         .group_by(Post.id)
         .having(func.count(Comment.id) >= 5)  # only aggregate needed in having
-        .order_by((func.count(Comment.id) + Post.like_count + Post.views).desc())
+        .order_by(desc("popularity"))
         .limit(5)
         .all()
     )
+
+    trending_posts = [p for p, _ in trending_posts if p is not None]
 
     breaking_posts = (
         Post.query
@@ -971,7 +1038,9 @@ def index():
         .all()
     )
 
-        # Get cached data
+    breaking_posts = [p for p in breaking_posts if p is not None]
+
+    # Get cached data
     live = FootballCache.query.filter_by(data_type="live", league="PL").first()
     table = FootballCache.query.filter_by(data_type="table", league="PL").first()
 
@@ -999,7 +1068,7 @@ def index():
 
     print("Live Matches:", live_matches)
     print("League Table:", league_table)
-    return render_template("homepage.html", posts=posts, trending_posts=trending_posts, popular_tags=popular_tags, breaking_posts=breaking_posts, Post=Post, live_matches=live_matches, league_table=league_table, form=form, editor_picks=editor_picks)
+    return render_template("homepage.html", posts=posts, trending_posts=trending_posts, popular_posts=popular_posts, popular_tags=popular_tags, latest_posts=latest_posts, breaking_posts=breaking_posts, Post=Post, live_matches=live_matches, league_table=league_table, form=form, editor_picks=editor_picks)
 
 @public_bp.route("/post/<slug>", endpoint='post_detail')
 def post_detail(slug):
@@ -1223,12 +1292,16 @@ def subscribe():
 def unsubscribe(token):
     subscriber = Subscriber.query.filter_by(unsubscribe_token=token).first_or_404()
 
-    subscriber.is_active = False
-    if not safe_commit():
-      current_app.logger.error(f"Failed to unsubscribe {subscriber.email}")
-      return "Error unsubscribing. Please try again.", 500
+    if subscriber:
+        subscriber.is_active = False
+        if not safe_commit():
+            current_app.logger.error(f"Failed to unsubscribe {subscriber.email}")
+            return "Error unsubscribing. Please try again.", 500
+        flash("You have been unsubscribed successfully. {subscriber.email}", "success")
+    else:
+        flash("Invalid or expired unsubscribe link.", "danger")
 
-    return "You have been unsubscribed successfully. {subscriber.email}"
+    return redirect(url_for('public.index'))
 
 @public_bp.route("/tag/<string:slug>")
 def tag(slug):
