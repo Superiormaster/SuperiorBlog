@@ -978,34 +978,68 @@ def index():
     latest_ids = [p.id for p in latest_posts]
 
     # Popular / most reach posts (excluding the latest 3)
+    comment_counts = (
+        db.session.query(
+            Comment.post_id,
+            func.count(Comment.id).label("comment_count")
+        )
+        .group_by(Comment.post_id)
+        .subquery()
+    )
+
     popular_posts = (
-        db.session.query(Post, (Post.views + Post.like_count + func.count(Comment.id)).label("popularity"))
-        .filter(Post.is_published == True, Post.status == "published", ~Post.id.in_(latest_ids), Post.created_at >= three_days_ago)
+        db.session.query(
+            Post,
+            (Post.views + Post.like_count + func.coalesce(comment_counts.c.comment_count, 0)).label("popularity")
+        )
+        .outerjoin(comment_counts, Post.id == comment_counts.c.post_id)
+        .filter(
+            Post.is_published == True,
+            Post.status == "published",
+            Post.created_at >= three_days_ago,
+            ~Post.id.in_(latest_ids)
+        )
         .order_by(desc("popularity"))
+        .limit(3)
         .all()
     )
 
     popular_posts = [p for p, _ in popular_posts if p is not None]
     popular_ids = [p.id for p in popular_posts]
 
-    posts = (
-        Post.query
-        .filter(
-            Post.is_published == True,
-            Post.status == "published",
-            ~Post.id.in_(latest_ids),
-            ~Post.id.in_(popular_ids),
-            Post.created_at >= seven_days_ago
-        )
-        .order_by(Post.created_at.desc())
-        .all()
+    posts_query = Post.query.filter(
+        Post.is_published == True,
+        Post.status == "published",
+        Post.created_at >= seven_days_ago
     )
+    
+    # Exclude latest posts only if they exist
+    if latest_ids:
+        posts_query = posts_query.filter(~Post.id.in_(latest_ids))
+    
+    # Exclude popular posts only if they exist
+    if popular_ids:
+        posts_query = posts_query.filter(~Post.id.in_(popular_ids))
+    
+    posts = posts_query.order_by(Post.created_at.desc()).limit(10).all()
 
     posts = [p for p in posts if p is not None]
 
+    comment_counts = (
+        db.session.query(
+            Comment.post_id,
+            func.count(Comment.id).label("comment_count")
+        )
+        .group_by(Comment.post_id)
+        .subquery()
+    )
+
     trending_posts = (
-        db.session.query(Post, (Post.views + Post.like_count + func.count(Comment.id)).label("popularity"))
-        .outerjoin(Comment)
+        db.session.query(
+            Post,
+            (Post.views + Post.like_count + func.coalesce(comment_counts.c.comment_count, 0)).label("popularity")
+        )
+        .outerjoin(comment_counts, Post.id == comment_counts.c.post_id)
         .filter(
             Post.is_published == True,
             Post.status == "published",
@@ -1013,10 +1047,9 @@ def index():
             or_(
                 Post.views >= 50,
                 Post.like_count >= 10
-            )
+            ),
+            (func.coalesce(comment_counts.c.comment_count, 0) >= 5)
         )
-        .group_by(Post.id)
-        .having(func.count(Comment.id) >= 5)  # only aggregate needed in having
         .order_by(desc("popularity"))
         .limit(5)
         .all()
