@@ -7,46 +7,50 @@
 </div>
 
   <div class="flex justify-center items-center space-x-8">
-    <div class="p-6 rounded-lg w-80">
+    <div class="p-6 rounded-lg bg-gray-200 dark:bg-gray-900 w-80">
       <img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior icon" class="w-full object-cover rounded-md">
 
       <form method="POST" action="{{ url_for('public.user_register') }}" class="space-y-4 p-4 rounded-lg border border-yellow-500">
         {{ form.hidden_tag() }}
       <div class="mb-4">
-        {{ form.username.label(class_="block text-sm font-medium mb-1") }}
+        {{ form.username.label(class_="block dark:text-white text-gray-900 text-sm font-medium mb-1") }}
         {{ form.username(
             placeholder="Choose a username",
-            class_="w-full px-3 py-2 border rounded-md bg-gray-900 text-white"
+            class_="w-full px-3 py-2 border bg-white text-black
+       dark:bg-gray-800 dark:text-white rounded-md"
         ) }}
         {% for error in form.username.errors %}
           <p class="text-red-500 text-sm">{{ error }}</p>
         {% endfor %}
       </div>
       <div class="mb-4">
-        {{ form.email.label(class_="block text-sm font-medium mb-1") }}
+        {{ form.email.label(class_="block text-sm dark:text-white text-gray-900 font-medium mb-1") }}
         {{ form.email(
             placeholder="Enter your email",
-            class_="w-full px-3 py-2 border rounded-md bg-gray-900 text-white"
+            class_="w-full px-3 py-2 border rounded-md bg-white text-black
+       dark:bg-gray-800 dark:text-white"
         ) }}
         {% for error in form.email.errors %}
           <p class="text-red-500 text-sm">{{ error }}</p>
         {% endfor %}
       </div>
       <div class="mb-4">
-        {{ form.password.label(class_="block text-sm font-medium mb-1") }}
+        {{ form.password.label(class_="block dark:text-white text-gray-900 text-sm font-medium mb-1") }}
         {{ form.password(id="password",
             placeholder="Create a password",
-            class_="w-full px-3 py-2 border rounded-md bg-gray-900 text-white"
+            class_="w-full px-3 py-2 border rounded-md bg-white text-black
+       dark:bg-gray-800 dark:text-white"
         ) }}
         {% for error in form.password.errors %}
           <p class="text-red-500 text-sm">{{ error }}</p>
         {% endfor %}
       </div>
       <div class="mb-4">
-        {{ form.confirm_password.label(class_="block text-sm font-medium mb-1") }}
+        {{ form.confirm_password.label(class_="block dark:text-white text-gray-900 text-sm font-medium mb-1") }}
         {{ form.confirm_password(id="confirm_password",
             placeholder="Confirm password",
-            class_="w-full px-3 py-2 border rounded-md bg-gray-900 text-white"
+            class_="w-full px-3 py-2 border rounded-md bg-white text-black
+       dark:bg-gray-800 dark:text-white"
         ) }}
         {% for error in form.confirm_password.errors %}
           <p class="text-red-500 text-sm">{{ error }}</p>
@@ -54,18 +58,18 @@
       </div>
       <div class="form-check mb-3">
         <input type="checkbox" class="form-check-input" id="show_password" onclick="show_pass()">
-        <label class="form-check-label" for="show_password">Show Password</label>
+        <label class="dark:text-white text-gray-900 form-check-label" for="show_password">Show Password</label>
       </div>
       <div class="text-sm mb-4">
-        <label class="flex items-center">
+        <label class="flex items-center dark:text-white text-gray-900">
           <input type="checkbox" class="mr-1"> I have read and agreed to User Agreement and privacy policy
         </label>
       </div>
       {{ form.submit(class_="w-full bg-blue-600 text-white py-2 rounded-md font-semibold") }}
-     <div class="text-center text-sm mt-4">Or SignUp With</div>
+     <div class="text-center dark:text-white text-gray-900 text-sm mt-4">Or SignUp With</div>
       <div class="space-x-4 bg-blue-600 rounded-full font-semibold mt-2 w-full">
       <a id="googleBtn" href="{{ url_for('public.google_login') }}"
-          class="flex items-center justify-center gap-3 w-full h-12 rounded-full border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition"
+          class="flex items-center justify-center gap-3 w-full h-12 rounded-full border border-gray-300 text-gray-700 font-medium transition"
         >
           <!-- Official Google SVG -->
           <svg
@@ -90,8 +94,8 @@
       <p id="googleError" class="hidden text-sm text-red-500">
         Something went wrong. Please try again.
       </p>
-      <div class="text-center text-sm mt-2">
-        Already have an account? <a href="{{ url_for('public.user_login') }}" class="text-green-500">Login</a>
+      <div class="text-center dark:text-white text-gray-900 text-sm mt-2">
+        Already have an account? <a href="{{ url_for('public.user_login') }}" class="text-blue-500 dark:text-yellow-600">Login</a>
       </div>
     </div>
   </div>

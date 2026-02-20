@@ -70,7 +70,7 @@ def user_register():
           flash("Error creating account. Try again.", "danger")
           return redirect(url_for('public.user_register'))
 
-        flash("Account created! and subscribed successfully! Please log in.", "success")
+        flash("Account created successfully! Please log in.", "success")
         return redirect(url_for('public.user_login'))
     return render_template('user/register.html', form=form)
 
@@ -1452,6 +1452,20 @@ def contact():
 @public_bp.route("/contact_feedback", methods=["GET", "POST"])
 @csrf.exempt
 def contact_feedback():
+    content = request.form.get("content", "").strip()
+
+    if not content:
+        flash("Feedback cannot be empty.", "error")
+        return redirect(url_for("public.index"))
+
+    if len(content) < 10:
+        flash("Feedback must be at least 10 characters.", "error")
+        return redirect(url_for("public.index"))
+
+    if len(content) > 1000:
+        flash("Feedback is too long.", "error")
+        return redirect(url_for("public.index"))
+
     if request.method == "POST":
         msg = ContactMessage(
             name=request.form.get("name", "Anonymous"),

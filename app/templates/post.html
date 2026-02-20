@@ -3,47 +3,18 @@
 
 {% block content %}
 
-  <h2 class="text-3xl px-3 mt-13 mb-6 bg-red-600 text-white py-1 uppercase font-bold">Latest News</h2>
-  <div class="overflow-hidden bg-gray-800 py-3">
-    <div id="latest-slider" class="flex transition-transform duration-700">
-      {% for p in latest_posts %}
-      <div class="min-w-full px-4 text-center">
-        <a href="{{ url_for('public.post_detail', slug=p.slug) }}"
-           data-safe data-redirect class="btn-primary btn-danger min-w-full text-center text-xl md:text-2xl line-clamp-1 font-semibold hover:underline px-4">
-          {{ p.title }}
-        </a>
-        <div class="flex justify-center">
-        {% if p.featured_image %}
-        <img
-          src="{{ p.featured_image }}"
-          loading="lazy"
-          decoding="async"
-          class="w-14 h-12 mt-2 object-cover rounded"
-          alt="{{ p.title }}"
-        >
-        {% else %}
-        <div class="fallback-thumbnail border h-14 w-16 rounded border-gray-800 flex items-center justify-center">
-          <div class="bg-neutral-800 mt-2 h-12 w-14"></div>
-        </div>
-        {% endif %}
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-<div class="flex-col flex">
+<div class="flex-col mt-16 py-12 flex">
 <article class="shadow-md rounded p-6">
   {% if post.featured_image and post.featured_image not in post.content %}
     <img src="{{ post.featured_image }}"
-         class="rounded w-full h-64 mb-6 object-cover">
+         class="rounded w-full h-auto max-h-[400px] mb-6 object-cover">
   {% endif %}
-  <h1 class="text-4xl text-yellow-500 font-bold mb-2">{{ post.title }}</h1>
+  <h1 class="text-2xl text-gray-900 dark:text-yellow-600 font-bold mb-2">{{ post.title }}</h1>
   <p class="text-gray-500 text-sm">Pubished on {{ post.created_at.strftime('%B %d, %Y') }}</p>
   <p class="text-sm text-gray-400 mb-8">
     By <b>{{ post.author.username }}</b>
   </p>
-  <div class="prose post-content max-w-3xl w-full mx-auto text-gray-300 md:text-2xl max-w-full sm:max-w-3xl px-1 break-words">
+  <div class="prose post-content max-w-3xl w-full mx-auto text-gray-900 dark:text-gray-300 md:text-2xl max-w-full sm:max-w-3xl px-1 break-words">
     {{ post.content | safe }}
   </div>
   
@@ -68,16 +39,16 @@
   <div class="social-bar py-3 border-gray-200 border-t mt-4">
     <!-- Bottom row: Action buttons -->
     <div class="flex">
-      <button class="btn-primary like-btn flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" data-url="{{ url_for('public.like_post', id=post.id) }}" onclick="likePost(this)" data-post-id="{{ post.id }}">
+      <button class="btn-primary like-btn flex items-center justify-center flex-1 text-gray-600 hover:text-gray-500 text-sm font-medium active:bg-gray-100 transition py-3" data-url="{{ url_for('public.like_post', id=post.id) }}" onclick="likePost(this)" data-post-id="{{ post.id }}">
         <i class="md:text-2xl text-xl far fa-thumbs-up mr-2"></i>
         <span class="like-count ml-1 md:text-xl text-sm">{{ post.likes.count() }}</span>
       </button>
       
-      <button class="btn-primary flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" onclick="toggleComments()">
+      <button class="btn-primary flex items-center justify-center flex-1 text-gray-600 hover:text-gray-500 text-sm font-medium active:bg-gray-100 transition py-3" onclick="toggleComments()">
         <i class="md:text-2xl far fa-comment text-xl mr-2"></i>
         <span class="md:text-xl text-sm">Comment</span>
       </button>
-      <button class="btn-primary flex items-center justify-center flex-1 text-gray-600 hover:text-blue-500 text-sm font-medium active:bg-gray-100 transition py-3" onclick="sharePost({{ post.id }}, '{{ post.title|escape }}')">
+      <button class="btn-primary flex items-center justify-center flex-1 text-gray-600 hover:text-gray-500 text-sm font-medium active:bg-gray-100 transition py-3" onclick="sharePost({{ post.id }}, '{{ post.title|escape }}')">
         <i class="md:text-2xl text-xl fas fa-share mr-2"></i>
         <span class="md:text-xl text-sm mt-1">Share</span>
       </button>
@@ -90,14 +61,14 @@
     {% if not current_user.is_authenticated %}
     <p class="text-gray-400 my-6 ">
       You must
-      <a href="{{ url_for('public.user_login') }}" data-redirect class="btn-primary btn-danger text-blue-500 underline">
+      <a href="{{ url_for('public.user_login') }}" data-redirect class="btn-primary btn-danger text-blue-500 dark:text-yellow-500 underline">
         log in
       </a>
       to comment or reply.
     </p>
     {% endif %}
 
-    <h3 class="text-xl font-bold mb-4">Comments</h3>
+    <h3 class="text-xl text-gray-900 dark:text-white font-bold mb-4">Comments</h3>
 
     <ul id="comment-list">
       {% for comment in post.comments %}
@@ -165,8 +136,8 @@
           class="fixed text-gray-700 px-4 py-2 rounded shadow-lg w-full left-0 bottom-0 bg-gray-800 border-t h-17 shadow z-50">
       <div class="flex justify-end gap-2">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <textarea name="content" rows="1" placeholder="Write a comment..." class="border border-gray-600 rounded px-3 w-full placeholder-gray-400 text-gray-400 focus:placeholder-gray-600 text-sm" required></textarea>
-        <button type="button" class="btn-primary bg-gray-400 text-white p-2 h-13 rounded" onclick="closeCommentForm()">
+      <textarea name="content" rows="1" placeholder="Write a comment..." class="border border-gray-900 dark:border-gray-600 rounded px-3 w-full placeholder-gray-400 text-gray-900 focus:placeholder-gray-600 text-sm" required></textarea>
+        <button type="button" class="btn-primary bg-gray-600 dark:bg-gray-400 text-white p-2 h-13 rounded" onclick="closeCommentForm()">
           Cancel
         </button>
         <button type="submit" class="btn-primary bg-blue-600 text-white p-2 h-13 w-10 rounded">
@@ -240,9 +211,9 @@
 
 {% if related_posts %}
 <aside class="mt-8">
-  <div class="p-4 rounded-lg shadow-sm bg-gray-700">
+  <div class="p-4 rounded-lg shadow-sm bg-gray-200 dark:bg-gray-700">
     
-    <h3 class="text-center font-semibold text-2xl md:text-3xl mb-4">
+    <h3 class="text-center text-gray-900 dark:text-white font-semibold text-2xl md:text-3xl mb-4">
       {{ section_title }}
     </h3>
 
@@ -269,7 +240,7 @@
           <a href="{{ url_for('public.post_detail', slug=r.slug) }}"
              data-post-id="{{ r.id }}"
              onclick="trackRelatedClick(this)"
-             data-redirect class="btn-primary min-w-full md:text-2xl btn-danger block text-lg font-semibold hover:underline">
+             data-redirect class="btn-primary min-w-full text-gray-900 dark:text-yellow-600 md:text-2xl btn-danger block text-lg font-semibold hover:underline">
             {{ r.title }}
           </a>
           </h3>
@@ -280,7 +251,7 @@
         </div>
       </li>
       {% else %}
-        <p class="text-gray-500 text-center">No related stories</p>
+        <p class="text-gray-700 dark:text-gray-500 text-center">No related stories</p>
       {% endfor %}
     </ul>
 
@@ -297,7 +268,7 @@
     <input type="hidden" name="csrf_token" value="...">
     <form action="{{ url_for('public.subscribe') }}" method="post" class="flex flex-col md:flex-row gap-3">
       {{ form.hidden_tag() }}
-      {{ form.email(class="form-control flex-1 p-3 rounded-lg text-white w-full border border-[#c89a1a] focus:outline-none", placeholder="Enter your email to stay informed") }}
+      {{ form.email(class="form-control flex-1 p-3 rounded-lg bg-white text-black dark:bg-gray-800 dark:text-white w-full border border-[#c89a1a] focus:outline-none", placeholder="Enter your email to stay informed") }}
       {{ form.submit(class="btn btn-primary px-6 py-3 rounded-lg font-medium text-black bg-[#c89a1a]") }}
       
     </form>
@@ -311,31 +282,30 @@
   </section>
 
   <!-- Footer Links -->
-  <div class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 text-center md:text-left mb-8">
+  <div class="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 text-left mb-8">
     <!-- General Links -->
     <div class="flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">General</h4>
-      <a href="{{ url_for('public.contact', type='contact') }}" class="hover:text-white">Contact Us</a>
-      <a href="{{ url_for('public.contact', type='feedback') }}" class="hover:text-white">Write a feedback</a>
-      <a href="{{ url_for('public.contact', type='report') }}" class="hover:text-white">Report a problem</a>
-      <a href="{{ url_for('public.privacy') }}" class="hover:text-white">Privacy Policy</a>
-      <a href="{{ url_for('public.terms') }}" class="hover:text-white">Terms & Conditions</a>
+      <a href="{{ url_for('public.contact', type='contact') }}" class="hover:text-white link-gold">Contact Us</a>
+      <a href="{{ url_for('public.contact', type='feedback') }}" class="hover:text-white link-gold">Write a feedback</a>
+      <a href="{{ url_for('public.contact', type='report') }}" class="hover:text-white link-gold">Report a problem</a>
+      <a href="{{ url_for('public.privacy') }}" class="hover:text-white link-gold">Privacy Policy</a>
+      <a href="{{ url_for('public.terms') }}" class="hover:text-white link-gold">Terms & Conditions</a>
     </div>
 
     <!-- Categories -->
     <div class="flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">Categories</h4>
       {% for cat in nav_categories %}
-        <a data-redirect href="{{ url_for('public.category', slug=cat.slug) }}" class="capitalize btn-primary btn-danger">
+        <a data-redirect href="{{ url_for('public.category', slug=cat.slug) }}" class="capitalize btn-primary link-gold btn-danger">
           {{ cat.name }}
         </a>
       {% endfor %}
     </div>
 
-    <!-- Social Links -->
-    <div class="flex flex-col space-y-2">
-      <h4 class="font-semibold mb-2 text-white">Follow Us</h4>
-      <div class="flex space-x-4 justify-center md:justify-start text-xl md:text-2xl">
+    <div class="flex hidden md:flex flex-col space-y-2">
+      <h4 class="font-semibold text-center mb-2 text-white">Follow Us</h4>
+      <div class="flex space-x-4 justify-center text-xl md:text-2xl">
         <a href="https://www.facebook.com/share/1MoaNAoJJZ/" target="_blank" class="hover:scale-110 transition">
           <i class="fab fa-facebook-f text-[#1877F2]"></i>
         </a>
@@ -351,13 +321,48 @@
         <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" class="hover:scale-110 transition">
           <i class="fab fa-linkedin-in text-[#0A66C2]"></i>
         </a>
+        <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" class="hover:scale-110 transition">
+          <i class="fab fa-linkedin-in text-[#0A66C2]"></i>
+        </a>
       </div>
     </div>
 
-    <!-- Optional Extra / Generate Captions -->
-    <div class="md:hidden hidden flex flex-col space-y-2">
+    <!--<div class="md:flex hidden flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">Tools</h4>
-      <a href="{{ url_for('caption.caption_page') }}" class="hover:text-white">Generate Captions</a>
+      <a href="{{ url_for('caption.caption_page') }}" class="hover:text-white link-gold">Generate Captions</a>
+    </div>-->
+  </div>
+
+  <div class="max-w-5xl mx-auto grid grid-cols-1 gap-6 text-center md:text-left mb-8">
+    <!-- Optional Extra / Generate Captions --><!--
+    <div class="md:hidden flex flex-col space-y-2">
+      <h4 class="font-semibold mb-2 text-white">Tools</h4>
+      <a href="{{ url_for('caption.caption_page') }}" class="hover:text-white link-gold">Generate Captions</a>
+    </div>-->
+
+    <!-- Social Links -->
+    <div class="flex md:hidden flex-col space-y-2">
+      <h4 class="font-semibold text-center mb-2 text-white">Follow Us</h4>
+      <div class="flex space-x-4 justify-center md: text-xl md:text-2xl">
+        <a href="https://www.facebook.com/share/1MoaNAoJJZ/" target="_blank" class="hover:scale-110 transition">
+          <i class="fab fa-facebook-f text-[#1877F2]"></i>
+        </a>
+        <a href="https://twitter.com/@SMprogra" target="_blank" class="hover:scale-110 transition">
+          <i class="fab fa-x-twitter text-[#1DA1F2]"></i>
+        </a>
+        <a href="https://www.instagram.com/superiormastersdesign" target="_blank" class="hover:scale-110 transition">
+          <i class="fab fa-instagram text-[#E4405F]"></i>
+        </a>
+        <a href="https://youtube.com/@lifootballmoments" target="_blank" class="hover:scale-110 transition">
+          <i class="fab fa-youtube text-[#FF0000]"></i>
+        </a>
+        <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" class="hover:scale-110 transition">
+          <i class="fab fa-linkedin-in text-[#0A66C2]"></i>
+        </a>
+        <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" class="hover:scale-110 transition">
+          <i class="fab fa-linkedin-in text-[#0A66C2]"></i>
+        </a>
+      </div>
     </div>
   </div>
 

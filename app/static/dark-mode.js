@@ -1,10 +1,23 @@
-const toggleBtn = document.getElementById("darkModeToggle");
-toggleBtn.addEventListener("click", () => {
-  document.documentElement.classList.toggle("dark");
-  localStorage.setItem("darkMode", document.documentElement.classList.contains("dark"));
-});
 
-// Load preference on page load
-if (localStorage.getItem("darkMode") === "true") {
-  document.documentElement.classList.add("dark");
-}
+    const html = document.documentElement;
+    const toggleBtn = document.getElementById('toggle-dark');
+
+    // Apply system preference on first load if no user preference
+    if (!localStorage.getItem('theme')) {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            html.classList.add('dark');
+        }
+    } else {
+        if (localStorage.getItem('theme') === 'dark') html.classList.add('dark');
+        if (localStorage.getItem('theme') === 'light') html.classList.remove('dark');
+    }
+
+    // Toggle dark mode on button click
+    toggleBtn.addEventListener('click', () => {
+        html.classList.toggle('dark');
+        if (html.classList.contains('dark')) {
+            localStorage.setItem('theme', 'dark');
+        } else {
+            localStorage.setItem('theme', 'light');
+        }
+    });

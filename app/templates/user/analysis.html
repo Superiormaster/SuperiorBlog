@@ -24,7 +24,7 @@
   {% if best_post %}
   <div class="bg-white dark:bg-gray-800 p-4 rounded-lg mt-6 mx-4">
     <h3 class="text-sm text-center md:text-left font-bold text-gray-700 dark:text-gray-400">Best Performing Post</h3>
-    <p class="text-lg text-center font-bold">{{ best_post.title }}</p>
+    <p class="text-lg text-gray-900 dark:text-yellow-500 text-center font-bold">{{ best_post.title }}</p>
     <p class="text-sm text-center text-gray-700 dark:text-gray-400">
       {{ best_post.views }} views · 
       {{ likes_map.get(best_post.id, 0) }} likes
@@ -199,7 +199,7 @@ new Chart(document.getElementById("viewsChart"), {
     plugins: {
       legend: {
         labels: {
-          color: "#1f2937"
+          color: "#e5e7eb"
         }
       }
     },

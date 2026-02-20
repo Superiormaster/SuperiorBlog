@@ -48,7 +48,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='Style.css') }}">
 
 </head>
-<body class="bg-white dark:bg-gray-900 w-full duration-700 text-black dark:text-gray-500 bg-lightBg text-lightText transition-colors duration-300">
+<body class="bg-white dark:bg-gray-900 w-full duration-700 transition-colors">
 <header class="h-18 fixed w-full top-0 flex items-center justify-between border-b shadow-lg px-4 z-30 bg-headerBgDark text-darkText">
   
   <!-- Left: Logo -->
@@ -58,10 +58,15 @@
 
   <!-- Right: Auth & Hamburger -->
   <div class="flex items-center gap-4">
+      <button id="toggle-dark" class="p-2 rounded-full focus:outline-none bg-gray-200 dark:bg-gray-700 transition-colors">
+        <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-800 dark:text-yellow-300 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+          <path id="icon-path" d="M17.293 13.293a8 8 0 01-10.586-10.586 8 8 0 1010.586 10.586z"/>
+        </svg>
+      </button>
     {% if current_user.is_authenticated %}
-      <a href="{{ url_for('public.user_logout') }}" class="text-sm md:text-xl border rounded p-1">Logout</a>
+      <a href="{{ url_for('public.user_logout') }}" class="text-sm md:text-xl link-gold border rounded p-1">Logout</a>
     {% else %}
-      <a href="{{ url_for('public.user_login') }}" class="text-sm md:text-xl border rounded p-1">Login</a>
+      <a href="{{ url_for('public.user_login') }}" class="text-sm md:text-xl link-gold border rounded p-1">Login</a>
     {% endif %}
 
     <!-- Hamburger menu (mobile) -->
@@ -74,7 +79,7 @@
 
 </header>
     
-    <main id="mainContent" class="text-white w-full max-w-7xl mx-auto mt-15">
+    <main id="mainContent" class="w-full max-w-7xl mx-auto mt-15">
       {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             <div class="fixed top-5 right-5 space-y-2 z-50" id="flash-messages">
@@ -92,13 +97,13 @@
             </div>
           {% endif %}
         {% endwith %}
-        <button class="fixed right-10 bottom-0 text-gray-100 text-2xl border rounded-xl py-2 px-1 text-white z-50" id="btn">↑</button>
+        <button class="fixed right-10 bottom-0 text-gray-900 dark:text-gray-100 text-2xl border rounded-xl py-2 px-1 z-50" id="btn">↑</button>
         {% block content %}{% endblock %}
     </main>
 
 <div class="fixed inset-0 bg-black/50 hidden z-50 md:hidden" id="drawerOverlay" tabindex="-1" data-hidden="true"></div>
 
-<aside class="md:hidden drawer transform translate-x-full duration-300 z-60" id="mainDrawer" role="dialog" aria-modal="true" aria-label="Main menu" aria-hidden="true">
+<aside class="md:hidden bg-gray-600 dark:bg-gray-900 drawer transform translate-x-full duration-300 z-60" id="mainDrawer" role="dialog" aria-modal="true" aria-label="Main menu" aria-hidden="true">
   <div class="drawer__layout">
     <div class="drawer__header w-full border-b border-gray-700 p-4 flex gap-3 flex-col flex-shrink-0">
         <div class="" aria-hidden="true"><img src="{{ url_for('static', filename='Img/New.png') }}" alt="Superior logo" class="h-12">
@@ -115,23 +120,23 @@
           type="text"
           name="q"
           placeholder="Search Superior News"
-          class="w-full px-4 py-2 flex border border-[#c89a1a] focus:outline-none rounded-l-lg text-white"
+          class="w-full px-4 py-2 flex border border-[#c89a1a] focus:outline-none rounded-l-lg text-black bg-white dark:bg-gray-800 dark:text-white"
         >
         <button class="btn-primary px-4 bg-[#c89a1a] text-white py-2 rounded-r-lg">Search</button>
       </form>
     </div>
     
-      <div class="drawer__body">
+      <div class="drawer__body bg-gray-300 dark:bg-gray-900">
         <div class="section-title">Navigation</div>
-        <ul class="nav-list" id="drawerNav">
+        <ul class="nav-list text-gray-800 dark:text-yellow-600" id="drawerNav">
           <li><a href="{{ url_for('public.index') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-home mr-2" aria-hidden="true"></i>Home</a></li>
 
         {% if current_user.is_authenticated %}
         <li><a href="{{ url_for('public.user_dashboard') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-dashboard mr-2"></i> Dashboard</a></li>
-        <li><a href="{{ url_for('public.user_change_password') }}" data-redirect class="btn-primary btn-danger text-blue-500 hover:underline"><i class="fa fa-eraser mr-2" aria-hidden="true"></i>Change Password</a></li>
+        <li><a href="{{ url_for('public.user_change_password') }}" data-redirect class="btn-primary btn-danger hover:underline"><i class="fa fa-eraser mr-2" aria-hidden="true"></i>Change Password</a></li>
         <li><a href="{{ url_for('public.user_logout') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-out mr-2" aria-hidden="true"></i>Logout</a></li>
         {% else %}
-          <li><a href="{{ url_for('public.user_login') }}" data-redirect class="btn-primary btn-danger "><i class="fa fa-sign-in mr-2"></i> Login</a></li>
+          <li><a href="{{ url_for('public.user_login') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-in mr-2"></i> Login</a></li>
         {% endif %}
 
         <div class="section-title">Category</div>
@@ -143,7 +148,7 @@
           <li><a href="{{ url_for('public.category', slug='business') }}" data-redirect class="btn-primary btn-danger">
             <svg
               viewBox="0 0 512 512"
-              class="w-6 h-6 mr-2 text-yellow-500"
+              class="w-6 h-6 mr-2"
               fill="currentColor"
               aria-hidden="true"
             >
@@ -177,11 +182,6 @@
               <i class="fa fa-file-alt mr-2" aria-hidden="true"></i> Terms & Conditions
             </a></li>
           {% endif %}
-          <button id="toggle-dark" class="p-2 rounded-full focus:outline-none bg-gray-200 dark:bg-gray-700">
-            <svg id="moon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-800 dark:text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M17.293 13.293a8 8 0 01-10.586-10.586 8 8 0 1010.586 10.586z"/>
-            </svg>
-          </button>
         </ul>
       </div>
     </div>
@@ -191,7 +191,7 @@
         <!-- Use user's initials for avatar -->
         <span class="avatar">{{ current_user.username[0]|upper }}{{ current_user.username.split(' ')[1][0]|upper if ' ' in current_user.username else '' }}</span>
         <!-- Display username -->
-        <span class="username">{{ current_user.username }}</span>
+        <span class="username dark:text-white">{{ current_user.username }}</span>
       </div>
     </div>
     {% endif %}
@@ -240,30 +240,47 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 <!-- Dark Mode Script -->
-    <script>
-        const html = document.documentElement;
-        const toggleBtn = document.getElementById('toggle-dark');
+<script>
+const html = document.documentElement;
+const toggleBtn = document.getElementById('toggle-dark');
+const iconPath = document.getElementById('icon-path');
 
-        // Apply system preference on first load if no user preference
-        if (!localStorage.getItem('theme')) {
-            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                html.classList.add('dark');
-            }
-        } else {
-            if (localStorage.getItem('theme') === 'dark') html.classList.add('dark');
-            if (localStorage.getItem('theme') === 'light') html.classList.remove('dark');
-        }
+// Icon paths
+const moonPath = "M17.293 13.293a8 8 0 01-10.586-10.586 8 8 0 1010.586 10.586z";
+const sunPath = "M10 2a1 1 0 011 1v1a1 1 0 01-2 0V3a1 1 0 011-1zm4.22 2.22a1 1 0 011.414 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707zM18 10a1 1 0 110 2h-1a1 1 0 110-2h1zm-2.22 4.22a1 1 0 011.414 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707zM10 18a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.22-2.22a1 1 0 011.414 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707zM2 10a1 1 0 110 2H1a1 1 0 110-2h1zm2.22-4.22a1 1 0 011.414 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707z";
 
-        // Toggle dark mode on button click
-        toggleBtn.addEventListener('click', () => {
-            html.classList.toggle('dark');
-            if (html.classList.contains('dark')) {
-                localStorage.setItem('theme', 'dark');
-            } else {
-                localStorage.setItem('theme', 'light');
-            }
-        });
-    </script>
+// Apply theme helper
+function applyTheme(theme) {
+  if (theme === 'dark') html.classList.add('dark');
+  else html.classList.remove('dark');
+  // Update icon
+  iconPath.setAttribute('d', theme === 'dark' ? moonPath : sunPath);
+}
+
+// 1️⃣ On page load
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme) {
+  applyTheme(savedTheme);
+} else {
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(systemPrefersDark ? 'dark' : 'light');
+}
+
+// 2️⃣ Listen for system changes (if user hasn't chosen)
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  if (!localStorage.getItem('theme')) {
+    applyTheme(e.matches ? 'dark' : 'light');
+  }
+});
+
+// 3️⃣ Toggle button
+toggleBtn.addEventListener('click', () => {
+  const isDark = html.classList.contains('dark');
+  const newTheme = isDark ? 'light' : 'dark';
+  applyTheme(newTheme);
+  localStorage.setItem('theme', newTheme);
+});
+</script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

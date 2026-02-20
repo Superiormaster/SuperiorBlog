@@ -25,7 +25,6 @@
 }
 
 html,body {
-  color: #0b0b0b;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -39,13 +38,13 @@ button {
   border-color: #c89a1a;
 }
 
-a {
+.link-gold {
   color: #c89a1a;
   text-decoration: none;
   transition: color 220ms cubic-bezier(.2,.9,.3,1);
 }
   
-a:hover {
+.link-gold:hover {
   color: #a28014;
   text-decoration: underline;
 }
@@ -175,11 +174,6 @@ form > div {
   max-height: 1000px; /* arbitrary large value */
 }
 
-body {
-  color: #e6e6e6;
-  font-family: system-ui, sans-serif;
-}
-
 .tool-header {
   margin-bottom: 24px;
 }
@@ -195,7 +189,7 @@ body {
   width: 100%;
   min-height: 140px;
   background: #0f1115;
-  color: #fff;
+  color: 
   border: 1px solid #2a2f3a;
   border-radius: 8px;
   padding: 12px;
@@ -215,11 +209,6 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 16px;
-}
-
-/* CRITICAL: prevents Chrome auto-white background */
-textarea:focus {
-  color: #e5e7eb !important;
 }
 
 /* Post page img */
@@ -324,7 +313,7 @@ textarea:focus {
 .btn-primary {
   @apply relative inline-flex items-center justify-center gap-2
            h-11 px-6 rounded-lg font-medium
-           bg-blue-600 text-white
+           bg-blue-600
            hover:bg-blue-700
            transition
            disabled:opacity-60
@@ -357,7 +346,6 @@ textarea:focus {
   padding: 6px 10px;
   border-radius: 6px;
   background: rgba(255,255,255,0.08);
-  color: white;
   font-size: 14px;
   border: 1px solid rgba(255,255,255,0.15);
 }
@@ -368,7 +356,6 @@ textarea:focus {
 }
 
 strong{
-  background: linear-gradient(135deg, var(--brand), #ffd66b);
   font-weight: 700;
   box-shadow: var(--shadow-sm);
 }
@@ -444,7 +431,6 @@ strong{
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    background-color: #0f172a;
     box-shadow: var(--shadow);
     transition: transform 0.3s ease;
     will-change: transform;
@@ -505,8 +491,6 @@ strong{
   -webkit-overflow-scrolling: touch; /* iOS + Chrome mobile */
   overscroll-behavior: contain;      /* stops body scroll */
   scrollbar-width: thin;
-
-  background-color: #0f172a; /* prevents white flash */
   padding-bottom: 2rem;
   margin-left: 1rem;
 }

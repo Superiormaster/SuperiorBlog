@@ -7,30 +7,33 @@
   
   <div class="flex justify-center items-center space-x-8">
     <!-- Login Card -->
-    <div class="p-4 rounded-lg w-80">
+    <div class="p-4 rounded-lg bg-gray-200 dark:bg-gray-900 w-80">
         <img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior icon" class="w-full object-cover rounded-md">
 
       <form method="POST" class="space-y-4 p-4 rounded-lg border border-yellow-500">
       {{ form.hidden_tag() }}
       <div class="mb-4">
-        {{ form.email.label(class="block text-sm font-medium mb-1") }} {{ form.email(placeholder="Enter your email address", class="w-full px-3 py-2 border rounded-md") }}
+        {{ form.email.label(class="block text-sm dark:text-white text-gray-900
+        font-medium mb-1") }} {{ form.email(placeholder="Enter your email address", class="w-full bg-white text-black
+       dark:bg-gray-800 dark:text-white px-3 py-2 border rounded-md") }}
       </div>
       <div class="mb-4">
-        {{ form.password.label(class="block text-sm font-medium mb-1") }} {{ form.password(id="password", placeholder="Enter your password", class="w-full px-3 py-2 border rounded-md") }}
+        {{ form.password.label(class="block text-sm dark:text-white text-gray-900 font-medium mb-1") }} {{ form.password(id="password", placeholder="Enter your password", class="w-full px-3 bg-white text-black
+       dark:bg-gray-800 dark:text-white py-2 border rounded-md") }}
       </div>
       <div class="form-check">
         <input type="checkbox" id="show_password" class="form-check-input" onclick="show_pass()">
-        <label class="form-check-label">Show Password</label>
+        <label class="dark:text-white text-gray-900 form-check-label">Show Password</label>
       </div>
       <div class="flex justify-between items-center text-sm mb-4">
-        {{ form.remember_me(class="flex items-center") }} <span class="mr-1">Remember me</span>
-        <a href="{{ url_for('public.forgot_password') }}">Forgot Password?</a>
+        {{ form.remember_me(class="flex items-center") }} <span class="mr-1 dark:text-white text-gray-900">Remember me</span>
+        <a href="{{ url_for('public.forgot_password') }}" class="dark:text-white text-gray-900">Forgot Password?</a>
       </div>
       {{ form.submit(class="bg-blue-600 text-white px-4 py-2 rounded w-full rounded-md font-semibold") }}
-     <div class="text-center text-sm mt-4">Or SignUp With</div>
+     <div class="text-center dark:text-white text-gray-900 text-sm mt-4">Or SignUp With</div>
       <div class="space-x-4 bg-blue-600 rounded-full font-semibold mt-2 w-full">
       <a id="googleBtn" href="{{ url_for('public.google_login') }}"
-          class="flex items-center justify-center gap-3 w-full h-12 rounded-full border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition"
+          class="flex items-center justify-center gap-3 w-full h-12 rounded-full border border-gray-300 text-gray-700 font-medium transition"
         >
           <!-- Official Google SVG -->
           <svg
@@ -57,8 +60,8 @@
       <p id="googleError" class="hidden text-sm text-red-500">
         Something went wrong. Please try again.
       </p>
-      <div class="text-center text-sm mt-2">
-        Don't have an account? <a href="{{ url_for('public.user_register') }}">Sign Up</a>               
+      <div class="text-center dark:text-white text-gray-900 text-sm mt-2">
+        Don't have an account? <a href="{{ url_for('public.user_register') }}" class="dark:text-yellow-600 text-blue-400">Sign Up</a>               
       </div>
       </form>
     </div>

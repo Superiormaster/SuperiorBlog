@@ -3,7 +3,8 @@
 
 {% block content %}
 
-<div class="max-w-4xl mx-auto mt-14 shadow rounded flex-1 shadow-md">
+<div class="max-w-4xl mx-auto mt-14 shadow rounded flex-1 bg-white text-gray-900
+            dark:bg-gray-900 dark:text-white shadow-md">
 
   <h1 class="text-2xl px-2 font-bold mb-4">
     {{ 'Edit' if post else 'Create' }} Post
@@ -15,10 +16,11 @@
 </button>
 
 <div id="guidelinesModal"
- class="fixed inset-0 bg-black/60 hidden items-center flex justify-center z-50">
-  <div class="bg-gray-900 p-6 rounded-xl max-w-lg">
+ class="fixed inset-0 bg-black/40 dark:bg-black/60  hidden items-center flex justify-center z-50">
+  <div class="bg-white text-gray-900
+            dark:bg-gray-900 dark:text-white p-6 rounded-xl max-w-lg">
     <h2 class="text-xl font-bold mb-4">Publishing Guidelines</h2>
-    <ul class="space-y-2 text-sm text-gray-300">
+    <ul class="space-y-2 text-gray-700 dark:text-gray-300 text-sm text-gray-300">
       <li>✔ No plagiarism</li>
       <li>✔ Proper grammar</li>
       <li>✔ Use reputable sources</li>
@@ -26,7 +28,7 @@
       <li>✔ Upload a single image for now. Avoid multiple images</li>
       <li>✔ Paste your image first before the text</li>
     </ul>
-    <ul class="list-disc my-2 bg-yellow-500 px-6 rounded text-sm text-gray-700">
+    <ul class="list-disc bg-yellow-400 dark:bg-yellow-500 px-6 rounded text-gray-900 dark:text-gray-700 my-2 bg-yellow-500 rounded text-sm">
       <li>Minimum words: {{ rules.min_words }}</li>
     </ul>
     <button id="closeGuidelines"
@@ -41,12 +43,13 @@
 
       <div class="relative">
       {{ form.category.label(class="block font-medium mb-2 px-2") }}
-      {{ form.category(class="w-full px-3 py-2 rounded bg-gray-800 text-white focus:outline-none appearance-none") }}
+      {{ form.category(class="w-full px-3 py-2 rounded bg-gray-100 text-gray-900
+       dark:bg-gray-800 dark:text-white focus:outline-none appearance-none") }}
       {% for error in form.category.errors %}
         <p class="text-red-500 text-sm">{{ error }}</p>
       {% endfor %}
 
-        <div class="pointer-events-none absolute inset-y-12 right-0 flex items-center px-2 text-white">
+        <div class="pointer-events-none absolute inset-y-12 right-0 flex items-center px-2 text-gray-900 dark:text-white">
             ▼
         </div>
       </div>
@@ -54,7 +57,8 @@
       <div class="space-y-2">
         {{ form.labels.label(class="font-medium block mb-2 px-2") }}
         {% for value, label in form.labels.choices %}
-          <label class="flex items-center gap-2 text-white w-full px-3 py-2 mb-1 rounded bg-gray-800 focus:outline-none appearance-none">
+          <label class="flex items-center gap-2 w-full px-3 py-2 mb-1 rounded bg-gray-100 text-gray-900
+       dark:bg-gray-800 dark:text-white focus:outline-none appearance-none">
             <input type="checkbox"
                    name="{{ form.labels.name }}"
                    value="{{ value }}"
@@ -67,7 +71,8 @@
     <div class="px-1">
     <div>
         {{ form.title.label(class_="block font-medium mb-2 px-2") }}
-        {{ form.title(class_="w-full py-3 px-4 mx-2 mb-2 bg-white/10 rounded text-white border focus:outline-none border-white/10 bg-white/10 transition focus:bg-blue-500/5 focus:border-blue-500", placeholder="Post Title") }}
+        {{ form.title(class_="w-full py-3 px-4 mx-2 mb-2 bg-white/10 rounded bg-gray-100 text-gray-900 border-gray-300
+       dark:bg-white/10 dark:text-white dark:border-white/10 border focus:outline-none transition focus:bg-blue-500/5 focus:border-blue-500", placeholder="Post Title") }}
       {% for error in form.title.errors %}
         <p class="text-red-500 text-sm">{{ error }}</p>
       {% endfor %}
@@ -92,11 +97,12 @@
     </div>-->
 
     {{ form.content.label(class_="block font-medium mb-2 px-2") }}
-    <div id="editor-container" class="border rounded bg-white/10 w-full mb-2 py-3 px-4 border-white/10 focus:outline-none h-[45rem] focus:bg-blue-500/5 focus:border-blue-500">
-      <div id="toolbar" class="editor-toolbar mb-2 flex gap-1 justify-between">
+    <div id="editor-container" class="border rounded bg-gray-100 border-gray-300
+       dark:bg-white/10 dark:border-white/10 w-full mb-2 py-3 px-4 focus:outline-none h-[45rem] focus:bg-blue-500/5 focus:border-blue-500">
+      <div id="toolbar" class="editor-toolbar bg-gray-100 text-gray-900
+       dark:bg-gray-800 dark:text-white mb-2 flex gap-1 justify-between">
         <button type="button" class="format-btn" data-cmd="h1">H1</button>
         <button type="button" class="format-btn" data-cmd="h2">H2</button>
-        <button type="button" class="format-btn" data-cmd="p">Normal</button>
         <button type="button" class="format-btn" data-cmd="bold"><b>B</b></button>
         <button type="button" class="format-btn" data-cmd="italic"><i>I</i></button>
         <button class="format-btn" type="button" id="insertImageBtn">🖼
@@ -107,8 +113,9 @@
         <button type="button" class="format-btn" data-cmd="undo"><i class="fa fa-undo" aria-hidden="true"></i></button>
         <button type="button" class="format-btn" data-cmd="redo"><i class="fa fa-redo" aria-hidden="true"></i></button>
       </div>
-      <div id="editor" contenteditable="true" class="editor-content h-[38rem] overflow-x-hidden overflow-y-auto border rounded bg-white/10 w-full mb-2 py-3 px-4 border-white/10 text-white break-words whitespace-pre-wrap transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500">{{ post.content|safe if post else '' }}</div>
-      <p id="word-count" class="text-sm text-gray-400 mt-1">Word count: 0</p>
+      <div id="editor" contenteditable="true" class="editor-content h-[38rem] overflow-x-hidden overflow-y-auto border rounded bg-white text-gray-900 border-gray-300
+       dark:bg-white/10 dark:text-white dark:border-white/10 w-full mb-2 py-3 px-4 break-words whitespace-pre-wrap transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500">{{ post.content|safe if post else '' }}</div>
+      <p id="word-count" class="text-sm text-gray-600 dark:text-gray-400 mt-1">Word count: 0</p>
     </div>
     <input type="hidden" name="content" id="content-hidden" value="{{ post.content|safe if post else '' }}">
     <input type="hidden" name="featured_image" id="featured_image" value="{{ post.featured_image or '' }}">

@@ -3,43 +3,43 @@
 
 <form method="POST" class="mt-8 px-4 py-3 space-y-4">
   {{ form.csrf_token }}
-  <div class="text-center text-3xl font-bold rounded text-gray-500 bg-yellow-600">Create Profile</div>
+  <div class="text-center text-3xl font-bold rounded text-gray-100 dark:text-gray-500 bg-yellow-600">Create Profile</div>
   
   <div>
-    <label class="block text-sm">Username</label>
-    {{ form.username(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    <label class="block text-sm text-gray-900 dark:text-gray-100">Username</label>
+    {{ form.username(class="w-full rounded bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-700 px-3 py-2") }}
     {% for error in form.username.errors %}
       <p class="text-red-500 text-sm">{{ error }}</p>
     {% endfor %}
   </div>
 
   <div>
-    <label class="block text-sm">Description</label>
-    {{ form.description(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    <label class="block text-sm text-gray-900 dark:text-gray-100">Description</label>
+    {{ form.description(class="w-full rounded bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100  border border-gray-700 px-3 py-2") }}
     {% for error in form.description.errors %}
       <p class="text-red-500 text-sm">{{ error }}</p>
     {% endfor %}
   </div>
 
   <div>
-    <label class="block text-sm">Category</label>
-    {{ form.category(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    <label class="block text-sm text-gray-900 dark:text-gray-100">Category</label>
+    {{ form.category(class="w-full rounded bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100  border border-gray-700 px-3 py-2") }}
     {% for error in form.category.errors %}
       <p class="text-red-500 text-sm">{{ error }}</p>
     {% endfor %}
   </div>
 
   <div>
-    <label class="block text-sm">Full Name</label>
-    {{ form.full_name(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    <label class="block text-sm text-gray-900 dark:text-gray-100">Full Name</label>
+    {{ form.full_name(class="w-full rounded bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100  border border-gray-700 px-3 py-2") }}
     {% for error in form.full_name.errors %}
       <p class="text-red-500 text-sm">{{ error }}</p>
     {% endfor %}
   </div>
 
   <div>
-    <label class="block text-sm">Location</label>
-    {{ form.location(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    <label class="block text-sm text-gray-900 dark:text-gray-100">Location</label>
+    {{ form.location(class="w-full rounded bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-700 px-3 py-2") }}
     {% for error in form.location.errors %}
       <p class="text-red-500 text-sm">{{ error }}</p>
     {% endfor %}
@@ -62,8 +62,8 @@
   </div>-->
 
   <div>
-    <label class="block text-sm">Phone Number</label>
-    {{ form.phone(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
+    <label class="block text-sm text-gray-900 dark:text-gray-100">Phone Number</label>
+    {{ form.phone(class="w-full rounded  border bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100  border-gray-700 px-3 py-2") }}
     {% for error in form.phone.errors %}
       <p class="text-red-500 text-sm">{{ error }}</p>
     {% endfor %}
@@ -78,7 +78,7 @@
   </div>-->
 
   <button
-    class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
+    class="bg-blue-600 text-gray-900 dark:text-gray-200 px-4 py-2 rounded hover:bg-blue-700">
     Save Profile
   </button>
 </form>
