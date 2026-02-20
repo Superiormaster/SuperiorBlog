@@ -33,7 +33,7 @@
               <span class="inline-block px-2 py-1 text-xs font-semibold text-gray-700 bg-gray-200 rounded-full">Disabled</span>
             {% endif %}
           </td>
-          <td>{{ "Yes" if sub.is_active else "No" }}</td>
+          <td>{{ "Yes" if s.is_active else "No" }}</td>
           <td class="py-3 px-4 flex flex-col sm:flex-row gap-2 justify-end">
             <form method="post" action="{{ url_for('admin.resend_welcome', id=s.id) }}">
               <button type="submit" class="w-full sm:w-auto px-3 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium transition">Resend Welcome</button>
