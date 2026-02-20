@@ -3,18 +3,18 @@
 
 {% block content %}
 
-<div class="flex-col mt-16 py-12 flex">
+<div class="flex-col mt-16 py-8 flex">
 <article class="shadow-md rounded p-6">
   {% if post.featured_image and post.featured_image not in post.content %}
     <img src="{{ post.featured_image }}"
          class="rounded w-full h-auto max-h-[400px] mb-6 object-cover">
   {% endif %}
-  <h1 class="text-2xl text-gray-900 dark:text-yellow-600 font-bold mb-2">{{ post.title }}</h1>
+  <h1 class="text-3xl md:text-4xl text-gray-900 dark:text-yellow-600 font-bold mb-2">{{ post.title }}</h1>
   <p class="text-gray-500 text-sm">Pubished on {{ post.created_at.strftime('%B %d, %Y') }}</p>
   <p class="text-sm text-gray-400 mb-8">
     By <b>{{ post.author.username }}</b>
   </p>
-  <div class="prose post-content max-w-3xl w-full mx-auto text-gray-900 dark:text-gray-300 md:text-2xl max-w-full sm:max-w-3xl px-1 break-words">
+  <div class="prose post-content max-w-3xl w-full mx-auto text-gray-900 dark:text-gray-300 md:text-lg text-base max-w-full sm:max-w-3xl px-1 break-words">
     {{ post.content | safe }}
   </div>
   
@@ -321,9 +321,6 @@
         <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" class="hover:scale-110 transition">
           <i class="fab fa-linkedin-in text-[#0A66C2]"></i>
         </a>
-        <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" class="hover:scale-110 transition">
-          <i class="fab fa-linkedin-in text-[#0A66C2]"></i>
-        </a>
       </div>
     </div>
 
@@ -355,9 +352,6 @@
         </a>
         <a href="https://youtube.com/@lifootballmoments" target="_blank" class="hover:scale-110 transition">
           <i class="fab fa-youtube text-[#FF0000]"></i>
-        </a>
-        <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" class="hover:scale-110 transition">
-          <i class="fab fa-linkedin-in text-[#0A66C2]"></i>
         </a>
         <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" class="hover:scale-110 transition">
           <i class="fab fa-linkedin-in text-[#0A66C2]"></i>

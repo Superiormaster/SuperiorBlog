@@ -47,9 +47,20 @@
     <!-- Your custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='Style.css') }}">
 
+    <script>
+    (function () {
+      const savedTheme = localStorage.getItem("theme");
+      const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+      if (savedTheme === "dark" || (!savedTheme && systemPrefersDark)) {
+        document.documentElement.classList.add("dark");
+      }
+    })();
+    </script>
+
 </head>
 <body class="bg-white dark:bg-gray-900 w-full duration-700 transition-colors">
-<header class="h-18 fixed w-full top-0 flex items-center justify-between border-b shadow-lg px-4 z-30 bg-headerBgDark text-darkText">
+<header class="h-18 fixed w-full top-0 flex items-center justify-between border-b shadow-sm px-4 z-30 bg-headerBgDark text-darkText">
   
   <!-- Left: Logo -->
   <div class="flex items-center gap-4">
@@ -214,6 +225,7 @@
     <script src="{{ url_for('static', filename='message.js') }}"></script>
     <script src="{{ url_for('static', filename='like.js') }}"></script>
     <script src="{{ url_for('static', filename='cta.js') }}"></script>
+    <script src="{{ url_for('static', filename='theme.js') }}"></script>
     <script src="{{ url_for('static', filename='slider.js') }}"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!--<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
@@ -237,48 +249,6 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("cookiesAccepted", "true");
     banner.classList.add("hidden");
   });
-});
-</script>
-<!-- Dark Mode Script -->
-<script>
-const html = document.documentElement;
-const toggleBtn = document.getElementById('toggle-dark');
-const iconPath = document.getElementById('icon-path');
-
-// Icon paths
-const moonPath = "M17.293 13.293a8 8 0 01-10.586-10.586 8 8 0 1010.586 10.586z";
-const sunPath = "M10 2a1 1 0 011 1v1a1 1 0 01-2 0V3a1 1 0 011-1zm4.22 2.22a1 1 0 011.414 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707zM18 10a1 1 0 110 2h-1a1 1 0 110-2h1zm-2.22 4.22a1 1 0 011.414 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707zM10 18a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.22-2.22a1 1 0 011.414 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707zM2 10a1 1 0 110 2H1a1 1 0 110-2h1zm2.22-4.22a1 1 0 011.414 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707z";
-
-// Apply theme helper
-function applyTheme(theme) {
-  if (theme === 'dark') html.classList.add('dark');
-  else html.classList.remove('dark');
-  // Update icon
-  iconPath.setAttribute('d', theme === 'dark' ? moonPath : sunPath);
-}
-
-// 1️⃣ On page load
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme) {
-  applyTheme(savedTheme);
-} else {
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  applyTheme(systemPrefersDark ? 'dark' : 'light');
-}
-
-// 2️⃣ Listen for system changes (if user hasn't chosen)
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-  if (!localStorage.getItem('theme')) {
-    applyTheme(e.matches ? 'dark' : 'light');
-  }
-});
-
-// 3️⃣ Toggle button
-toggleBtn.addEventListener('click', () => {
-  const isDark = html.classList.contains('dark');
-  const newTheme = isDark ? 'light' : 'dark';
-  applyTheme(newTheme);
-  localStorage.setItem('theme', newTheme);
 });
 </script>
     {% block scripts %}{% endblock %}

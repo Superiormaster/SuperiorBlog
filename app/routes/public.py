@@ -1228,7 +1228,6 @@ def add_reply(comment_id):
     })
 
 @public_bp.route("/search")
-@cache.cached(timeout=300)
 def search():
     query = request.args.get("q", "")
     results = []

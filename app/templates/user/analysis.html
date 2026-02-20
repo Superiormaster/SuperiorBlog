@@ -176,44 +176,80 @@
 <canvas id="viewsChart"></canvas>
 
 <script>
-new Chart(document.getElementById("viewsChart"), {
-  type: "line",
-  data: {
-    labels: {{ chart_labels|tojson }},
-    datasets: [
-      {
-        label: "Views",
-        data: {{ views_data|tojson }},
-        borderWidth: 2,
-        tension: 0.4
+function getChartColors() {
+  const isDark = document.documentElement.classList.contains("dark");
+
+  if (isDark) {
+    return {
+      text: "#e5e7eb",      // light gray text
+      grid: "#374151",      // dark gray grid
+      views: "#60a5fa",     // blue-400
+      likes: "#fbbf24"      // yellow-400
+    };
+  } else {
+    return {
+      text: "#1f2937",      // dark text
+      grid: "#e5e7eb",      // light grid
+      views: "#2563eb",     // blue-600
+      likes: "#f59e0b"      // amber-500
+    };
+  }
+}
+
+let chartInstance;
+
+function renderChart() {
+  const colors = getChartColors();
+
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  chartInstance = new Chart(document.getElementById("viewsChart"), {
+    type: "line",
+    data: {
+      labels: {{ chart_labels|tojson }},
+      datasets: [
+        {
+          label: "Views",
+          data: {{ views_data|tojson }},
+          borderColor: colors.views,
+          borderWidth: 2,
+          tension: 0.4
+        },
+        {
+          label: "Likes",
+          data: {{ likes_data|tojson }},
+          borderColor: colors.likes,
+          borderWidth: 2,
+          tension: 0.4
+        }
+      ]
+    },
+    options: {
+      plugins: {
+        legend: {
+          labels: { color: colors.text }
+        }
       },
-      {
-        label: "Likes",
-        data: {{ likes_data|tojson }},
-        borderWidth: 2,
-        tension: 0.4
-      }
-    ]
-  },
-  options: {
-    plugins: {
-      legend: {
-        labels: {
-          color: "#e5e7eb"
+      scales: {
+        x: {
+          ticks: { color: colors.text },
+          grid: { color: colors.grid }
+        },
+        y: {
+          ticks: { color: colors.text },
+          grid: { color: colors.grid }
         }
       }
-    },
-    scales: {
-      x: {
-        ticks: { color: "#1f2937" },
-        grid: { color: "#e5e7eb" }
-      },
-      y: {
-        ticks: { color: "#1f2937" },
-        grid: { color: "#e5e7eb" }
-      }
     }
-  }
+  });
+}
+
+renderChart();
+
+document.getElementById("toggle-dark")?.addEventListener("click", () => {
+  setTimeout(renderChart, 50);
 });
 </script>
 
