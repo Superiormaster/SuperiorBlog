@@ -29,7 +29,7 @@ def send_welcome_email(subscriber_email, token):
 
     html_content = render_template(
         "emails/welcome_email.html",
-        unsubscribe_token=token,
+        subscriber=subscriber,
         now=datetime.utcnow()
     )
 

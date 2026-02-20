@@ -108,9 +108,7 @@
     <div class="footer">
       <p>You are receiving this email because you subscribed to Superior News.</p>
       <p>
-        <a href="https://www.superiornews.app/unsubscribe/{{ subscriber.unsubscribe_token }}">
-          Unsubscribe
-        </a>
+        <a style="color:#FACC15;" href="{{ url_for('public.unsubscribe', token=subscriber.unsubscribe_token, _external=True) }}">Unsubscribe</a>
       </p>
       <p>© {{ now.year }} Superior News</p>
     </div>

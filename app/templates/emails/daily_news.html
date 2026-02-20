@@ -86,9 +86,7 @@
             text-align: center;">
               <p>You are receiving this email because you subscribed to Superior News.</p>
               <p>
-                <a style="color:#FACC15;" href="https://www.superiornews.app/unsubscribe/{{ subscriber.unsubscribe_token }}">
-                  Unsubscribe
-                </a>
+                <a style="color:#FACC15;" href="{{ url_for('public.unsubscribe', token=subscriber.unsubscribe_token, _external=True) }}">Unsubscribe</a>
               </p>
               <p>© {{ now.year }} Superior News</p>
                <p>Superior News Team</p>
