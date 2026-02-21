@@ -6,6 +6,7 @@ from flask_login import (
     login_user, logout_user,
     login_required, current_user
 )
+from sqlalchemy import or_
 from app.utils.db_helpers import safe_commit
 from app.utils.email import send_email
 from app.models import Post, AppSettings, CaptionHistory, User, ContactMessage, Repost, Subscriber, DigestDraft, BreakingNews, Tag, Comment, PageView
@@ -680,8 +681,35 @@ def settings():
 @admin_bp.route("/users")
 @login_required
 def users():
-    users_list = User.query.order_by(User.created_at.desc()).all()
-    return render_template("admin/users.html", users=users_list)
+    page = request.args.get("page", 1, type=int)
+    search = request.args.get("search", "", type=str)
+    sort = request.args.get("sort", "newest")
+
+    query = User.query
+
+    # 🔎 Search
+    if search:
+        query = query.filter(
+            or_(
+                User.username.ilike(f"%{search}%"),
+                User.email.ilike(f"%{search}%")
+            )
+        )
+
+    # 🔃 Sorting
+    if sort == "oldest":
+        query = query.order_by(User.created_at.asc())
+    else:
+        query = query.order_by(User.created_at.desc())
+
+    users_paginated = query.paginate(page=page, per_page=10)
+
+    return render_template(
+        "admin/users.html",
+        users=users_paginated,
+        search=search,
+        sort=sort
+    )
 
 @admin_bp.route("/user/<int:user_id>/toggle", methods=["POST"])
 @login_required

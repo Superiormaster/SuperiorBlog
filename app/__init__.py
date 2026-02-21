@@ -12,7 +12,7 @@ from flask_login import current_user
 from flask_migrate import Migrate
 from app.models import AppSettings, Category, Post, PageView, User
 from app.forms import UserLoginForm
-import os
+import os, pytz
 from app.utils.db_helpers import safe_commit
 from datetime import datetime, UTC, date
 
@@ -77,6 +77,18 @@ def create_app():
     @app.context_processor
     def inject_year():
         return {'year': datetime.now().year}
+
+    @app.template_filter("localtime")
+    def localtime_filter(utc_dt):
+        if not utc_dt:
+            return ""
+    
+        nigeria = pytz.timezone("Africa/Lagos")
+        return utc_dt.replace(tzinfo=pytz.utc).astimezone(nigeria)
+
+    @app.template_filter("datetimeformat")
+    def datetimeformat(value, format="%B %d, %Y %I:%M %p"):
+        return value.strftime(format)
 
     @app.before_request
     def update_last_seen():

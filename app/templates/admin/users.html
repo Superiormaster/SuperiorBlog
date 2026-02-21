@@ -7,17 +7,61 @@
     Manage Users
   </h1>
 
+<div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+
+  <!-- Search -->
+  <form method="GET" class="flex gap-2 w-full md:w-auto">
+    <input type="text"
+           name="search"
+           value="{{ search }}"
+           placeholder="Search by username or email..."
+           class="w-full md:w-72 px-4 py-2 rounded-lg border dark:bg-gray-800 dark:border-gray-600">
+
+    <select name="sort"
+            class="px-3 py-2 rounded-lg border dark:bg-gray-800 dark:border-gray-600">
+      <option value="newest" {% if sort=='newest' %}selected{% endif %}>Newest</option>
+      <option value="oldest" {% if sort=='oldest' %}selected{% endif %}>Oldest</option>
+    </select>
+
+    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+      Filter
+    </button>
+  </form>
+
+  <!-- Bulk Action -->
+  <form id="bulkForm" method="POST" action="{{ url_for('admin.users') }}">
+    <select name="action"
+            class="px-3 py-2 rounded-lg border dark:bg-gray-800 dark:border-gray-600">
+      <option value="">Bulk Actions</option>
+      <option value="block">Block Selected</option>
+      <option value="restore">Restore Selected</option>
+      <option value="delete">Delete Selected</option>
+    </select>
+
+    <button type="submit"
+            class="ml-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800">
+      Apply
+    </button>
+  </form>
+
+</div>
+
   <!-- Desktop Table -->
   <div class="hidden md:block overflow-x-auto bg-white dark:bg-gray-800 shadow rounded-xl">
     <table class="w-full text-left border-collapse">
       <thead class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm uppercase">
         <tr>
+          <th class="px-4 py-3">
+            <input type="checkbox" id="selectAll">
+          </th>
           <th class="px-6 py-4">Username</th>
           <th class="px-6 py-4">Email</th>
           <th class="px-6 py-4">Registered</th>
           <th class="px-6 py-4">Posts</th>
           <th class="px-6 py-4">Status</th>
-          <th class="px-6 py-4 text-right">Actions</th>
+          <th class="px-4 py-3">Role</th>
+          <th class="px-4 py-3">Last Login</th>
+          <th class="px-4 py-3 text-right">Actions</th>
         </tr>
       </thead>
       <tbody class="text-gray-700 dark:text-gray-300">
@@ -25,8 +69,17 @@
         {% for user in users %}
         <tr class="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
 
+          <td class="px-4 py-4">
+            <input type="checkbox" name="user_ids" value="{{ user.id }}" form="bulkForm">
+          </td>
+
           <td class="px-6 py-4 font-medium">
             {{ user.username }}
+            {% if user.is_admin %}
+              <span class="ml-2 text-xs px-2 py-1 rounded bg-purple-100 text-purple-700 dark:bg-purple-800 dark:text-purple-200">
+                Admin
+              </span>
+            {% endif %}
           </td>
 
           <td class="px-6 py-4">
