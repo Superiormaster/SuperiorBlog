@@ -74,6 +74,7 @@
           <path id="icon-path" d="M17.293 13.293a8 8 0 01-10.586-10.586 8 8 0 1010.586 10.586z"/>
         </svg>
       </button>
+
     {% if current_user.is_authenticated %}
       <a href="{{ url_for('public.user_logout') }}" class="text-sm md:text-xl link-gold border rounded p-1">Logout</a>
     {% else %}
@@ -228,8 +229,8 @@
     <script src="{{ url_for('static', filename='theme.js') }}"></script>
     <script src="{{ url_for('static', filename='slider.js') }}"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <!--<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>-->
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
     <script>
       const csrf_token = "{{ csrf_token() }}";
     </script>

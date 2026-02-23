@@ -71,3 +71,14 @@ class Request(db.Model):
     user_input = db.Column(db.Text, nullable=False)
     output = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Payment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    reference = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    plan = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(50), default="pending")
+    subscription_code = db.Column(db.String(120))
+    customer_code = db.Column(db.String(120))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

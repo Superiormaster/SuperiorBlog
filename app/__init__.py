@@ -88,7 +88,9 @@ def create_app():
 
     @app.template_filter("datetimeformat")
     def datetimeformat(value, format="%B %d, %Y %I:%M %p"):
-        return value.strftime(format)
+      if value is None:
+        return ""
+      return value.strftime(format)
 
     @app.before_request
     def update_last_seen():

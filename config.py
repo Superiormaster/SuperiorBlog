@@ -10,7 +10,10 @@ load_dotenv(ENV_PATH)
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY")
-    PAYSTACK_SECRET_KEY = os.environ.get("PAYSTACK_SECRET_KEY")
+    PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
+    PAYSTACK_MONTHLY_PLAN = os.getenv("PAYSTACK_MONTHLY_PLAN")
+    PAYSTACK_YEARLY_PLAN = os.getenv("PAYSTACK_YEARLY_PLAN")
+    PAYSTACK_BASE_URL = "https://api.paystack.co"
     WTF_CSRF_ENABLED = True
     SQLALCHEMY_DATABASE_URI = None
     SQLALCHEMY_TRACK_MODIFICATIONS = False

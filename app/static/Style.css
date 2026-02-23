@@ -636,6 +636,23 @@ strong{
     table-layout: fixed; /* Prevent overflow */
 }
 
+/* Apply custom white text for dark mode */
+.dark .post-content {
+    color: white;
+}
+
+.dark .post-content h1,
+.dark .post-content h2,
+.dark .post-content h3,
+.dark .post-content h4,
+.dark .post-content h5,
+.dark .post-content h6,
+.dark .post-content li,
+.dark .post-content p,
+.dark .post-content a {
+    color: white;
+}
+
 @media (max-width: 599px) {
   .drawer__header{
     padding: 20px;

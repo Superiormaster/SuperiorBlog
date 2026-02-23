@@ -2,100 +2,68 @@
 {% block title %}Premium pricing – SuperiorNews{% endblock %}
 
 {% block content %}
-<div class="min-h-screen p-4 max-w-6xl mx-auto">
+<div class="min-h-screen p-4 mt-12 max-w-6xl mx-auto">
 
   <!-- Header -->
   <div class="text-center mb-12">
-    <h2 class="text-4xl font-bold mb-4">SIMPLE, TRANSPARENT PRICING</h2>
+    <h2 class="text-black dark:text-gray-200 text-4xl font-bold mb-4">SIMPLE, TRANSPARENT PRICING</h2>
     <p class="text-gray-400">Choose the plan that fits your needs</p>
   </div>
 
   <!-- Plans Grid -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-    <!-- Basic Plan -->
-    <div class="plan-card bg-black p-8 rounded-lg w-full relative cursor-pointer transition-all duration-300"
-       data-plan="basic">
-      <div class="badge absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-sm hidden">
-        Recommended
-      </div>
-      <h3 class="text-2xl font-semibold mb-2">Basic</h3>
-      <p class="text-gray-400 mb-4">Free</p>
-      <ul class="text-left text-gray-300 mb-6 space-y-2">
-        <li>✔️ Calendar and scheduling</li>
-        <li>✔️ Broadcasts</li>
-        <li>✔️ Conferencing</li>
-      </ul>
-      <!-- Premium Plan button -->
-      <form id="premiumForm" method="POST" action="{{ url_for('billings.init_payment') }}">
-        <button type="submit"
-                class="plan-btn w-full py-3 bg-gray-800 rounded text-white font-semibold hover:bg-gray-700">
-          Select Plan
-        </button>
-      </form>
-    </div>
-
-    <!-- Premium Plan -->
-    <div class="plan-card bg-black p-8 rounded-lg w-full relative cursor-pointer transition-all duration-300 border-2 border-transparent glow-effect"
-         data-plan="premium">
+    <!-- Monthly Premium Plan -->
+    <div class="plan-card bg-gray-300 dark:bg-black p-8 rounded-lg w-full relative cursor-pointer transition-all duration-300 border-2 border-transparent glow-effect" data-plan="basic">
       <div class="badge absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-4 py-1 rounded-full text-sm">
         MOST POPULAR
       </div>
-      <h3 class="text-2xl font-semibold mb-2">Premium</h3>
-      <p class="text-gray-400 mb-4">$10 <span class="text-sm">/ month</span></p>
-      <ul class="text-left text-gray-300 mb-6 space-y-2">
+      <h3 class="text-2xl text-black dark:text-gray-200 font-semibold mb-2">Premium Monthly</h3>
+      <p class="text-gray-600 dark:text-gray-400 mb-4">₦2,000 / month</p>
+      <ul class="text-left text-gray-800 dark:text-gray-300 mb-6 space-y-2">
         <li>✔️ Calendar and scheduling</li>
         <li>✔️ Conferencing</li>
         <li>✔️ Unlimited Data Removal</li>
+        <li>✔️ Predictive Engagement Score</li>
+        <li>✔️ Suggested Replies & Thread Generator</li>
+        <li>✔️ Image Generation for Posts</li>
+        <li>✔️ Best Posting Time Recommendation</li>
       </ul>
-      <!-- Premium Plan button -->
-      <form id="premiumForm" method="POST" action="{{ url_for('billings.init_payment') }}">
+      <form method="POST" id="premiumForm" action="{{ url_for('billings.init_payment', plan='monthly') }}">
+        {{ csrf_token() }}
         <button type="submit"
-                class="plan-btn w-full py-3 bg-yellow-500 rounded text-black font-semibold hover:bg-yellow-400">
-          Upgrade to Premium
+                class="plan-btn w-full py-3 dark:bg-gray-800 bg-gray-700 text-white rounded font-semibold hover:bg-gray-600">
+          Upgrade Monthly
         </button>
       </form>
     </div>
+
+    <!-- Yearly Premium Plan -->
+    <div class="plan-card bg-gray-300 dark:bg-black p-8 rounded-lg w-full relative cursor-pointer transition-all duration-300 border-2 border-transparent glow-effect" data-plan="premium">
+      <div class="badge absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-1 rounded-full text-sm">
+        BEST VALUE
+      </div>
+      <h3 class="text-2xl text-black dark:text-gray-200 font-semibold mb-2">Premium Yearly</h3>
+      <p class="text-gray-600 dark:text-gray-400 mb-4">₦20,000 / year <span class="text-sm text-green-700">(Save ₦4,000!)</span></p>
+      <ul class="text-left text-gray-800 dark:text-gray-300 mb-6 space-y-2">
+        <li>✔️ Calendar and scheduling</li>
+        <li>✔️ Conferencing</li>
+        <li>✔️ Unlimited Data Removal</li>
+        <li>✔️ Predictive Engagement Score</li>
+        <li>✔️ Suggested Replies & Thread Generator</li>
+        <li>✔️ Image Generation for Posts</li>
+        <li>✔️ Best Posting Time Recommendation</li>
+        <li>✔️ Extra Savings vs Monthly Plan</li>
+      </ul>
+      <form method="POST" id="premiumForm" action="{{ url_for('billings.init_payment', plan='yearly') }}">
+        {{ csrf_token() }}
+        <button type="submit"
+                class="plan-btn w-full py-3 dark:bg-gray-800 bg-gray-700 text-white rounded font-semibold hover:bg-gray-600">
+          Upgrade Yearly
+        </button>
+      </form>
+    </div>
+
   </div>
 </div>
-
-<!-- JavaScript for interactive selection -->
-<script>
-  const plans = document.querySelectorAll(".plan-card");
-
-  plans.forEach(plan => {
-    plan.addEventListener("click", () => {
-      plans.forEach(p => {
-        // reset all cards
-        p.classList.remove("border-yellow-500");
-        p.querySelector(".badge").classList.add("hidden");
-
-        // reset buttons
-        const btn = p.querySelector(".plan-btn");
-        if (p.dataset.plan === "basic") {
-          btn.classList.remove("bg-yellow-500", "text-black", "font-semibold");
-          btn.classList.add("bg-gray-800", "text-white");
-        } else if (p.dataset.plan === "premium") {
-          btn.classList.remove("bg-yellow-500", "text-black", "font-semibold");
-          btn.classList.add("bg-gray-800", "text-white");
-        }
-      });
-
-      // apply selection to clicked plan
-      plan.classList.add("border-yellow-500");
-      const badge = plan.querySelector(".badge");
-      badge.classList.remove("hidden");
-
-      // update button
-      const btn = plan.querySelector(".plan-btn");
-      btn.classList.remove("bg-gray-800", "text-white");
-      btn.classList.add("bg-yellow-500", "text-black", "font-semibold");
-
-      // optional: change badge text for Basic
-      if(plan.dataset.plan === "basic") {
-        badge.textContent = "Basic Plan";
-      }
-    });
-  });
-</script>
 {% endblock %}

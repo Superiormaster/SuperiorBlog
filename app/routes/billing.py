@@ -1,83 +1,194 @@
 import requests
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+import uuid
+import hmac
+import hashlib
+
+from flask import (
+    Blueprint, request, redirect,
+    url_for, flash, current_app
+)
 from flask_login import login_required, current_user
+from datetime import datetime, timedelta
+
 from app.extensions import db, csrf
+from app.utils.db_helpers import safe_commit
+from app.models import Payment, User  # make sure this import exists
 
-billing_bp = Blueprint('billings', __name__)
+
+billing_bp = Blueprint("billings", __name__)
 
 # ----------------------------
-# Initialize Payment
+# PLANS
 # ----------------------------
-@billing_bp.route("/paystack/init", methods=["POST"])
-@csrf.exempt
+PLANS = {
+    "monthly": {
+        "amount": 200000,   # ₦2,000
+        "duration_days": 30
+    },
+    "yearly": {
+        "amount": 3000000,  # ₦30,000
+        "duration_days": 365
+    }
+}
+
+# ----------------------------
+# INIT PAYMENT
+# ----------------------------
+@billing_bp.route("/paystack/init/<plan>", methods=["POST"])
 @login_required
-def init_payment():
-    """
-    Initialize a Paystack payment for the current user.
-    Accepts POST parameter 'amount' (in kobo, e.g., 200000 = ₦2,000)
-    """
+def init_payment(plan):
+
+    if plan not in PLANS:
+        flash("Invalid plan selected.", "danger")
+        return redirect(url_for("public.pricing"))
+
     try:
-        plan_amount = int(request.form.get("amount", 200000))  # Default ₦2,000
+        secret_key = current_app.config["PAYSTACK_SECRET_KEY"]
+        base_url = current_app.config["PAYSTACK_BASE_URL"]
+
+        reference = str(uuid.uuid4())
+        amount = PLANS[plan]["amount"]
+
         headers = {
-            "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
+            "Authorization": f"Bearer {secret_key}",
             "Content-Type": "application/json"
         }
 
         data = {
             "email": current_user.email,
-            "amount": plan_amount,
-            "callback_url": url_for("billings.verify_payment", _external=True)
+            "amount": amount,
+            "reference": reference,
+            "callback_url": url_for("billings.payment_success", _external=True),
+             "plan": PAYSTACK_PLAN_CODE
         }
 
-        r = requests.post(
-            "https://api.paystack.co/transaction/initialize",
+        response = requests.post(
+            f"{base_url}/transaction/initialize",
             json=data,
-            headers=headers,
-            timeout=20
-        )
-        res = r.json()
-
-        if res.get("status"):
-            # Redirect user to Paystack payment page
-            return redirect(res["data"]["authorization_url"])
-        else:
-            flash("⚠️ Payment initialization failed. Please try again.", "error")
-            return redirect(url_for("pricing"))
-
-    except Exception as e:
-        print("Paystack init error:", e)
-        flash("⚠️ Payment initialization failed. Please try again.", "error")
-        return redirect(url_for("public.pricing"))
-
-# ----------------------------
-# Verify Payment
-# ----------------------------
-@billing_bp.route("/paystack/verify/<ref>")
-@login_required
-@csrf.exempt
-def verify_payment(ref):
-    """
-    Verify a Paystack payment using the transaction reference.
-    Marks the user as premium if successful and redirects to the caption lab.
-    """
-    try:
-        headers = {"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"}
-        r = requests.get(
-            f"https://api.paystack.co/transaction/verify/{ref}",
             headers=headers,
             timeout=20
         ).json()
 
-        if r.get("status") and r["data"]["status"] == "success":
-            current_user.is_premium = True
-            db.session.commit()
-            flash("🎉 Congratulations! You are now a premium user.", "success")
-            return redirect(url_for("public.caption.lab"))  # caption generator page
-        else:
-            flash("❌ Payment failed or could not be verified.", "error")
-            return redirect(url_for("public.pricing"))
+        if response.get("status"):
+
+            payment = Payment(
+                reference=reference,
+                email=current_user.email,
+                amount=amount,
+                plan=plan,
+                status="pending"
+            )
+
+            db.session.add(payment)
+            safe_commit()
+
+            return redirect(response["data"]["authorization_url"])
+
+        flash("Payment initialization failed.", "danger")
+        return redirect(url_for("public.pricing"))
 
     except Exception as e:
-        print("Payment verification error:", e)
-        flash("❌ Payment verification failed. Please try again.", "error")
+        print("Paystack init error:", e)
+        flash("Something went wrong. Try again.", "danger")
         return redirect(url_for("public.pricing"))
+
+
+# ----------------------------
+# PAYMENT SUCCESS PAGE
+# ----------------------------
+@billing_bp.route("/payment/success")
+@login_required
+def payment_success():
+    flash("Payment processing... Please wait.", "info")
+    return redirect(url_for("user.dashboard"))
+
+
+@billing_bp.route("/subscription/cancel", methods=["POST"])
+@login_required
+def cancel_subscription():
+
+    current_user.is_premium = False
+    current_user.premium_expires_at = None
+
+    safe_commit()
+
+    flash("Subscription cancelled successfully.", "info")
+    return redirect(url_for("user.dashboard"))
+
+
+# ----------------------------
+# WEBHOOK (SECURE)
+# ----------------------------
+@billing_bp.route("/paystack/webhook", methods=["POST"])
+@csrf.exempt
+def paystack_webhook():
+
+    secret_key = current_app.config["PAYSTACK_SECRET_KEY"]
+
+    # Verify signature
+    signature = request.headers.get("x-paystack-signature")
+    computed_hash = hmac.new(
+        secret_key.encode("utf-8"),
+        request.data,
+        hashlib.sha512
+    ).hexdigest()
+
+    if signature != computed_hash:
+        return "Invalid signature", 400
+
+    payload = request.get_json()
+    event = payload.get("event")
+
+    if event == "charge.success":
+
+        data = payload["data"]
+        reference = data["reference"]
+
+        payment = Payment.query.filter_by(reference=reference).first()
+
+        if payment and payment.status != "success":
+
+            payment.status = "success"
+
+            user = User.query.filter_by(email=payment.email).first()
+
+            if user:
+                duration = PLANS[payment.plan]["duration_days"]
+
+                # Extend if already premium
+                if user.premium_expires_at and user.premium_expires_at > datetime.utcnow():
+                    new_expiry = user.premium_expires_at + timedelta(days=duration)
+                else:
+                    new_expiry = datetime.utcnow() + timedelta(days=duration)
+
+                user.is_premium = True
+                user.premium_expires_at = new_expiry
+
+            safe_commit()
+
+    return "", 200
+
+
+@billing_bp.route("/payments")
+@login_required
+def payment_history():
+
+    payments = Payment.query.filter_by(
+        email=current_user.email
+    ).order_by(Payment.created_at.desc()).all()
+
+    return render_template(
+        "tools/history.html",
+        payments=payments
+    )
+
+# ----------------------------
+# AUTO EXPIRY CHECK
+# ----------------------------
+def check_premium_status(user):
+
+    if user.is_premium and user.premium_expires_at:
+        if datetime.utcnow() > user.premium_expires_at:
+            user.is_premium = False
+            user.premium_expires_at = None
+            safe_commit()

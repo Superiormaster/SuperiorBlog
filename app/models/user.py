@@ -39,6 +39,7 @@ class User(db.Model, UserMixin):
     referral_link = db.Column(db.String(255))
     oauth_provider = db.Column(db.String(50))
     is_premium = db.Column(db.Boolean, default=False)
+    premium_expires_at = db.Column(db.DateTime, nullable=True)
     oauth_id = db.Column(db.String(255), unique=True)
     trust_score = db.Column(db.Integer, default=0)
     is_trusted = db.Column(db.Boolean, default=False)

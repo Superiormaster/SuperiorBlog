@@ -1,0 +1,22 @@
+<h2>Total Revenue: ₦{{ total_revenue }}</h2>
+
+<p>Monthly Subscriptions: {{ monthly_count }}</p>
+<p>Yearly Subscriptions: {{ yearly_count }}</p>
+
+<table>
+<tr>
+  <th>Email</th>
+  <th>Plan</th>
+  <th>Amount</th>
+  <th>Date</th>
+</tr>
+
+{% for payment in payments %}
+<tr>
+  <td>{{ payment.email }}</td>
+  <td>{{ payment.plan }}</td>
+  <td>₦{{ payment.amount / 100 }}</td>
+  <td>{{ payment.created_at.strftime('%d %b %Y') }}</td>
+</tr>
+{% endfor %}
+</table>

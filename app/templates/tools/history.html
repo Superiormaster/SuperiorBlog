@@ -1,0 +1,21 @@
+<h2>Your Payment History</h2>
+
+<table>
+<tr>
+  <th>Reference</th>
+  <th>Plan</th>
+  <th>Status</th>
+  <th>Amount</th>
+  <th>Date</th>
+</tr>
+
+{% for p in payments %}
+<tr>
+  <td>{{ p.reference }}</td>
+  <td>{{ p.plan }}</td>
+  <td>{{ p.status }}</td>
+  <td>₦{{ p.amount / 100 }}</td>
+  <td>{{ p.created_at.strftime('%d %b %Y') }}</td>
+</tr>
+{% endfor %}
+</table>

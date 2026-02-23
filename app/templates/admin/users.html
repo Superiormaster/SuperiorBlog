@@ -106,6 +106,14 @@
             {% endif %}
           </td>
 
+          <td class="px-4 py-4">
+            {{ user.role if user.role else "User" }}
+          </td>
+
+          <td class="px-4 py-4 text-sm">
+            {{ user.last_login.strftime('%Y-%m-%d') if user.last_login else "Never" }}
+          </td>
+
           <td class="px-6 py-4 text-right space-x-2">
 
             <form action="{{ url_for('admin.toggle_user', user_id=user.id) }}" method="POST" class="inline">
@@ -192,6 +200,28 @@
     {% endfor %}
 
   </div>
+  
+<div class="flex justify-center mt-6 space-x-2">
+
+  {% if users.has_prev %}
+    <a href="{{ url_for('admin.users', page=users.prev_num, search=search, sort=sort) }}"
+       class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded">
+       Previous
+    </a>
+  {% endif %}
+
+  <span class="px-4 py-1 text-gray-600 dark:text-gray-300">
+    Page {{ users.page }} of {{ users.pages }}
+  </span>
+
+  {% if users.has_next %}
+    <a href="{{ url_for('admin.users', page=users.next_num, search=search, sort=sort) }}"
+       class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded">
+       Next
+    </a>
+  {% endif %}
+
+</div>
 
 </div>
 

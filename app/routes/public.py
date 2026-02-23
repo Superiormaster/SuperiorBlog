@@ -837,6 +837,7 @@ def google_login():
         "?response_type=code"
         f"&client_id={client_id}"
         f"&redirect_uri={redirect_uri}"
+        f"&state={next_page}"
         "&scope=openid%20email%20profile"
         "&prompt=select_account"
         "&include_granted_scopes=true" 
@@ -903,11 +904,14 @@ def google_callback():
         if not safe_commit():
           print("Failed to login user")
 
+    next_page = request.args.get('state', url_for("public.user_dashboard"))
+
     login_user(user)
     track_login(user)
     flash("Logged in successfully", "success")
+
     if user.profile_completed:
-        return redirect(url_for("public.user_dashboard"))
+        return redirect(next_page)
     return redirect(url_for("public.profile_setup"))
 
 @public_bp.route("/auth/google/onetap", methods=["POST"])

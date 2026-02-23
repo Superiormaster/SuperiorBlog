@@ -32,7 +32,7 @@
       {{ form.submit(class="bg-blue-600 text-white px-4 py-2 rounded w-full rounded-md font-semibold") }}
      <div class="text-center dark:text-white text-gray-900 text-sm mt-4">Or SignUp With</div>
       <div class="space-x-4 bg-blue-600 rounded-full font-semibold mt-2 w-full">
-      <a id="googleBtn" href="{{ url_for('public.google_login') }}"
+      <a id="googleBtn" href="{{ url_for('public.google_login', next=request.args.get('next')) }}"
           class="flex items-center justify-center gap-3 w-full h-12 rounded-full border border-gray-300 text-gray-700 font-medium transition"
         >
           <!-- Official Google SVG -->
@@ -55,8 +55,7 @@
           ></span>
         </a>
       </div>
-      <!-- DEBUG -->
-<p style="display:none">{{ GOOGLE_CLIENT_ID }}</p>
+
       <p id="googleError" class="hidden text-sm text-red-500">
         Something went wrong. Please try again.
       </p>
@@ -87,6 +86,7 @@ function show_pass() {
 }
 </script>
 <script>
+const nextPage = "{{ request.args.get('next', url_for('public.user_dashboard')) }}";
 function handleGoogleOneTap(response) {
     if (!response || !response.credential) return;
     fetch("/auth/google/onetap", {
@@ -102,7 +102,7 @@ function handleGoogleOneTap(response) {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            window.location.href = "/dashboard";
+            window.location.href = "/nextPage";
         } else {
           flash("Could not log you in. Try again.");
         }

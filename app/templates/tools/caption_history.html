@@ -12,6 +12,13 @@ Caption History – SuperiorNews
     <h1 class="text-3xl font-bold tracking-tight">Your Generated Captions History</h1>
     <p class="text-gray-400 mt-2">Click on a history entry to view all captions and confidence scores.</p>
   </div>
+  
+<button id="openHistory"
+  class="fixed top-6 right-6 bg-gray-900 text-white px-4 py-2 rounded-xl shadow-lg hover:bg-gray-800 z-50">
+  🕘 History
+</button>
+<div id="historyOverlay"
+  class="fixed inset-0 bg-black/60 hidden z-40"></div>
 
   {% if history %}
     <div class="space-y-4">
@@ -58,7 +65,122 @@ Caption History – SuperiorNews
     View
 </button>
 
+  <!-- HISTORY DRAWER -->
+<div id="historyDrawer"
+  class="fixed top-0 right-0 h-full w-full md:w-96 bg-gray-950 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
+
+  <div class="flex justify-between items-center p-4 border-b border-gray-700">
+    <h2 class="text-white text-xl font-bold">Caption History</h2>
+    <button id="closeHistory" class="text-gray-400 hover:text-white text-xl">✕</button>
+  </div>
+
+  <div id="historyContent" class="p-4 space-y-3">
+    <div class="text-gray-400 text-sm">Loading history...</div>
+  </div>
+
 </div>
+
+</div>
+
+
+<script>
+const drawer = document.getElementById("historyDrawer");
+const overlay = document.getElementById("historyOverlay");
+const openBtn = document.getElementById("openHistory");
+const closeBtn = document.getElementById("closeHistory");
+const historyContent = document.getElementById("historyContent");
+const results = document.getElementById("results");
+const textarea = document.getElementById("text");
+
+openBtn.addEventListener("click", () => {
+  drawer.classList.remove("translate-x-full");
+  overlay.classList.remove("hidden");
+  loadHistoryList();
+});
+
+closeBtn.addEventListener("click", closeDrawer);
+overlay.addEventListener("click", closeDrawer);
+
+function closeDrawer() {
+  drawer.classList.add("translate-x-full");
+  overlay.classList.add("hidden");
+}
+
+function loadHistoryList() {
+  historyContent.innerHTML = "<div class='text-gray-400'>Loading...</div>";
+
+  fetch("/caption/history/list")
+    .then(res => res.json())
+    .then(data => {
+      historyContent.innerHTML = "";
+
+      if (data.length === 0) {
+        historyContent.innerHTML = "<p class='text-gray-400'>No history yet.</p>";
+        return;
+      }
+
+      data.forEach(item => {
+        historyContent.innerHTML += `
+          <div class="p-3 bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-700 transition"
+               onclick="loadHistoryItem(${item.id})">
+            <p class="text-white text-sm font-semibold">${item.platform.toUpperCase()}</p>
+            <p class="text-gray-400 text-xs">${item.created_at}</p>
+            <p class="text-gray-300 text-sm mt-1 line-clamp-2">${item.preview}</p>
+          </div>
+        `;
+      });
+    });
+}
+
+function loadHistoryItem(id) {
+
+  results.innerHTML = "<div class='text-gray-400'>Loading captions...</div>";
+
+  fetch(`/caption/history/${id}`)
+    .then(res => res.json())
+    .then(data => {
+
+      textarea.value = data.original_text;
+
+      results.innerHTML = "";
+
+      data.captions.forEach((post, index) => {
+
+        const bestBadge = index === 0
+          ? `<div class="border-2 border-yellow-400 bg-yellow-50 p-2 rounded mb-2 text-xs font-bold text-yellow-600">
+               BEST CAPTION
+             </div>`
+          : "";
+
+        results.innerHTML += `
+          <div class="bg-gray-800 p-4 rounded-xl shadow-md">
+            ${bestBadge}
+            <p class="text-white text-lg">${post.text}</p>
+            <p class="text-gray-400 text-sm">
+              Style: ${post.style}, Confidence: ${post.confidence_score}%
+            </p>
+            <p class="text-gray-400 text-sm">
+              Best Posting Time: ${post.best_post_time || "Not specified"}
+            </p>
+          </div>
+        `;
+      });
+
+      if (data.thread) {
+        results.innerHTML += `
+          <div class="mt-4 p-4 border-l-4 border-blue-500 bg-gray-800 rounded-xl">
+            <h3 class="text-lg font-bold mb-2 text-white">Generated Thread</h3>
+            ${data.thread.tweets.map(t => `<p class="text-white mb-1">• ${t}</p>`).join("")}
+          </div>
+        `;
+      }
+
+      closeDrawer();
+      results.scrollIntoView({ behavior: "smooth" });
+
+    });
+}
+</script>
 
 <script>
   // Toggle captions visibility on click
@@ -87,6 +209,46 @@ Caption History – SuperiorNews
         });
       });
   }
+</script>
+
+<!-- JavaScript for interactive selection -->
+<script>
+  const plans = document.querySelectorAll(".plan-card");
+
+  plans.forEach(plan => {
+    plan.addEventListener("click", () => {
+      plans.forEach(p => {
+        // reset all cards
+        p.classList.remove("border-yellow-500");
+        p.querySelector(".badge").classList.add("hidden");
+
+        // reset buttons
+        const btn = p.querySelector(".plan-btn");
+        if (p.dataset.plan === "basic") {
+          btn.classList.remove("bg-yellow-500", "text-black", "font-semibold");
+          btn.classList.add("bg-gray-800", "text-white");
+        } else if (p.dataset.plan === "premium") {
+          btn.classList.remove("bg-yellow-500", "text-black", "font-semibold");
+          btn.classList.add("bg-gray-800", "text-white");
+        }
+      });
+
+      // apply selection to clicked plan
+      plan.classList.add("border-yellow-500");
+      const badge = plan.querySelector(".badge");
+      badge.classList.remove("hidden");
+
+      // update button
+      const btn = plan.querySelector(".plan-btn");
+      btn.classList.remove("bg-gray-800", "text-white");
+      btn.classList.add("bg-yellow-500", "text-black", "font-semibold");
+
+      // optional: change badge text for Basic
+      if(plan.dataset.plan === "basic") {
+        badge.textContent = "Basic Plan";
+      }
+    });
+  });
 </script>
 
 {% endblock %}

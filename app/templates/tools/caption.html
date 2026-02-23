@@ -7,146 +7,138 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
 {% endblock %}
 
 {% block content %}
+<div class="max-w-6xl mx-auto mt-12 p-6 bg-white/5 backdrop-blur-md rounded-2xl shadow-lg relative">
 
-<div class="max-w-5xl mx-auto mt-12 bg-white/5 backdrop-blur rounded-2xl shadow-lg px-5">
-  <div class="flex justify-end mb-2">
-    {% if current_user.tokens > 0 %}
-        <div class="token-badge">
-            🎟️ Tokens left: {{ current_user.tokens }}
+  <!-- TOKEN / PREMIUM -->
+  <div class="flex justify-between items-center mb-6">
+    {% if current_user.is_authenticated %}
+      {% if current_user.tokens > 0 %}
+        <div class="px-4 py-2 bg-yellow-400 text-black font-semibold rounded-xl shadow-md">
+          🎟️ Tokens: {{ current_user.tokens }}
         </div>
-    {% else %}
-        <!-- Just a link to upgrade -->
-        <a href="{{ url_for('public.pricing') }}"
-           class="w-full py-3 px-3 bg-yellow-100 rounded text-black font-semibold hover:bg-yellow-400 text-center block">
-            Upgrade to Premium 🌟
+      {% else %}
+        <a href="{{ url_for('public.pricing') }}" 
+           class="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-xl shadow-md hover:bg-yellow-400 transition">
+          Upgrade to Premium 🌟
         </a>
+      {% endif %}
     {% endif %}
   </div>
-  
-  {% if current_user.is_authenticated %}
-    <div class="ml-4">
-        🎟️ Tokens: {{ current_user.tokens }}
-    </div>
-  {% endif %}
 
-<!-- Header -->  
-  <div class="text-center">
-    <h1 class="text-3xl font-bold mb-2 tracking-tight">Generate Viral X Content Instantly</h1>
-    <p class="text-gray-400 mb-2">Turn news, sports highlights, and events into high-performing X posts & threads.</p>
+  <!-- HEADER -->
+  <div class="text-center mb-6">
+    <h1 class="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-400">
+      Generate Viral X Content Instantly
+    </h1>
+    <p class="text-gray-400 mt-2 text-lg">
+      Turn news, sports highlights, and events into high-performing X posts & threads.
+    </p>
   </div>
-  
-  <div class="border-2 border-yellow-400 bg-yellow-50 p-4 rounded-xl">
+
+  <!-- BEST CAPTION PROGRESS -->
+  <div class="border-2 border-yellow-400 bg-yellow-50 p-4 rounded-xl mb-2">
     <span class="text-xs font-bold text-yellow-600">BEST CAPTION</span>
   </div>
-  
-  <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+  <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
     <div class="bg-green-500 h-2 rounded-full" style="width: 87%"></div>
   </div>
-<div class="max-w-5xl mx-auto mt-14">
 
-{% for caption in editor_picks %}
-<pre class="bg-gray-800 dark:bg-gray-900 text-green-400 p-4 rounded-xl overflow-x-auto">
-{{ caption.caption | e }}
-</pre>
-{% endfor %}
-
+  <!-- EDITOR PICKS -->
   {% if editor_picks %}
-    <div class="space-y-4">
+    <div class="grid md:grid-cols-2 gap-4 mb-8">
       {% for caption in editor_picks %}
-        <div class="bg-gray-800 p-4 rounded-xl shadow-md">
-          <p class="text-white text-lg">{{ caption.caption }}</p>
-          <p class="text-gray-400 text-sm">Platform: {{ caption.platform.upper() }}, Confidence: {{ caption.confidence }}%</p>
+        <div class="bg-gray-800 dark:bg-gray-900 p-4 rounded-xl shadow-md hover:shadow-xl transition">
+          <p class="text-white font-medium text-lg mb-2">{{ caption.caption }}</p>
+          <p class="text-gray-400 text-sm">
+            Platform: {{ caption.platform.upper() }}, Confidence: {{ caption.confidence }}%
+          </p>
         </div>
       {% endfor %}
     </div>
-  {% else %}
-    <p class="text-gray-400">No premium captions yet. Generate some to see them here!</p>
   {% endif %}
-</div>
 
-  <!-- Input -->  
-  <div class="space-y-4">
-    <textarea
-      id="text"
-      class="w-full h-40 p-4 rounded-xl bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+  <!-- INPUT AREA -->
+  <div class="mb-6">
+    <textarea id="text" 
+      class="w-full h-40 p-4 rounded-xl bg-gray-200 dark:bg-gray-900 dark:text-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800" 
       placeholder="Paste article content, or key points here…"></textarea>
 
-  <!-- CONTROLS -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-    <select id="tone" class="bg-gray-800 rounded p-2">
-      <option value="neutral">Neutral</option>
-      <option value="breaking">Breaking</option>
-      <option value="viral">Viral</option>
-      <option value="emotional">Emotional</option>
-      <option value="professional">Professional</option>
-    </select>
+    <!-- CONTROLS -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+      <select id="tone" class="bg-gray-400 rounded p-2 text-black dark:text-white dark:bg-gray-700">
+        <option value="neutral">Neutral</option>
+        <option value="breaking">Breaking</option>
+        <option value="viral">Viral</option>
+        <option value="emotional">Emotional</option>
+        <option value="professional">Professional</option>
+      </select>
 
-    <select id="mode" class="bg-gray-800 rounded p-2">
-      <option value="single">Single Post</option>
-      <option value="thread">Thread</option>
-      <option value="reply">Reply Optimized</option>
-      <option value="engagement">Engagement Hook</option>
-    </select>
+      <select id="mode" class="bg-gray-400 rounded p-2 text-black dark:text-white dark:bg-gray-700">
+        <option value="single">Single Post</option>
+        <option value="thread">Thread</option>
+        <option value="reply">Reply Optimized</option>
+        <option value="engagement">Engagement Hook</option>
+      </select>
 
-    <label class="flex items-center gap-2 text-sm">
-      <input type="checkbox" id="avoid_clickbait">
-      Avoid clickbait
-    </label>
+      <label class="flex items-center gap-2 text-black dark:text-white text-sm">
+        <input type="checkbox" id="avoid_clickbait" class="accent-blue-500">
+        Avoid clickbait
+      </label>
 
-    <button id="generateBtn"
-      class="bg-blue-600 hover:bg-blue-700 rounded-xl px-4 py-2">
-      Generate X Content
-    </button>
+      <button id="generateBtn" 
+        class="dark:bg-blue-600 bg-blue-500 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl transition">
+        Generate X Content
+      </button>
+    </div>
+
+    <p id="charCount" class="text-sm text-gray-400 mt-2">Characters: 0</p>
   </div>
 
-  <p id="charCount" class="text-sm text-gray-400 mb-4">Characters: 0</p>
-
-  </div>  
-
   <!-- TABS -->
-  <div class="flex space-x-2 border-b border-gray-600 mb-4">
-    <button class="tab-btn px-4 py-2 font-semibold active bg-gray-700 rounded-t" data-tab="free">Free Captions</button>
-    <button class="tab-btn px-4 py-2 font-semibold bg-gray-700 rounded-t" data-tab="premium">Premium Captions</button>
-    <button class="tab-btn px-4 py-2 font-semibold bg-gray-700 rounded-t" data-tab="thread">Thread</button>
+  <div class="flex space-x-2 border-b border-gray-600 mb-6">
+    <button class="tab-btn px-4 py-2 font-semibold active bg-gray-400 rounded-t dark:text-white dark:bg-gray-800" data-tab="free">Free Captions</button>
+    <button class="tab-btn px-4 py-2 font-semibold bg-gray-400 dark:text-white rounded-t dark:bg-gray-800" data-tab="premium">Premium Captions</button>
+    <button class="tab-btn px-4 py-2 font-semibold dark:text-white bg-gray-400 rounded-t dark:bg-gray-800" data-tab="thread">Thread</button>
   </div>
 
   <!-- RESULTS -->
-  <div id="results" class="mt-8 space-y-4">
+  <div id="results" class="space-y-4">
     {% if captions %}
-      {% if captions.type == 'single' %}
+      {% for post in captions.captions %}
         <div class="bg-gray-800 p-4 rounded-xl shadow-md">
-          <p class="text-white text-lg">{{ captions.captions[0].text }}</p>
-          <p class="text-gray-400 text-sm">
-            Style: {{ captions.captions[0].style }}, Confidence: {{ captions.captions[0].confidence_score }}%
-          </p>
-          <p class="text-gray-400 text-sm">
-            Suggested Replies: {{ captions.captions[0].suggested_replies | join(', ') }}
-          </p>
-          <p class="text-gray-400 text-sm">
-            Best Posting Time: {{ captions.captions[0].best_post_time }}
-          </p>
-        </div>
-      {% else %}
-        <!-- Premium: multiple styles + thread -->
-        {% for post in captions.captions %}
-          <div class="bg-gray-800 p-4 rounded-xl shadow-md">
-            <p class="text-white text-lg">{{ post.text }}</p>
-            <p class="text-gray-400 text-sm">
-              Style: {{ post.style }}, Confidence: {{ post.confidence_score }}%
-            </p>
-            <p class="text-gray-400 text-sm">
-              Suggested Replies: {{ post.suggested_replies | join(', ') }}
-            </p>
-            <p class="text-gray-400 text-sm">
-              Best Posting Time: {{ post.best_post_time }}
-            </p>
-          </div>
-        {% endfor %}
+          {% if loop.first %}
+            <div class="border-2 border-yellow-400 bg-yellow-50 p-2 rounded mb-2 text-xs font-bold text-yellow-600">
+              BEST CAPTION
+            </div>
+          {% endif %}
+          <p class="text-white text-lg">{{ post.text }}</p>
 
+          {% if post.image_url %}
+            <div class="relative w-full h-64 bg-gray-700 rounded-xl overflow-hidden">
+              <div class="absolute inset-0 animate-pulse bg-gray-600/50"></div>
+              <img data-src="{{ post.image_url[0] }}" alt="Post image" class="lazy absolute inset-0 w-full h-full object-cover rounded-xl">
+            </div>
+          {% endif %}
+
+          <p class="text-gray-400 text-sm mt-1">Style: {{ post.style }}, Confidence: {{ post.confidence_score }}%</p>
+          <p class="text-gray-400 text-sm mt-1">Suggested Replies: {{ post.suggested_replies | join(', ') }}</p>
+          <p class="text-gray-400 text-sm mt-1">Best Posting Time: {{ post.best_post_time }}</p>
+        </div>
+      {% endfor %}
+
+      {% if captions.thread %}
         <div class="mt-4 p-4 border-l-4 border-blue-500 bg-gray-800 rounded-xl">
-          <h3 class="text-lg font-bold mb-2">Generated Thread</h3>
-          {% for tweet in captions.thread.thread.tweets %}
-            <p class="text-white mb-1">• {{ tweet }}</p>
+          <h3 class="text-lg font-bold mb-2 text-white">Generated Thread</h3>
+          {% for tweet in captions.thread %}
+            <div class="mb-4">
+              <p class="text-white mb-1">• {{ tweet.text }}</p>
+              {% if tweet.image_url %}
+                <div class="relative w-full h-64 bg-gray-700 rounded-xl overflow-hidden">
+                  <div class="absolute inset-0 animate-pulse bg-gray-600/50"></div>
+                  <img data-src="{{ tweet.image_url[0] }}" alt="Thread image" class="lazy absolute inset-0 w-full h-full object-cover rounded-xl">
+                </div>
+              {% endif %}
+            </div>
           {% endfor %}
         </div>
       {% endif %}
@@ -154,63 +146,42 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
       <p class="text-gray-400">No X content generated yet. Paste text above and click Generate.</p>
     {% endif %}
   </div>
-  
-  <!-- CTA -->  
-  <div class="mt-12 p-6 rounded-xl bg-gradient-to-r from-blue-600/20 to-cyan-500/20 border border-blue-500/20">
-    <p class="font-semibold mb-3">🚀 Want more creator & newsroom tools?</p>
+  {% if current_user.is_premium %}
+    <p>Premium expires on {{ current_user.premium_expires_at.strftime('%d %b %Y') }}</p>
+{% endif %}
+
+  <!-- SUBSCRIBE CTA -->
+  <div class="mt-12 p-6 rounded-xl bg-gradient-to-r from-blue-600/20 to-cyan-500/20 border border-blue-500/20 text-center">
+    <p class="text-black dark:text-white font-semibold mb-3">🚀 Want more creator & newsroom tools?</p>
     <form action="{{ url_for('public.subscribe') }}" method="post" class="flex flex-col md:flex-row gap-3">
       {{ form.hidden_tag() }}
-      {{ form.email(class="form-control flex-1 p-3 rounded-lg bg-gray-900 text-white", placeholder="Your email address") }}
+      {{ form.email(class="flex-1 p-3 rounded-lg bg-gray-400 dark:text-white dark:bg-gray-900", placeholder="Your email address") }}
       {{ form.submit(class="btn btn-primary font-medium text-black px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700") }}
     </form>
   </div>
 </div>
-<!--
-<div class="max-w-3xl mx-auto mt-12 p-6 rounded-xl bg-gradient-to-r from-yellow-400/20 to-red-500/20 border border-yellow-500/20 text-center">
-  <h2 class="text-2xl font-bold mb-4">Upgrade to Premium</h2>
-  <p class="text-gray-600 mb-6">
-    Unlock multi-variation captions, AI-powered confidence scores, and premium homepage features!
-  </p>
-  <button
-    id="upgradeBtn"
-    class="px-6 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-600 font-semibold text-white transition"
-  >
-    Upgrade Now - ₦2,000
-  </button>
-</div>
 
+<!-- LAZY LOADING SCRIPT -->
 <script>
-document.getElementById("upgradeBtn").addEventListener("click", async () => {
-  try {
-    btn.disabled = true;
-    btn.innerText = "Initializing...";
+document.addEventListener("DOMContentLoaded", function() {
+  const lazyImages = document.querySelectorAll("img.lazy");
 
-    const init = await fetch("/paystack/init", { method: "POST" });
-    let data;
-
-    try {
-      data = await init.json();
-    } catch {
-      alert("Server error: Could not parse payment response.");
-      return;
-    }
-
-    if (data.status) {
-      // Redirect user to Paystack payment page
-      window.location.href = data.data.authorization_url;
-    } else {
-      alert(data.message || "Payment initialization failed. Try again.");
-      btn.disabled = false;
-      btn.innerText = "Upgrade Now - ₦2,000";
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Something went wrong. Try again later.");
-    btn.disabled = false;
-      btn.innerText = "Upgrade Now - ₦2,000";
+  if ("IntersectionObserver" in window) {
+    let observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          let img = entry.target;
+          img.src = img.dataset.src;
+          img.classList.remove("lazy");
+          if (img.previousElementSibling) img.previousElementSibling.remove();
+          observer.unobserve(img);
+        }
+      });
+    });
+    lazyImages.forEach(img => observer.observe(img));
+  } else {
+    lazyImages.forEach(img => img.src = img.dataset.src);
   }
 });
 </script>
--->
-
 {% endblock %}

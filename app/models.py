@@ -55,6 +55,7 @@ class User(db.Model, UserMixin):
     referral_link = db.Column(db.String(255))
     oauth_provider = db.Column(db.String(50))
     is_premium = db.Column(db.Boolean, default=False)
+    premium_expires_at = db.Column(db.DateTime, nullable=True)
     oauth_id = db.Column(db.String(255), unique=True)
     trust_score = db.Column(db.Integer, default=0)
     is_trusted = db.Column(db.Boolean, default=False)
@@ -466,6 +467,15 @@ class AdClick(db.Model):
     ad_id = db.Column(db.Integer, db.ForeignKey("ads.id"))
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)  # optional for logged-in users
     clicked_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Payment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    reference = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    plan = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(50), default="pending")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):

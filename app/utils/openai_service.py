@@ -6,6 +6,7 @@ from app.utils.caption_logger import log_premium_caption_history
 from app.utils.openai_predictive_generator import predictive_best_time, predictive_engagement_boost
 from app.extensions import db
 from app.models import XPost, XPostMetrics
+from app.utils.db_helpers import safe_commit
 
 # ---------------------------
 # Engagement Scoring
@@ -75,7 +76,7 @@ def suggest_best_post_time(user=None):
 # Caption Generation
 # ---------------------------
 
-def generate_captions(text, user):
+def generate_captions(text, user, tone="neutral", mode="single", avoid_clickbait=False):
     """Generate captions: safe for free, safe/viral/editor for premium."""
     styles = ["safe", "viral", "editor"] if user.is_premium else ["safe"]
     style_prompts = {
@@ -93,9 +94,18 @@ Rules:
 - Strong hook first line
 - Optional emoji (max 1)
 - No marketing language or AI mention
-TEXT: {text}
-STYLE: {style_prompts[style]}
 """
+        # Inject tone
+        if tone and tone.lower() != "neutral":
+            prompt += f"- Adopt a {tone.lower()} tone.\n"
+
+        # Inject clickbait avoidance
+        if avoid_clickbait:
+            prompt += "- Avoid clickbait, exaggerated claims, or sensationalist hooks.\n"
+
+        # Inject text
+        prompt += f"TEXT: {text}\nSTYLE: {style_prompts[style]}"
+
         post_text = call_ai(prompt, max_tokens=120)
         captions.append({
             "style": style,
@@ -137,14 +147,28 @@ Return as JSON array.
 # Unified X Post Generator
 # ---------------------------
 
-def generate_x_post_for_user(text, user, teams=None, event_time=None):
+def generate_x_post_for_user(text, user, teams=None, event_time=None, tone="neutral", length="short", platforms=None, mode="single", intent="inform", avoid_clickbait=False):
     """
     Generate full X post package.
     Free: 1 safe caption + image + basic score
     Premium: multiple captions + thread + replies + predictive best time + engagement
     """
-    # Generate images once
-    images = generate_match_image(match_text=text, teams=teams, event_time=event_time)
+    # Decide if images are needed
+    topic = "sports" if any(k in text.lower() for k in ["match", "goal", "score", "football"]) else "general"
+    generate_images = topic.lower() == "sports"
+
+    # Pre-generate thread images for sports
+    thread_images = []
+    if generate_images:
+        thread_texts = generate_thread(text, max_tweets=4)
+        for t_text in thread_texts:
+            thread_images.append(generate_match_image(match_text=t_text, teams=teams, event_time=event_time))
+    else:
+        thread_texts = generate_thread(text, max_tweets=4)
+        thread_images = [None] * len(thread_texts)
+
+    # Generate main images (for top post)
+    main_images = generate_match_image(match_text=text, teams=teams, event_time=event_time) if generate_images else []
 
     # Free user
     if not user.is_premium:
@@ -162,18 +186,24 @@ def generate_x_post_for_user(text, user, teams=None, event_time=None):
                 },
                 "suggested_replies": [],
                 "best_post_time": suggest_best_post_time(user),
-                "image_url": images
+                "image_url": main_images
             }],
             "thread": None,
             "replies": [],
             "best_post_time": suggest_best_post_time(user),
             "engagement_score": compute_engagement_score(caption_text, user_is_premium=False),
-            "images": images
+            "images": main_images
         }
 
     # Premium user
-    captions = generate_captions(text, user)
-    thread = generate_thread(text, max_tweets=4)
+    captions = generate_captions(text, user, tone=tone, mode=mode, avoid_clickbait=avoid_clickbait)
+    thread = []
+    if mode in ["thread", "reply", "engagement"]:
+        thread = generate_thread(
+            text,
+            max_tweets=4,
+            breaking=(tone=="breaking") or (mode=="breaking")
+        )
     engagement_score = max(c["confidence_score"] for c in captions)
     replies = sum([c["suggested_replies"] for c in captions], [])
 
@@ -198,16 +228,27 @@ def generate_x_post_for_user(text, user, teams=None, event_time=None):
             created_at=datetime.now()
         )
         db.session.add(new_post)
-        db.session.commit()
+        safe_commit()
         db.session.add(XPostMetrics(post_id=new_post.id, engagement_score=cap["confidence_score"]))
-        db.session.commit()
+        safe_commit()
+
+        if generate_images:
+            cap["image_url"] = main_images
+
+    # Attach thread images
+    thread_with_images = []
+    for i, t_text in enumerate(thread_texts):
+      thread_with_images.append({
+        "text": t_text,
+        "image_url": thread_images[i]
+      })
 
     return {
         "type": "premium",
         "captions": captions,
-        "thread": thread,
-        "replies": sum([c["suggested_replies"] for c in captions], []),
+        "thread": thread_with_images,
+        "replies": replies,
         "best_post_time": suggest_best_post_time(user),
         "engagement_score": engagement_score,
-        "images": images
+        "images": main_images
     }
