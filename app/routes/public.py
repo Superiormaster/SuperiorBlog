@@ -2,6 +2,7 @@ from flask import Blueprint, request, render_template, redirect, url_for, sessio
 from app.models import Post, Comment, Like, Subscriber, ContactMessage, CaptionHistory, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit, FootballCache, PageView
 import os, traceback, re, base64, requests, secrets, uuid
 from requests.exceptions import ConnectionError
+from urllib.parse import quote
 from sqlalchemy import distinct, func, or_, and_
 from uuid import uuid4
 from collections import defaultdict
@@ -831,13 +832,15 @@ def delete_post(id):
 def google_login():
     client_id = current_app.config["GOOGLE_CLIENT_ID"]
     redirect_uri = current_app.config["REDIRECT_URI"]
+    next_page = request.args.get("next", url_for("public.user_dashboard"))
+
     # Google OAuth URL
     google_auth_url = (
         "https://accounts.google.com/o/oauth2/v2/auth"
         "?response_type=code"
         f"&client_id={client_id}"
         f"&redirect_uri={redirect_uri}"
-        f"&state={next_page}"
+        f"&state={quote(next_page)}"
         "&scope=openid%20email%20profile"
         "&prompt=select_account"
         "&include_granted_scopes=true" 
@@ -968,6 +971,7 @@ def index():
     seven_days_ago = datetime.utcnow() - timedelta(days=7)
     six_hours_ago = datetime.utcnow() - timedelta(hours=6)
     one_day_ago = datetime.utcnow() - timedelta(days=1)
+    two_days_ago = datetime.utcnow() - timedelta(days=2)
 
     # Latest posts (3)
     latest_posts = (
@@ -1000,7 +1004,7 @@ def index():
         .filter(
             Post.is_published == True,
             Post.status == "published",
-            Post.created_at >= three_days_ago,
+            Post.created_at >= two_days_ago,
             ~Post.id.in_(latest_ids)
         )
         .order_by(desc("popularity"))

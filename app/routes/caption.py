@@ -32,7 +32,7 @@ def caption_history_list():
 
 @caption_bp.route("/captions/history/<int:id>")
 @login_required
-def caption_history():
+def caption_history(id):
     items = CaptionHistory.query.filter_by(
         user_id=current_user.id
     ).order_by(CaptionHistory.created_at.desc()).limit(20).all()
@@ -65,13 +65,24 @@ def generate_caption_route():
             return jsonify({"error": "Invalid JSON"}), 400
 
         data = request.get_json()
+        MAX_INPUT_CHARS = 500
+        MAX_OUTPUT_CHARS = 280
+
         text = data.get("text", "").strip()
+        if not text:
+            return jsonify({"error": "Text is required"}), 400
+        
+        if len(text) > MAX_INPUT_CHARS:
+            return jsonify({
+                "error": f"Text exceeds max length of {MAX_INPUT_CHARS} characters."
+            }), 400
+
         tone = data.get("tone")
-        length = data.get("length", "short")
         platform = data.get("platform")
         intent = data.get("intent", "inform")
-        mode = data.get("mode", "breaking")
+        mode = data.get("mode", "single")
         avoid_clickbait = data.get("avoid_clickbait", False)
+        custom_prompt = data.get("custom_prompt")
 
         if not text:
             return jsonify({"error": "Text is required"}), 400
@@ -93,18 +104,17 @@ def generate_caption_route():
             text=text,
             user=current_user,
             tone=tone,
-            length=length,
-            platforms=[platform] if platform else [],
             mode=mode,
-            intent=intent,
-            avoid_clickbait=avoid_clickbait
+            avoid_clickbait=avoid_clickbait, 
+            custom_prompt=custom_prompt,
+            max_output_chars=MAX_OUTPUT_CHARS
         )
 
         if not results:
             return jsonify({"error": "Caption generation failed."}), 500
 
         # ---- Deduct Token ONCE ----
-        current_user.tokens -= 1
+        use_token(current_user)
         safe_commit()
 
         # ---- Update Usage for Free Users ----
