@@ -575,6 +575,19 @@ strong{
   font-size: 13px;
 }
 
+.editor-content,
+.post-content {
+    font-size: 16px;      /* Base size */
+    line-height: 1.7;
+}
+
+@media (min-width: 768px) {
+    .editor-content,
+    .post-content {
+        font-size: 18px;  /* Match Tailwind md:text-lg */
+    }
+}
+
 .editor-toolbar {
   border: none !important;
   background: transparent !important;
@@ -621,6 +634,11 @@ strong{
     overflow-wrap: break-word;
 }
 
+.post-content {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .prose img {
     max-width: 100%;  /* Images scale to container */
     height: auto;
@@ -639,6 +657,19 @@ strong{
 /* Apply custom white text for dark mode */
 .dark .post-content {
     color: white;
+}
+
+.dark .prose,
+.dark .prose p,
+.dark .prose li,
+.dark .prose a,
+.dark .prose h1, 
+.dark .prose h2, 
+.dark .prose h3, 
+.dark .prose h4, 
+.dark .prose h5, 
+.dark .prose h6 {
+    color: #ffffff !important;
 }
 
 .dark .post-content h1,
@@ -660,7 +691,7 @@ strong{
     gap: 12px;
     align-items: center;
     border-bottom: 1px solid #efefef;
-    background: linear-gradient(180deg, rgba(0,0,0,0.03), transparent);
+    background: linear-gradient(180deg, ,rgba(0,0,0,0.03), transparent);
   }
   
   .homepage_down_nav {
