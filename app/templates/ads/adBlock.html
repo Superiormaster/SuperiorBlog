@@ -1,0 +1,68 @@
+{% set ads = get_active_ads(location) %}
+
+{% if ads %}
+<div class="w-full max-w-6xl mx-auto px-3 sm:px-4 lg:px-0 my-6">
+
+  {% for ad in ads %}
+  <div class="relative overflow-hidden rounded-2xl 
+              bg-white dark:bg-gray-800 
+              border border-gray-200 dark:border-gray-700
+              shadow-sm hover:shadow-md 
+              transition duration-300">
+
+      {% if ad.type == "adsense" %}
+
+          <!-- Ad Label -->
+          <div class="text-[10px] tracking-widest uppercase 
+                      text-gray-400 dark:text-gray-500 
+                      text-center pt-2">
+              Advertisement
+          </div>
+
+          <!-- AdSense Container -->
+          <div class="px-2 sm:px-4 py-4 text-center">
+              <div class="adsense-container w-full overflow-hidden">
+                  {{ ad.html_code | safe }}
+              </div>
+          </div>
+
+      {% elif ad.type == "custom" %}
+
+          <a href="{{ url_for('ads.ad_click', ad_id=ad.id) }}"
+             class="block group">
+
+              {% if ad.image_url %}
+                  <img src="{{ ad.image_url }}"
+                       loading="lazy"
+                       decoding="async"
+                       alt="{{ ad.title or 'Advertisement' }}"
+                       class="w-full h-auto object-cover 
+                              transition-transform duration-300 
+                              group-hover:scale-[1.02]">
+              {% else %}
+                  <div class="p-6 text-center 
+                              text-gray-800 dark:text-gray-200 
+                              font-semibold">
+                      {{ ad.title }}
+                  </div>
+              {% endif %}
+
+          </a>
+
+          <!-- Impression Tracking (Non-blocking) -->
+          <script>
+              window.addEventListener("load", function() {
+                  fetch("{{ url_for('ads.track_impression', ad_id=ad.id) }}", {
+                      method: "POST",
+                      keepalive: true
+                  });
+              });
+          </script>
+
+      {% endif %}
+
+  </div>
+  {% endfor %}
+
+</div>
+{% endif %}

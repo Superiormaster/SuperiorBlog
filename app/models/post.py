@@ -88,6 +88,7 @@ class XPost(db.Model):
     text = db.Column(db.String(280), nullable=False)
     confidence_score = db.Column(db.Integer)
     predicted_engagement = db.Column(JSON)
+    image_url = db.Column(db.JSON)
     suggested_replies = db.Column(JSON)
     best_post_time = db.Column(Time)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

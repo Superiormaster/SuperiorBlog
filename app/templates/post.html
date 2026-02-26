@@ -2,6 +2,8 @@
 {% block title %}{{ post.title }} - Superior News{% endblock %}
 
 {% block content %}
+{% set location = "post_top" %}
+{% include "ads/adBlock.html" %}
 
 <div class="flex-col mt-16 py-8 flex">
 <article class="shadow-md rounded p-6">
@@ -260,6 +262,114 @@
 {% endif %}
 </article>
 
+  <!-- components/creator_prompt.html -->
+  {% if not current_user.is_authenticated %}
+
+<div id="creator-cta" class="fixed hidden bottom-0 left-0 right-0 z-50 n">
+  <div class="mx-auto max-w-6xl m-4">
+    <div class="flex items-center justify-between gap-4 bg-gray-100 dark:bg-gray-700 rounded-2xl backdrop-blur shadow-2xl border border-yellow-500 p-4">
+      <!-- Text -->
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+          ✍️
+        </div>
+        <div>
+          <p class="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-300">
+            Your ideas deserve an audience.
+          </p>
+          <p class="text-xs sm:text-sm text-gray-400">
+            Login and start creating today.
+          </p>
+        </div>
+      </div>
+  
+  <!-- Actions -->
+  
+  <div class="flex items-center gap-2">
+    <button
+      onclick="openLoginModal()"
+      class="animate-pulse-slow flex items-center gap-2 rounded-full bg-primary px-5 py-2 border datk:border-x-red-100 border-red-100 text-sm font-semibold text-black dark:text-white shadow hover:opacity-90 transition"
+    >
+      🚀 Start Writing
+    </button>
+    <button
+      onclick="dismissCreatorCTA()"
+      class="text-gray-400 hover:text-gray-600 text-lg"
+      aria-label="Close"
+    >
+      ×
+    </button>
+  </div>
+</div>
+
+  </div>
+</div>
+{% endif %}
+
+<!-- Login Modal -->
+
+<div id="login-modal" class="fixed hidden inset-0 z-[60]">
+  <div class="absolute inset-0 bg-black/40" onclick="closeLoginModal()"></div>
+  <div class="relative mx-auto mt-24 w-[90%] max-w-md rounded-2xl bg-gray-100 dark:bg-gray-800 p-6 shadow-xl">
+    <h2 class="text-xl text-gray-900 dark:text-white text-center font-bold mb-4">Login to start creating</h2>
+    <form method="POST" action="{{ url_for('public.user_login', next=url_for('public.create_post')) }}" class="space-y-4">
+  {{ login_form.hidden_tag() }}
+      {{ login_form.email(
+      placeholder="Email",
+      class="w-full rounded-lg text-black border px-3 py-2"
+  ) }}
+  {{ login_form.password(
+      id="password",
+      placeholder="Password",
+      class="w-full rounded-lg text-black border px-3 py-2"
+  ) }}
+  <div class="form-check">
+    <input type="checkbox" id="show_password" class="form-check-input" onclick="show_pass()">
+    <label class="text-gray-900 dark:text-white form-check-label">Show Password</label>
+  </div>
+  {{ login_form.submit(
+      class="w-full rounded-full bg-blue-600 py-2 text-white font-semibold"
+  ) }}
+  <p class="text-center text-gray-900 dark:text-white text-sm mt-2">
+    Don’t have an account?
+    <a href="{{ url_for('public.user_register') }}" class="text-blue-400 dark:text-yellow-500">Sign up</a>
+  </p>
+  <div class="text-center text-gray-900 dark:text-white text-sm mt-2">Or SignUp With</div>
+      <div class="space-x-4 bg-blue-600 rounded-full font-semibold mt-2 w-full">
+      <a id="googleBtn" href="{{ url_for('public.google_login') }}"
+          class="flex items-center justify-center gap-3 w-full h-12 rounded-full border border-yellow-500 text-gray-700 font-medium transition"
+        >
+          <!-- Official Google SVG -->
+          <svg
+            id="googleIcon"
+            class="w-5 h-5"
+            viewBox="0 0 48 48"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.7 1.22 9.19 3.22l6.85-6.85C35.9 2.34 30.47 0 24 0 14.6 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.09 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.1 24.55c0-1.64-.15-3.21-.43-4.73H24v9.01h12.45c-.54 2.91-2.18 5.38-4.64 7.04l7.1 5.5C43.8 36.83 46.1 31.21 46.1 24.55z"/>
+            <path fill="#FBBC05" d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.98-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.91-5.81l-7.1-5.5c-1.97 1.32-4.49 2.1-8.81 2.1-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.6 48 24 48z"/>
+          </svg>
+        
+          <span id="googleText" class="text-white">Sign in with Google</span>
+          <span
+            id="googleSpinner"
+            class="hidden absolute right-5 w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"
+          ></span>
+        </a>
+      </div>
+      <p id="googleError" class="hidden text-sm text-red-500">
+        Something went wrong. Please try again.
+      </p>
+</form>
+
+<button onclick="closeLoginModal()" class="absolute top-3 right-4 text-gray-400 text-xl">×</button>
+
+  </div>
+
+</div>
+
 <footer class="drawer_footer bg-gray-800 text-gray-300 px-4 py-10">
 
   <!-- Newsletter -->
@@ -368,6 +478,67 @@
   </div>
 </footer>
 </div>
+
+<!-- Bottom Ad -->
+<div class="my-8">
+  {% for ad in get_active_ads('post_bottom') %}
+    <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded text-center">
+      <a href="{{ url_for('ads.ad_click', ad_id=ad.id) }}" target="_blank">
+        {% if ad.image_url %}
+          <img src="{{ ad.image_url }}" class="mx-auto rounded">
+        {% else %}
+          <p class="font-semibold">{{ ad.title }}</p>
+        {% endif %}
+      </a>
+    </div>
+  {% endfor %}
+</div>
+
+<script>
+const modal = document.getElementById('login-modal');
+
+window.openLoginModal = () => modal?.classList.remove('hidden');
+window.closeLoginModal = () => modal?.classList.add('hidden');
+
+document.getElementById('login-modal-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+
+    const res = await fetch(form.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+        closeLoginModal();
+        window.location.href = result.redirect;
+    } else {
+        const err = document.getElementById('modal-error');
+        err.textContent = result.message;
+        err.classList.remove('hidden');
+    }
+});
+
+function toggleBreakingBanner(show) {
+  const banner = document.getElementById("breaking-banner");
+  if (!banner) return;
+
+  if (show) {
+    banner.classList.remove("hidden");
+    banner.classList.add("visible");
+  } else {
+    banner.classList.remove("visible");
+    banner.classList.add("hidden");
+  }
+}
+
+// Example: hide after 10 seconds
+setTimeout(() => toggleBreakingBanner(false), 10000);
+</script>
 
 <script>
 function trackRelatedClick(el) {

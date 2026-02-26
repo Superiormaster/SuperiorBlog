@@ -2,7 +2,11 @@ from sqlalchemy import event
 from app.extensions import db
 from sqlalchemy.dialects.postgresql import JSONB
 from .post import XPost, XThread
-
+from .user import User
+from app.utils.openai_service import generate_x_post_for_user
+import threading
+from flask import current_app
+from sqlalchemy.orm import sessionmaker
 
 class CaptionHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -18,37 +22,68 @@ class CaptionHistory(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.now())
 
 
-@event.listens_for(XPost, "before_insert")
-def populate_xpost_ai_fields(mapper, connection, target):
-    from app.utils.openai_service import (
-        generate_x_post_ai,
-        predict_engagement,
-        suggest_replies,
-        best_post_time_for_growth,
-    )
+def run_generate_x_post(app, target_text, user_id):
+    """
+    Runs generate_x_post_for_user in a separate thread/session
+    to avoid SQLAlchemy flush conflicts.
+    """
+    # Create a fresh session
+    from sqlalchemy.orm import Session
+    from app.extensions import db
+    from app.models import XPost, XPostMetrics
 
-    target.confidence_score = generate_x_post_ai(
-        target.text, style=target.style, return_confidence=True
-    )
-    target.predicted_engagement = predict_engagement(target.text, target.style)
-    target.suggested_replies = suggest_replies(target.text, target.style)
-    target.best_post_time = best_post_time_for_growth(target.text, target.style)
+    with app.app_context(): 
+      SessionLocal = sessionmaker(bind=db.engine)
+      session = SessionLocal()
+
+      try:
+        user = session.get(User, user_id)
+        if not user:
+          app.logger.warning(f"User {user_id} not found.")
+          return
+
+        result = generate_x_post_for_user(text=target_text, user=user)
+    
+        # Add generated posts safely in a new session
+        for cap in result.get("captions", []):
+          new_post = XPost(
+            user_id=user.id,
+            text=cap["text"],
+            style=cap.get("style", "engineered"),
+            confidence_score=cap.get("analysis", {}).get("hook_score", 0),
+            predicted_engagement=cap.get("analysis", {}),
+            suggested_replies=cap.get("suggested_replies", []),
+            best_post_time=cap.get("best_post_time")
+          )
+          session.add(new_post)
+          session.flush()
+          session.add(XPostMetrics(post_id=new_post.id, engagement_score=None))
+    
+        session.commit()
+      except Exception as e:
+        session.rollback()
+        app.logger.error(f"AI generation failed: {str(e)}")
+
+      finally:
+        session.close()
 
 
-@event.listens_for(XThread, "before_insert")
-def populate_xthread_ai_fields(mapper, connection, target):
-    from app.utils.openai_service import (
-        generate_x_post_ai,
-        predict_engagement,
-        suggest_replies,
-        best_post_time_for_growth,
-    )
+def start_ai_generation(target_text, user_id):
+    app = current_app._get_current_object()
 
-    full_text = " ".join(target.thread)
+    threading.Thread(
+        target=run_generate_x_post,
+        args=(app, target_text, user_id),
+        daemon=True
+    ).start()
 
-    target.confidence_score = generate_x_post_ai(
-        full_text, style="editor", return_confidence=True
-    )
-    target.predicted_engagement = predict_engagement(full_text, "editor")
-    target.suggested_replies = suggest_replies(full_text, "editor")
-    target.best_post_time = best_post_time_for_growth(full_text, "editor")
+
+@event.listens_for(XPost, "after_insert")
+def after_insert_xpost(mapper, connection, target):
+    start_ai_generation(target.text, target.user_id)
+
+
+@event.listens_for(XThread, "after_insert")
+def after_insert_xthread(mapper, connection, target):
+    full_text = " ".join(target.thread or [])
+    start_ai_generation(full_text, target.user_id)

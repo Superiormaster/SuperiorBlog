@@ -16,6 +16,7 @@ from app.moderation.grammar import grammar_score
 from app.moderation.duplicate import hash_content
 from app.utils.helper import process_tags, get_related_posts, publish_scheduled_posts
 from app.utils.cloudinary_helper import upload_image_file
+from app.utils.adInjector import inject_inpost_ads
 from app.utils.email import send_email
 from app.utils.admin_email import send_welcome_email
 from app.utils.decorators import generate_unique_slug
@@ -491,7 +492,6 @@ def user_edit(id):
     return user_create_or_edit(id)
 
 def user_create_or_edit(id=None):
-    # Fetch post if editing, else create new
     post = Post.query.get(id) if id else None
     form = PostForm(obj=post or None)
 
@@ -528,6 +528,7 @@ def user_create_or_edit(id=None):
         flash("Published posts cannot be edited.", "warning")
         return redirect(url_for("public.user_dashboard"))
 
+
     # Block if rejected but max resubmissions reached
     if post and post.status == "rejected" and (post.resubmission_count or 0) >= 2:
         flash("Maximum resubmissions reached.", "danger")
@@ -551,6 +552,10 @@ def user_create_or_edit(id=None):
         content_html = request.form.get("content", "")
         soup = BeautifulSoup(content_html, "html.parser")
         text = soup.get_text(separator=" ").strip()
+        if not text:
+            flash("Post content cannot be empty.", "danger")
+            return render_template("user/create.html", form=form, rules=rules, post=post)
+
         # Remove extra whitespace
         text = re.sub(r'\s+', ' ', text)
         word_count = len(text.split())
@@ -578,6 +583,7 @@ def user_create_or_edit(id=None):
                 status="draft",
                 is_published=False
             )
+            db.session.add(post)
         else:
             # Editing existing post
             post.title = form.title.data
@@ -598,133 +604,84 @@ def user_create_or_edit(id=None):
         post.category = category
 
         # Assign labels
+        form.labels.choices = [(label.id, label.name) for label in Label.query.all()]
         post.labels = Label.query.filter(Label.id.in_(form.labels.data)).all()
 
         # Assign tags
         raw_tags = request.form.get("tags", "")
         post.tags = process_tags(raw_tags)
 
-        if not text:
-            flash("Post content cannot be empty.", "danger")
-            return render_template("user/create.html", form=form, rules=rules, post=post)
-
-        try:
-          result = auto_moderate(post, current_user) if post else None
-          status = result["status"]
-          reason = result.get("reason")
-  
-          post.status = status
-          post.rejection_reason = reason
-          post.is_published = False   # admin approval required
-
-          db.session.add(post)
-          if not safe_commit():
-              flash("Failed to save post. Please try again.", "danger")
-              return render_template("user/create.html", form=form, post=post, rules=rules)
-      
-          # Flash messages based on moderation result
-          if status == "rejected":
-              flash(f"Post rejected: {reason}", "error")
-              return render_template("user/create.html", form=form, post=post)
-          elif status == "pending_review":
-              flash(f"{reason or 'Pending review'}", "warning")
-              return redirect(url_for("public.user_dashboard"))
-        except ConnectionError:
-          # Handle network issues gracefully
-          flash("⚠️ Network error: Unable to reach the moderation service. "
-        "Your post was saved as draft. Please try submitting again.",
-        "error")
-        post.status = "draft"
-        post.is_published = False
-        db.session.add(post)
         safe_commit()
+
+        flash("Draft saved successfully.", "success")
         return redirect(url_for("public.user_dashboard"))
 
-        # ✅ ONLY approved posts reach here
-        submit_status = request.form.get("status", "draft")
-
-        # FEATURED IMAGE (ALWAYS)
-        if not post.featured_image and post.content:
-            soup = BeautifulSoup(post.content, "html.parser")
-            first_img = soup.find("img")
-            if first_img:
-                post.featured_image = first_img.get("src")
-
-        if submit_status == "published":
-            post.status = "published"
-            post.is_published = True
-            post.published_at = datetime.utcnow()
-            post.is_locked = True
-        
-        elif submit_status == "scheduled":
-          scheduled_date = form.scheduled_at.data
-          if not scheduled_date:
-              flash("Please select a schedule date", "danger")
-              return redirect(request.url)
-          if not scheduled_date or scheduled_date <= datetime.utcnow():
-              flash("The selected schedule date is not valid.", "danger")
-              return redirect(request.url)
-      
-          post.status = "scheduled"
-          post.scheduled_at = scheduled_date
-          post.is_published = False
-        
-        else:
-            post.status = "draft"
-            post.is_published = False
-            post.content = form.content.data
-        
-        if not safe_commit():
-          print("Failed to save post")
-
-        flash("Post submitted successfully.", "success")
-        return redirect(url_for("public.user_dashboard"))
-
-    return render_template(
-        "user/create.html",
-        form=form,
-        post=post,
-        rules=rules,
-        moderation_status=status if post else None,
-        moderation_reason=reason if post else None,
-        existing_tags=[t.name for t in post.tags] if post and post.id else []
-    )
+    return render_template("user/create.html", form=form, post=post, rules=rules)
 
 @public_bp.route("/post/draft", methods=["POST"])
 @csrf.exempt
 @login_required
 def save_draft():
-    content = request.form.get("content", "").strip()
-    if not content:
-        return jsonify({"status": "ignored"})
-
-    # Save draft logic here
+    """
+    Saves a draft, automatically sets featured image from first Cloudinary image
+    and keeps database lightweight by only storing URLs.
+    """
+    content_html = request.form.get("content", "").strip()
+    title = request.form.get("title", "").strip() or "Untitled Draft"
+    featured_image = request.form.get("featured_image")
+    category_id = request.form.get("category")
+    label_ids = request.form.getlist("labels[]")
+    raw_tags = request.form.get("tags", "")
     post_id = request.form.get("post_id")
 
-    # Update existing post
+    if not content_html:
+        return jsonify({"status": "ignored"})
+
+    # --- Fetch or create post ---
     if post_id:
         post = Post.query.get(post_id)
         if not post or post.user_id != current_user.id:
             return jsonify({"status": "forbidden"})
-        if getattr(post, "is_locked", False):
-            return jsonify({"status": "locked"})
-        post.content = content
-        post.status = "draft"
-        if not safe_commit():
-            print("Failed to save post")
-        return jsonify({"status": "updated", "post_id": post.id})
+        is_new = False
+    else:
+        post = Post(user_id=current_user.id)
+        is_new = True
 
-    # If new draft
-    post = Post(
-        user_id=current_user.id,
-        content=content,
-        status="draft",
-        is_published=False
-    )
-  
-    db.session.add(post)
-    if not safe_commit():
-        print("Failed to save post")
+    # --- Save content and basic info ---
+    #content_html = inject_inpost_ads(content_html)
+    post.content = content_html
+    post.title = title
+    post.featured_image = featured_image
+    post.status = "draft"
+    post.is_published = False
+    post.content_hash = hash_content(content_html)
+
+    # --- Automatically set featured image if missing ---
+    if not post.featured_image and content_html:
+        soup = BeautifulSoup(content_html, "html.parser")
+        first_img = soup.find("img")
+        if first_img:
+            post.featured_image = first_img.get("src")  # Should be Cloudinary URL
+
+    # --- Assign category ---
+    if category_id:
+        category = Category.query.get(category_id)
+        if category:
+            post.category = category
+
+    # --- Assign labels ---
+    label_ids = [int(i) for i in label_ids if i.isdigit()]
+    post.labels = Label.query.filter(Label.id.in_(label_ids)).all()
+
+    # --- Assign tags ---
+    post.tags = process_tags(raw_tags)
+
+    if is_new and not post.slug:
+      post.slug = generate_unique_slug(title) or f"draft-{int(time.time())}"
+      db.session.add(post)
+
+    safe_commit()
+
     return jsonify({"status": "saved", "post_id": post.id})
 
 @public_bp.route("/post/user/<int:id>/submit", methods=["POST"])
@@ -732,65 +689,124 @@ def save_draft():
 def submit_user_post(id):
     post = Post.query.get_or_404(id)
 
-    # Can only submit own posts
+    # Ownership check
     if post.user_id != current_user.id:
-        flash("You cannot submit this post", "danger")
+        flash("You cannot submit this post.", "danger")
         return redirect(url_for("public.user_dashboard"))
 
-    if post.status == "published":
-        flash("Post is already published", "info")
-        return redirect(url_for("public.user_dashboard"))
-  
+    # Only draft or rejected can be submitted
     if post.status not in ["draft", "rejected"]:
-        flash("This post cannot be submitted", "warning")
+        flash("This post cannot be submitted.", "warning")
         return redirect(url_for("public.user_dashboard"))
 
-    if post.status == "rejected" and post.resubmission_count >= 2:
-        flash("Maximum resubmissions reached", "danger")
+    # Resubmission limit
+    if post.status == "rejected" and (post.resubmission_count or 0) >= 2:
+        flash("Maximum resubmissions reached.", "danger")
         return redirect(url_for("public.user_dashboard"))
 
-    if not post.content or len(post.content.strip()) < 50:
-      flash("Post content is missing or too short", "danger")
-      return redirect(url_for("public.user_dashboard"))
+    # Content validation
+    soup = BeautifulSoup(post.content, "html.parser")
+    text = soup.get_text(" ")
+    word_count = len(text.split())
+
+    if not post.content or word_count < 150:
+        flash("Post content must be at least 150 words.", "danger")
+        return redirect(url_for("public.user_dashboard"))
 
     try:
+        was_rejected = post.status == "rejected"
+
         result = auto_moderate(post, current_user)
-        status = result["status"]           # this is now always defined
+
+        status = result.get("status", "pending_review")
         reason = result.get("reason")
+
         post.status = status
         post.rejection_reason = reason
         post.is_published = False
-        post.is_locked = True
 
-        # Extract first image if no featured image
-        if not post.featured_image:
-            soup = BeautifulSoup(post.content, "html.parser")
-            first_img = soup.find("img")
-            if first_img:
-                post.featured_image = first_img.get("src")
+        # Increment resubmission count if previously rejected
+        if was_rejected and status == "rejected":
+            post.resubmission_count = (post.resubmission_count or 0) + 1
 
-        # Save immediately
-        db.session.add(post)
-        if not safe_commit():
-            flash("Failed to save post. Please try again.", "danger")
-            return redirect(url_for("public.user_dashboard"))
-
-        if status == "rejected":
-            post.status = "rejected"
-            flash(f"Post rejected: {reason}", "error")
-        elif status == "pending_review":
-            post.status = "pending_review"
-            flash(f"Post submitted for editorial review: {reason or 'Pending review'}", "warning")
-        else:
-          flash(f"Post submitted and sent for moderation: {status.upper()}", "info")
+        # FEATURED IMAGE (ALWAYS)
+        if not post.featured_image and post.content:
+          soup = BeautifulSoup(post.content, "html.parser")
+          first_img = soup.find("img")
+          if first_img:
+            post.featured_image = first_img.get("src")
 
         safe_commit()
-        flash(f"Post submitted: {status.upper()}" + (f" ({reason})" if reason else ""), "success")
-    except Exception as e:
+
+        # Flash messages
+        if status == "rejected":
+            flash(f"Post rejected: {reason}", "danger")
+
+        elif status == "pending_review":
+            flash("Post submitted for editorial review.", "warning")
+
+        elif status == "approved":
+            flash("Post approved and awaiting publication.", "success")
+
+        else:
+            flash(f"Moderation result: {status}", "info")
+
+    except ConnectionError:
         db.session.rollback()
-        flash(f"Error submitting post: {str(e)}", "danger")
+        post.status = "draft"
+        post.is_published = False
+        safe_commit()
+        print("FORM DATA:", request.form)
+        print("LABELS:", request.form.getlist("labels"))
+
+        flash(
+            "Moderation service unavailable. Post saved as draft.",
+            "danger"
+        )
+
+    except Exception:
+        db.session.rollback()
+        print("Moderation Exception:", str(e))
+        flash("Moderation error. Try again.", "danger")
+
+    return redirect(url_for("public.user_dashboard"))
+
+@public_bp.route("/post/<int:id>/schedule", methods=["POST"])
+@login_required
+def schedule_post(id):
+    post = Post.query.get_or_404(id)
+
+    if post.user_id != current_user.id:
+        flash("Unauthorized.", "danger")
         return redirect(url_for("public.user_dashboard"))
 
+    if post.status != "approved":
+        flash("Only approved posts can be scheduled.", "warning")
+        return redirect(url_for("public.user_dashboard"))
+
+    scheduled_date = request.form.get("scheduled_at")
+
+    if not scheduled_date:
+        flash("Please select a valid date.", "danger")
+        return redirect(url_for("public.user_dashboard"))
+
+    try:
+        parsed_date = datetime.fromisoformat(scheduled_date)
+    except ValueError:
+        flash("Invalid date format.", "danger")
+        return redirect(url_for("public.user_dashboard"))
+
+    if parsed_date <= datetime.utcnow():
+        flash("Scheduled date must be in the future.", "danger")
+        return redirect(url_for("public.user_dashboard"))
+
+    post.status = "scheduled"
+    post.scheduled_at = parsed_date
+    post.is_published = False
+
+    safe_commit()
+
+    flash("Post scheduled successfully.", "success")
     return redirect(url_for("public.user_dashboard"))
 
 @csrf.exempt
@@ -1042,29 +1058,6 @@ def index():
         .subquery()
     )
 
-    trending_posts = (
-        db.session.query(
-            Post,
-            (Post.views + Post.like_count + func.coalesce(comment_counts.c.comment_count, 0)).label("popularity")
-        )
-        .outerjoin(comment_counts, Post.id == comment_counts.c.post_id)
-        .filter(
-            Post.is_published == True,
-            Post.status == "published",
-            Post.published_at >= three_days_ago,
-            or_(
-                Post.views >= 50,
-                Post.like_count >= 10
-            ),
-            (func.coalesce(comment_counts.c.comment_count, 0) >= 5)
-        )
-        .order_by(desc("popularity"))
-        .limit(5)
-        .all()
-    )
-
-    trending_posts = [p for p, _ in trending_posts if p is not None]
-
     breaking_posts = (
         Post.query
         .join(Post.labels)
@@ -1109,10 +1102,11 @@ def index():
 
     print("Live Matches:", live_matches)
     print("League Table:", league_table)
-    return render_template("homepage.html", posts=posts, trending_posts=trending_posts, popular_posts=popular_posts, popular_tags=popular_tags, latest_posts=latest_posts, breaking_posts=breaking_posts, Post=Post, live_matches=live_matches, league_table=league_table, form=form, editor_picks=editor_picks)
+    return render_template("homepage.html", posts=posts, popular_posts=popular_posts, popular_tags=popular_tags, latest_posts=latest_posts, breaking_posts=breaking_posts, Post=Post, live_matches=live_matches, league_table=league_table, form=form, editor_picks=editor_picks)
 
 @public_bp.route("/post/<slug>", endpoint='post_detail')
 def post_detail(slug):
+    two_days_ago = datetime.utcnow() - timedelta(days=2)
     form = SubscribeForm()
     post = Post.query.filter_by(slug=slug, is_published=True).first_or_404()
     # Convert to HTML
@@ -1166,7 +1160,8 @@ def post_detail(slug):
         .filter(
             Post.is_published == True,
             Post.category_id == post.category_id,
-            Post.id != post.id
+            Post.id != post.id,
+            Post.published_at >= two_days_ago
         )
         .order_by(
             desc(Post.views + Post.like_count + Post.related_clicks)
@@ -1366,20 +1361,19 @@ def category(slug):
         .all()
     )
 
+    comment_count = func.count(Comment.id)
+    
     trending_posts = (
         Post.query
         .filter(
             Post.category_id == category.id,
             Post.is_published == True,
-            Post.views >= 50,
-            Post.like_count >= 10
+            Post.status == "published"
         )
         .outerjoin(Post.comments)
         .group_by(Post.id)
-        .having(func.count(Comment.id) >= 5)
-        .order_by(
-            desc(Post.views + Post.like_count + func.count(Comment.id))
-        )
+        .having(comment_count >= 5)
+        .order_by(desc(Post.views + Post.like_count + comment_count))
         .limit(5)
         .all()
     )

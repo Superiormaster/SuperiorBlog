@@ -66,11 +66,19 @@ def generate_match_image(
         team_text = f"between {teams[0]} and {teams[1]}"
 
     prompt = f"""
-Generate a high-quality, visually appealing football/news image.
+You are an elite social media strategist for football content on X (formerly Twitter).
+Your task:
+Generate a **high-quality football image** that visually matches the following caption exactly:
+"{match_text}{team_text}"
 {time_note}
-Match: {match_text} {team_text}.
-Focus on dynamic action, excitement, and engagement for social media.
-Suitable for posting on X (Twitter).
+Instructions:
+- Include goal celebrations, fan reactions, and key match action
+- Make it vibrant, dynamic, and attention-grabbing
+- Align the visual with the caption content
+- Trending, recent match only if relevant
+- Suitable for posting on X (Twitter)
+Include visual excitement, goal celebrations, fan reactions, and trending action.
+Make it vibrant, dynamic, and X (Twitter) ready.
 """
 
     return call_ai_image(prompt, size=size)

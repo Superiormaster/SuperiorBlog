@@ -14,6 +14,7 @@
   class="text-sm rounded py-1 text-blue-500 hover:underline px-2 mx-2 mb-4 bg-yellow-500">
   Publishing Guidelines
 </button>
+<span class="text-red-500">Make sure you read it</span>
 
 <div id="guidelinesModal"
  class="fixed inset-0 bg-black/40 dark:bg-black/60  hidden items-center flex justify-center z-50">
@@ -60,9 +61,10 @@
           <label class="flex items-center gap-2 w-full px-3 py-2 mb-1 rounded bg-gray-100 text-gray-900
        dark:bg-gray-800 dark:text-white focus:outline-none appearance-none">
             <input type="checkbox"
-                   name="{{ form.labels.name }}"
-                   value="{{ value }}"
-                   class="accent-blue-500">
+             name="labels"
+             value="{{ value }}"
+             {% if form.labels.data and value|int in form.labels.data %}checked{% endif %}
+             class="accent-blue-500">
             {{ label }}
           </label>
         {% endfor %}
@@ -117,7 +119,7 @@
        dark:bg-white/10 dark:text-white dark:border-white/10 w-full mb-2 py-3 px-4 break-words whitespace-pre-wrap transition focus:outline-none focus:bg-blue-500/5 focus:border-blue-500">{{ post.content|safe if post else '' }}</div>
       <p id="word-count" class="text-sm text-gray-600 dark:text-gray-400 mt-1">Word count: 0</p>
     </div>
-    <input type="hidden" name="content" id="content-hidden" value="{{ post.content|safe if post else '' }}">
+    <input type="hidden" name="content" id="content-hidden">
     <input type="hidden" name="featured_image" id="featured_image" value="{{ post.featured_image or '' }}">
     {% for error in form.content.errors %}
       <p class="text-red-500 text-sm">{{ error }}</p>
@@ -135,18 +137,12 @@
         Save Draft
       </button>
     
+      <input type="hidden" name="scheduled_at" id="scheduled_at" value="{{ post.scheduled_at|default('') }}">
       <!--<button type="button"
               id="scheduleBtn"
               class="px-4 py-2 rounded text-gray-300 bg-blue-500">
         Schedule
       </button>-->
-    
-      <button type="submit"
-              id="publishBtn"
-              class="px-4 py-2 rounded text-gray-300 bg-blue-500">
-        Publish
-      </button>
-    
     </div>
 
     <div id="scheduleBox" class="hidden mt-4">

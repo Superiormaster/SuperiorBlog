@@ -9,7 +9,7 @@ from flask_login import (
 from sqlalchemy import or_
 from app.utils.db_helpers import safe_commit
 from app.utils.email import send_email
-from app.models import Post, AppSettings, CaptionHistory, User, ContactMessage, Repost, Subscriber, DigestDraft, BreakingNews, Tag, Comment, PageView
+from app.models import Post, AppSettings, CaptionHistory, User, ContactMessage, Repost, Subscriber, DigestDraft, Ad, BreakingNews, Tag, Comment, PageView
 from app.extensions import db, csrf
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.utils.admin_email import send_latest_breaking_news, send_weekly_digest_to_all, send_welcome_email, log_email
@@ -133,6 +133,8 @@ def approve_post(id):
     post.status = "published"
     post.is_published = True
     post.rejection_reason = None
+    post.published_at = datetime.utcnow()
+    post.is_locked = True
 
     post.author.rejected_posts = (post.author.rejected_posts or 0) + 1
 
@@ -593,6 +595,32 @@ def analytics():
         total_engagements_growth=growth_defaults,
         total_engagement_rate_growth=growth_defaults,
     )
+
+@admin_bp.route("/create", methods=["GET", "POST"])
+@login_required
+@csrf.exempt
+def create_media():
+    if request.method == "POST":
+
+        media = Ad(
+            name=request.form["name"],
+            location=request.form["location"],
+            type=request.form["type"],
+            title=request.form.get("title"),
+            image_url=request.form.get("image_url"),
+            target_url=request.form.get("target_url"),
+            html_code=request.form.get("html_code"),
+            priority=int(request.form.get("priority", 1)),
+            active=True
+        )
+
+        db.session.add(media)
+        safe_commit()
+
+        flash("Ad added!", "success")
+        return redirect(url_for("admin.create_media"))
+
+    return render_template("admin/create_media.html")
 
 @admin_bp.route("/tags")
 @login_required

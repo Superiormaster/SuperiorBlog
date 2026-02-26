@@ -6,6 +6,7 @@ from app.routes.admin import admin_bp
 from app.routes.caption import caption_bp
 from app.routes.billing import billing_bp
 from app.routes.comment import comments_bp
+from app.routes.ads import ads_bp
 from uuid import uuid4
 from app.extensions import db, login_manager, cache, csrf, mail
 from flask_login import current_user
@@ -14,6 +15,7 @@ from app.models import AppSettings, Category, Post, PageView, User
 from app.forms import UserLoginForm
 import os, pytz
 from app.utils.db_helpers import safe_commit
+from app.utils.AdService import get_active_ads
 from datetime import datetime, UTC, date
 
 migrate = Migrate()
@@ -25,6 +27,7 @@ def create_app():
   
     database_url = os.getenv("DATABASE_URL", "sqlite:///blog.db")
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
   
     app.config.update(
       CACHE_TYPE="SimpleCache",
@@ -43,6 +46,7 @@ def create_app():
     app.register_blueprint(caption_bp)
     app.register_blueprint(billing_bp)
     app.register_blueprint(comments_bp)
+    app.register_blueprint(ads_bp)
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -97,6 +101,10 @@ def create_app():
         if current_user.is_authenticated:
             current_user.last_seen = datetime.now(UTC)
             safe_commit()
+    
+    @app.context_processor
+    def inject_ads():
+        return dict(get_active_ads=get_active_ads)
     
     @app.before_request
     def track_page_view():

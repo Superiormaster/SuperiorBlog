@@ -1,5 +1,6 @@
-import json
+import json, re
 from datetime import datetime
+from datetime import time as dt_time
 from app.utils.openai_caption import call_ai
 from app.utils.openai_image import generate_match_image
 from app.utils.caption_logger import log_premium_caption_history
@@ -93,117 +94,69 @@ def detect_niche(text):
         return "sports"
     return "growth"
 
-def ai_suggest_best_time(text, user=None):
-    """
-    Use AI to suggest a best posting time based on content + niche.
-    The AI prompt instructs it to use research about *where X engagement is highest*.
-    """
-    niche = detect_niche(text)
-    prompt = f"""
-Based on social media engagement research for X (formerly Twitter):
-
-- For {niche} content specifically,
-- Considering global audience patterns for engagement,
-- Suggest a single best posting hour in HH:00 format.
-
-Content:
-\"\"\"{text}\"\"\"
-Only return the best hour.
-"""
-    ai_response = call_ai(prompt, max_tokens=10)
-    return ai_response.strip()
-
-def suggest_best_post_time(user=None, text=None):
-    # 1) Historical data
+def suggest_best_post_time(user=None, ai_best_hour=None):
+    # 1) Historical premium override
     if user and user.is_premium:
-        posts = XPost.query.filter_by(user_id=user.id).all()
-        hour_scores = {}
-        for post in posts:
-            metrics = XPostMetrics.query.filter_by(post_id=post.id).first()
-            if metrics:
-                hour = post.created_at.hour
-                hour_scores.setdefault(hour, []).append(metrics.engagement_score)
-        if hour_scores:
-            avg_scores = {h: sum(s)/len(s) for h, s in hour_scores.items()}
-            return f"{max(avg_scores, key=avg_scores.get):02d}:00"
+        # fetch posts with metrics in one query
+        posts_with_metrics = (
+            db.session.query(XPost, XPostMetrics)
+            .join(XPostMetrics, XPost.id == XPostMetrics.post_id)
+            .filter(XPost.user_id == user.id)
+            .all()
+        )
 
-    # 2) AI + research (best fallback)
-    if text:
-        best_time = ai_suggest_best_time(text, user)
-        if best_time:
-            return best_time
+        if len(posts_with_metrics) >= 5:
+            hour_scores = {}
+            for post, metrics in posts_with_metrics:
+                if metrics and metrics.engagement_score is not None:
+                    hour = post.created_at.hour
+                    hour_scores.setdefault(hour, []).append(metrics.engagement_score)
 
-    # 3) Hard fallback safe default
+            if hour_scores:
+                avg_scores = {h: sum(s)/len(s) for h, s in hour_scores.items()}
+                best_hour = max(avg_scores, key=avg_scores.get)
+                return f"{best_hour:02d}:00"
+
+    # 2) AI fallback
+    if ai_best_hour:
+        return ai_best_hour
+
+    # 3) Safe fallback
     return "12:00"
 
-def call_ai_thread(text, max_tweets=4, niche="growth", breaking=False):
-    """
-    Generate a structured thread:
-    - Hook first tweet
-    - Middle content
-    - Engagement ending
-    """
+def generate_captions(text, user, tone="neutral", mode="single", max_tweets=4, niche="growth", breaking=False, max_output_chars=280, avoid_clickbait=False, custom_prompt=None, generate_images=False):
 
-    niche_instruction = (
-        "Focus on tactical value and structured insight."
-        if niche == "growth"
-        else "Focus on emotion, match dynamics, and fan reactions."
-    )
-
-    breaking_instruction = (
-        "This is BREAKING NEWS. Prioritize clear and verified facts."
-        if breaking else ""
-    )
-
-    prompt = f"""
-You are an expert X thread strategist.
-
-Rules:
-- First tweet must have a hook (<12 words)
-- Each tweet <= 260 characters
-- No fluff
-- No hashtags unless natural
-
-{niche_instruction}
-{breaking_instruction}
-
-Topic:
-\"\"\"{text}\"\"\"
-
-Return a JSON array of tweet texts.
-"""
-
-    ai_response = call_ai(prompt, max_tokens=400)
-    try:
-        thread = json.loads(ai_response)
-        if isinstance(thread, list):
-            return thread[:max_tweets]
-    except:
-        lines = [l.strip() for l in ai_response.split("\n") if l.strip()]
-        return lines[:max_tweets]
-
-    return []
-
-def generate_caption(text, user, tone="neutral", mode="single", max_output_chars=280, avoid_clickbait=False):
     tone = (tone or "neutral").lower()
     mode = (mode or "single").lower()
     niche = detect_niche(text)
 
     SYSTEM_PROMPT = f"""
-You are an elite X strategist specializing in {niche} content.
-
-You engineer posts for:
-- Scroll stopping hooks
-- High retention
-- Psychological triggers
-- Niche authority
+You are an elite social media strategist for {niche} content on X (formerly Twitter). 
+Your task: Generate ONE high-performing, premium X post and threads for {niche}.
+Make it;
+- High engagement (likes, replies, retweets)
+- Scroll-stopping hooks
+- High retention in threads
+- Psychological triggers and niche authority
 
 Rules:
-- Max {max_output_chars} characters
-- First line under 12 words
-- No fluff
-- No cliched phrases
-- No AI language
+- Max {max_output_chars} characters per post
+- Include the exact rate (e.g., 26.5%) or specific policy action in the hook.
+- Make the first line factual and specific to show expertise. 
+- No fluff, no cliches, no AI language
+- No hashtags unless natural
+- Include emojis, excitement, and hooks
+- Only recent, trending content
+- Make it engaging, factual, and shareable
+- If mode is NOT thread → include one best caption ONLY
+- If mode is thread → caption must equal first tweet of thread
+- Thread first tweet must be a hook
+
+Instructions for best posting time:
+- Suggest the single hour of the day (HH:00) when engagement is expected to be highest
+- Include predicted **best posting hour** in HH:00
+- Consider global audience engagement patterns for {niche} content
+- Return exactly one hour in HH:00 format
 """
 
     if niche == "sports":
@@ -222,41 +175,85 @@ Replies should:
 - Encourage discussion
 Avoid generic praise.
 """
+    niche_instruction = (
+        "Focus on tactical value and structured insight."
+        if niche == "growth"
+        else "Focus on emotion, match dynamics, and fan reactions."
+    )
+
+    breaking_instruction = (
+        "This is BREAKING NEWS. Prioritize clear and verified facts."
+        if breaking else ""
+    )
+
     MODE_INSTRUCTIONS = {
         "single": "Write a single high-impact post.",
         "reply": "Write a reply-optimized post designed to spark responses.",
-        "thread": "Write the first tweet of a high-retention thread.",
+        "thread": f"Write a complete {max_tweets}-tweet high-retention thread.",
         "engagement": "Write a curiosity-driven post to maximize replies."
     }
 
+    mode_instruction = MODE_INSTRUCTIONS.get(mode, MODE_INSTRUCTIONS["single"])
+
+    thread_rules = f"""
+Thread Rules:
+- If mode is NOT "thread", return "thread": []
+- If mode is "thread":
+  - Return exactly {max_tweets} tweets
+  - Tweet 1 = hook (<12 words)
+  - Tweet 2-3 = insight/value/emotion
+  - Tweet {max_tweets} = strong close or CTA
+"""
+
+    prompt_content = custom_prompt or text
+    thread_rules_text = thread_rules if mode=="thread" else ""
     prompt = f"""
 {SYSTEM_PROMPT}
 
 Tone: {tone}
-Mode: {MODE_INSTRUCTIONS.get(mode, MODE_INSTRUCTIONS['single'])}
+Mode: {mode_instruction}
 Avoid clickbait: {avoid_clickbait}
+{niche_instruction}
+{breaking_instruction}
+{thread_rules_text}
 
 Return JSON:
 
 {{
   "caption": "...",
-  "replies": ["...", "...", "..."]
+  "replies": ["...", "...", "..."],
+  "thread": [],
+  "best_hour": "HH:00"
 }}
 
 Content:
-\"\"\"{text}\"\"\"
+\"\"\"{prompt_content}\"\"\"
 """
 
-    max_tokens = 220  # enough for caption + replies
-    ai_response = call_ai(prompt, max_tokens=max_tokens)
+    max_tokens = 250 if mode != "thread" else 500
+    ai_response = call_ai(prompt, max_tokens=max_tokens) or ""
 
     try:
         data = json.loads(ai_response)
-        caption = data.get("caption", "")[:max_output_chars]
-        replies = data.get("replies", [])
     except:
-        caption = ai_response[:max_output_chars]
-        replies = []
+        data = {}
+
+    caption = (data.get("caption") or "")[:max_output_chars]
+    replies = data.get("replies", [])
+    thread = data.get("thread", [])
+
+    if mode == "thread":
+      thread = thread[:max_tweets]
+      while len(thread) < max_tweets:
+        thread.append("Continue...")
+    else:
+      thread = []
+
+    ai_best_hour = data.get("best_hour")
+    if ai_best_hour and re.match(r"^\d{2}:00$", ai_best_hour):
+        validated_hour = ai_best_hour
+    else:
+        validated_hour = None
 
     analysis = {
         "hook_score": score_hook(caption),
@@ -266,19 +263,24 @@ Content:
         "psychological_triggers": detect_psychological_triggers(caption)
     }
 
-    image_url = generate_match_image(match_text=text) if generate_images else None
+    image_url = None
+    if generate_images and niche == "sports":
+        image_url = generate_match_image(match_text=caption)
 
-    best_post_time = suggest_best_post_time(user=user, text=text)
+    best_post_time = suggest_best_post_time(
+        user=user,
+        ai_best_hour=validated_hour
+    )
 
     return [{
         "style": "engineered",
-        "text": post_text,
+        "text": caption,
         "analysis": analysis,
+        "suggested_replies": replies if user.is_premium else [],
+        "thread": thread,
         "best_post_time": best_post_time,
         "image_url": image_url
     }]
-
-    return caption, replies, analysis
 
 def generate_x_post_for_user(
     text,
@@ -289,49 +291,40 @@ def generate_x_post_for_user(
     mode="single",
     avoid_clickbait=False,
     custom_prompt=None,
-    max_output_chars=280
+    max_output_chars=280,
+    generate_images=True
 ):
     tone = (tone or "neutral").lower()
     niche = detect_niche(text)
-    generate_images = niche == "sports"
 
-    thread_texts = []
+    captions = generate_captions(
+      text=text,
+      user=user,
+      tone=tone,
+      mode=mode,
+      avoid_clickbait=avoid_clickbait,
+      generate_images=generate_images,
+      max_output_chars=max_output_chars,
+      custom_prompt=custom_prompt
+    )
+
+    if niche != "sports":
+        for cap in captions:
+            cap["image_url"] = None
+
+    thread_texts = captions[0].get("thread", [])
     thread_images = []
-
-    if mode in ["thread", "reply", "engagement"]:
-        thread_texts = call_ai_thread(text, max_tweets=4, niche=niche, breaking=(tone == "breaking"))
-        if generate_images:
-            for t in thread_texts:
-                thread_images.append(generate_match_image(match_text=t, teams=teams, event_time=event_time))
-
-    if custom_prompt:
-        wrapped = f"Generate ONE X post (≤280 chars) based on:\n{custom_prompt}"
-        max_tokens = max_output_chars // 4
-        post_text = call_ai(wrapped, max_tokens=max_tokens)
-        post_text = post_text[:max_output_chars]
-        captions = [{
-            "style": "custom",
-            "text": post_text,
-            "suggested_replies": generate_replies(post_text, niche=niche) if user.is_premium else [],
-            "best_post_time": suggest_best_post_time(user=user, text=custom_prompt),
-            "image_url": generate_match_image(match_text=post_text) if generate_images else None
-        }]
-    else:
-        captions = generate_captions(
-            text=text,
-            user=user,
-            tone=tone,
-            mode=mode,
-            avoid_clickbait=avoid_clickbait,
-            generate_images=generate_images,
-            max_output_chars=max_output_chars
-        )
+    if generate_images:
+        for t in thread_texts:
+            thread_images.append(
+                generate_match_image(match_text=t, teams=teams, event_time=event_time)
+            )
 
     if user.is_premium:
-        replies_flat = []
-        for c in captions:
-            replies_flat += generate_replies(c["text"], niche=niche)
-
+        replies_flat = [
+            r for c in captions
+            for r in c.get("suggested_replies", [])
+        ]
         log_premium_caption_history(
             user=user,
             input_text=text,
@@ -344,16 +337,38 @@ def generate_x_post_for_user(
         )
 
     for cap in captions:
+        best_time_str = cap.get("best_post_time", "12:00")
+        try:
+            hour = int(best_time_str.split(":")[0])
+            best_time_obj = dt_time(hour=hour)
+        except:
+            best_time_obj = None
+
+        analysis = cap.get("analysis", {}) or {}
+
+        confidence_score = (
+            analysis.get("hook_score")
+            or analysis.get("retention_score")
+            or 0
+        )
         new_post = XPost(
-            user_id=user.id,
-            text=cap["text"],
-            style=cap["style"],
-            engagement_score=cap["analysis"]["hook_score"],
-            created_at=datetime.now()
+          user_id=user.id,
+          text=cap["text"],
+          style=cap["style"],
+          confidence_score=confidence_score,
+          predicted_engagement={
+              "retention": analysis.get("retention_score", 0),
+              "monetization": analysis.get("monetization_score", 0)
+          },
+          suggested_replies=cap.get("suggested_replies", []),
+          best_post_time=best_time_obj,
+          created_at=datetime.utcnow()
         )
         db.session.add(new_post)
         db.session.flush()
-        db.session.add(XPostMetrics(post_id=new_post.id, engagement_score=cap["analysis"]["hook_score"]))
+        db.session.add(XPostMetrics(post_id=new_post.id, engagement_score=None))
+
+    final_best_time = captions[0].get("best_post_time")
 
     safe_commit()
 
@@ -361,8 +376,11 @@ def generate_x_post_for_user(
         "type": "premium" if user.is_premium else "free",
         "captions": captions,
         "thread": [{"text": t, "image_url": i} for t, i in zip(thread_texts, thread_images)],
-        "replies": [r for cap in captions for r in generate_replies(cap["text"], niche=niche)],
-        "best_post_time": suggest_best_post_time(user=user, text=text),
-        "engagement_score": max(cap["analysis"]["hook_score"] for cap in captions),
+        "replies": [
+            r for cap in captions
+            for r in cap.get("suggested_replies", [])
+        ],
+        "best_post_time": final_best_time,
+        "engagement_score": None,
         "images": [cap["image_url"] for cap in captions]
     }

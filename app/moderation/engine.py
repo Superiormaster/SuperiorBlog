@@ -10,30 +10,34 @@ from .ai_moderation import ai_signal
 
 MIN_GRAMMAR_SCORE = 30
 def auto_moderate(post, user):
-    text = BeautifulSoup(post.content, "html.parser").get_text(" ")
+    html_soup = BeautifulSoup(post.content, "html.parser")
+    text = html_soup.get_text(" ")
     text = re.sub(r"\s+", " ", text).strip()
     word_count = len(text.split())
     grammar = grammar_score(text)
-    ai = ai_signal(text)
+    ai = ai_signal(text) or {}
+    spam = ai.get("spam", False)
+    toxicity = ai.get("toxicity", 0)
+    quality = ai.get("quality", 50)
 
     # ❌ Spam 🔴 HARD REJECT (ONLY THESE)
-    if is_spam(text) or ai["spam"]:
+    if is_spam(text) or spam:
         return {"status": "rejected", "reason": "Spam content detected"}
-    if ai["toxicity"] > 0.8:
+    if toxicity > 0.8:
         return {"status": "rejected", "reason": "Harmful content"}
 
     review_reasons = []
 
     # 🟡 REVIEW QUEUE (MOST CONTENT)
-    rules = CATEGORY_RULES.get(post.category.name.lower(), {"min_words": 150})
+    category_name = post.category.name.lower() if post.category else "uncategorized"
+    rules = CATEGORY_RULES.get(category_name, {"min_words": 150})
     if word_count < rules["min_words"]:
         review_reasons.append(f"Content shorter than {rules['min_words']}.")
 
     MIN_PARAGRAPHS = 2
-    text = BeautifulSoup(post.content, "html.parser")
 
     # Split by double line breaks
-    blocks = text.find_all(["p", "div", "section", "article"])
+    blocks = html_soup.find_all(["p", "div", "section", "article"])
 
     # Only count blocks that contain real text
     valid_blocks = [
@@ -52,9 +56,9 @@ def auto_moderate(post, user):
 
     # ❌ Duplicate
     duplicate_check = check_post_duplicates(
-        user_id=current_user.id,
+        user_id=user.id,
         title=post.title,
-        content=text,  # or post.content if that's what you want
+        content=text,
         category=post.category.name if post.category else None,
         post_id=post.id
     )
@@ -68,7 +72,7 @@ def auto_moderate(post, user):
     if duplicate_check["high_similarity"] or duplicate_check["ai_duplicate"]:
         review_reasons.append("Content is very similar to an existing post by another user")
 
-    if ai["quality"] < 50:
+    if quality < 50:
         review_reasons.append("Low editorial quality")
     
     if review_reasons:

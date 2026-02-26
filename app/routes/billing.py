@@ -5,7 +5,7 @@ import hashlib
 
 from flask import (
     Blueprint, request, redirect,
-    url_for, flash, current_app
+    url_for, flash, current_app, render_template
 )
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
@@ -26,7 +26,7 @@ PLANS = {
         "duration_days": 30
     },
     "yearly": {
-        "amount": 3000000,  # ₦30,000
+        "amount": 2000000,  # ₦20,000
         "duration_days": 365
     }
 }
@@ -58,8 +58,7 @@ def init_payment(plan):
             "email": current_user.email,
             "amount": amount,
             "reference": reference,
-            "callback_url": url_for("billings.payment_success", _external=True),
-             "plan": PAYSTACK_PLAN_CODE
+            "callback_url": url_for("billings.payment_success", _external=True)
         }
 
         response = requests.post(

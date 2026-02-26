@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="min-h-screen bg-gray-100 dark:bg-gray-900 py-10 px-4">
+    <div class="max-w-3xl mx-auto">
+
+        <!-- Card -->
+        <div class="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8">
+
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">
+                Create Media Block
+            </h2>
+
+            <form method="POST" class="space-y-6">
+
+                <!-- Internal Name -->
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Internal Name
+                    </label>
+                    <input name="name" required
+                        class="w-full rounded-xl border border-gray-300 dark:border-gray-600
+                               bg-white dark:bg-gray-700
+                               text-gray-900 dark:text-white
+                               px-4 py-2 focus:ring-2 focus:ring-blue-500
+                               focus:outline-none transition">
+                </div>
+
+                <!-- Location -->
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Location
+                    </label>
+                    <select name="location"
+                        class="w-full rounded-xl border border-gray-300 dark:border-gray-600
+                               bg-white dark:bg-gray-700
+                               text-gray-900 dark:text-white
+                               px-4 py-2 focus:ring-2 focus:ring-blue-500
+                               focus:outline-none transition">
+
+                        <option value="home_mid">Homepage Middle</option>
+                        <option value="post_top">Post Top</option>
+                        <option value="post_bottom">Post Bottom</option>
+                        <option value="sidebar">Sidebar</option>
+
+                    </select>
+                </div>
+
+                <!-- Type -->
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Media Type
+                    </label>
+                    <select name="type"
+                        class="w-full rounded-xl border border-gray-300 dark:border-gray-600
+                               bg-white dark:bg-gray-700
+                               text-gray-900 dark:text-white
+                               px-4 py-2 focus:ring-2 focus:ring-blue-500
+                               focus:outline-none transition">
+
+                        <option value="custom">Custom Banner</option>
+                        <option value="adsense">AdSense</option>
+                        <option value="affiliate">Affiliate</option>
+
+                    </select>
+                </div>
+
+                <!-- Title -->
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Title
+                    </label>
+                    <input name="title"
+                        class="w-full rounded-xl border border-gray-300 dark:border-gray-600
+                               bg-white dark:bg-gray-700
+                               text-gray-900 dark:text-white
+                               px-4 py-2 focus:ring-2 focus:ring-blue-500
+                               focus:outline-none transition">
+                </div>
+
+                <!-- Image URL -->
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Image URL
+                    </label>
+                    <input name="image_url"
+                        class="w-full rounded-xl border border-gray-300 dark:border-gray-600
+                               bg-white dark:bg-gray-700
+                               text-gray-900 dark:text-white
+                               px-4 py-2 focus:ring-2 focus:ring-blue-500
+                               focus:outline-none transition">
+                </div>
+
+                <!-- Target URL -->
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Target URL
+                    </label>
+                    <input name="target_url"
+                        class="w-full rounded-xl border border-gray-300 dark:border-gray-600
+                               bg-white dark:bg-gray-700
+                               text-gray-900 dark:text-white
+                               px-4 py-2 focus:ring-2 focus:ring-blue-500
+                               focus:outline-none transition">
+                </div>
+
+                <!-- HTML Code -->
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        HTML / AdSense Code
+                    </label>
+                    <textarea name="html_code" rows="5"
+                        class="w-full rounded-xl border border-gray-300 dark:border-gray-600
+                               bg-white dark:bg-gray-700
+                               text-gray-900 dark:text-white
+                               px-4 py-2 focus:ring-2 focus:ring-blue-500
+                               focus:outline-none transition resize-none">
+                    </textarea>
+                </div>
+
+                <!-- Priority -->
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Priority
+                    </label>
+                    <input name="priority" type="number" value="1"
+                        class="w-full rounded-xl border border-gray-300 dark:border-gray-600
+                               bg-white dark:bg-gray-700
+                               text-gray-900 dark:text-white
+                               px-4 py-2 focus:ring-2 focus:ring-blue-500
+                               focus:outline-none transition">
+                </div>
+
+                <!-- Submit Button -->
+                <div>
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700
+                               text-white font-semibold
+                               py-3 rounded-xl shadow-md
+                               transition duration-200">
+                        Create Media Block
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,4 +1,4 @@
-{% extends 'user/base.html' %} 
+{% extends 'user/base.html' %}
 
 {% block title %}
 Caption History – SuperiorNews
@@ -9,246 +9,170 @@ Caption History – SuperiorNews
 <div class="max-w-5xl mx-auto mt-14 bg-white/5 backdrop-blur rounded-2xl shadow-lg p-8">
 
   <div class="mb-8 text-center">
-    <h1 class="text-3xl font-bold tracking-tight">Your Generated Captions History</h1>
-    <p class="text-gray-400 mt-2">Click on a history entry to view all captions and confidence scores.</p>
-  </div>
-  
-<button id="openHistory"
-  class="fixed top-6 right-6 bg-gray-900 text-white px-4 py-2 rounded-xl shadow-lg hover:bg-gray-800 z-50">
-  🕘 History
-</button>
-<div id="historyOverlay"
-  class="fixed inset-0 bg-black/60 hidden z-40"></div>
-
-  {% if history %}
-    <div class="space-y-4">
-      {% for item in history %}
-        <div class="p-4 rounded-xl bg-gray-900/50 border border-gray-700 shadow cursor-pointer history-item" data-item-id="{{ loop.index }}">
-          <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-400">{{ item.created_at.strftime('%b %d, %Y %H:%M') }}</span>
-            <span class="text-lg font-semibold uppercase">{{ item.platform.upper() }}</span>
-          </div>
-          <div class="mb-3 p-3 rounded-lg bg-gray-800/70 border border-gray-700">
-            <p class="text-white clamp-3 text-md">{{ item.caption }}</p>
-          </div>
-          <p class="text-center bg-gray-800 text-gray-300 rounded border border-gray-600 text-sm">Click to view captions ▼</p>
-
-          <!-- Hidden caption list -->
-          <div class="mt-3 space-y-2 hidden captions-container" id="captions-{{ loop.index }}">
-          {% if item.captions %}
-            {% for cap in item.captions %}
-              <div class="p-3 rounded-lg bg-gray-800/70 border border-gray-700">
-                <div class="flex justify-between items-center mb-1">
-                  <span class="font-semibold text-white">{{ cap.style|capitalize }}</span>
-                  <span class="text-sm text-green-400">{{ cap.confidence }}%</span>
-                </div>
-                <p class="text-gray-200">{{ cap.caption }}</p>
-                {% if cap.reason %}
-                  <p class="text-xs text-gray-400 mt-1"><em>Reason: {{ cap.reason }}</em></p>
-                {% endif %}
-                {% if item.tone %}
-                <p class="text-gray-400 italic text-sm">Tone: {{ item.tone }}</p>
-                {% endif %}
-              </div>
-            {% endfor %}
-          {% else %}
-            <p class="text-gray-200">No captions saved for this entry.</p>
-          {% endif %}
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p class="text-center text-gray-400 mt-6">You haven’t generated any captions yet.</p>
-  {% endif %}
-  <button onclick="loadCaptionHistory({{ h.id }})">
-    View
-</button>
-
-  <!-- HISTORY DRAWER -->
-<div id="historyDrawer"
-  class="fixed top-0 right-0 h-full w-full md:w-96 bg-gray-950 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
-
-  <div class="flex justify-between items-center p-4 border-b border-gray-700">
-    <h2 class="text-white text-xl font-bold">Caption History</h2>
-    <button id="closeHistory" class="text-gray-400 hover:text-white text-xl">✕</button>
+    <h1 class="text-3xl font-bold tracking-tight text-white">
+      Your Generated Captions History
+    </h1>
+    <p class="text-gray-400 mt-2">
+      Scroll to load more. Click “View” to see full captions.
+    </p>
   </div>
 
-  <div id="historyContent" class="p-4 space-y-3">
-    <div class="text-gray-400 text-sm">Loading history...</div>
+  <!-- HISTORY LIST -->
+  <div id="historyList" class="space-y-4"></div>
+
+  <div id="loadingIndicator" class="text-center text-gray-400 mt-6 hidden">
+    Loading more...
+  </div>
+
+  <div id="noMore" class="text-center text-gray-500 mt-6 hidden">
+    No history yet.
   </div>
 
 </div>
 
+
+<!-- MODAL -->
+<div id="historyModal"
+     class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+
+  <div class="bg-gray-900 w-full max-w-2xl rounded-2xl p-6 relative shadow-2xl max-h-[80vh] overflow-y-auto">
+
+    <button onclick="closeModal()"
+            class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">
+      ✕
+    </button>
+
+    <h2 class="text-xl font-bold text-white mb-4">
+      Caption Details
+    </h2>
+
+    <div id="modalContent" class="space-y-4"></div>
+
+  </div>
 </div>
 
 
 <script>
-const drawer = document.getElementById("historyDrawer");
-const overlay = document.getElementById("historyOverlay");
-const openBtn = document.getElementById("openHistory");
-const closeBtn = document.getElementById("closeHistory");
-const historyContent = document.getElementById("historyContent");
-const results = document.getElementById("results");
-const textarea = document.getElementById("text");
+let currentPage = 1;
+let loading = false;
+let hasNext = true;
 
-openBtn.addEventListener("click", () => {
-  drawer.classList.remove("translate-x-full");
-  overlay.classList.remove("hidden");
-  loadHistoryList();
-});
+const historyList = document.getElementById("historyList");
+const loadingIndicator = document.getElementById("loadingIndicator");
+const noMore = document.getElementById("noMore");
+const modal = document.getElementById("historyModal");
+const modalContent = document.getElementById("modalContent");
 
-closeBtn.addEventListener("click", closeDrawer);
-overlay.addEventListener("click", closeDrawer);
 
-function closeDrawer() {
-  drawer.classList.add("translate-x-full");
-  overlay.classList.add("hidden");
-}
+// LOAD PAGE
+function loadHistory() {
 
-function loadHistoryList() {
-  historyContent.innerHTML = "<div class='text-gray-400'>Loading...</div>";
+  if (loading || !hasNext) return;
 
-  fetch("/caption/history/list")
+  loading = true;
+  loadingIndicator.classList.remove("hidden");
+
+  fetch(`/api/captions/history?page=${currentPage}`)
     .then(res => res.json())
     .then(data => {
-      historyContent.innerHTML = "";
 
-      if (data.length === 0) {
-        historyContent.innerHTML = "<p class='text-gray-400'>No history yet.</p>";
-        return;
-      }
+      data.items.forEach(item => {
 
-      data.forEach(item => {
-        historyContent.innerHTML += `
-          <div class="p-3 bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-700 transition"
-               onclick="loadHistoryItem(${item.id})">
-            <p class="text-white text-sm font-semibold">${item.platform.toUpperCase()}</p>
-            <p class="text-gray-400 text-xs">${item.created_at}</p>
-            <p class="text-gray-300 text-sm mt-1 line-clamp-2">${item.preview}</p>
+        historyList.innerHTML += `
+          <div class="p-4 rounded-xl bg-gray-900/50 border border-gray-700 shadow">
+
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-sm text-gray-400">
+                ${item.created_at}
+              </span>
+              <span class="text-lg font-semibold uppercase text-white">
+                ${item.platform}
+              </span>
+            </div>
+
+            <p class="text-gray-300 mb-3">
+              ${item.preview}...
+            </p>
+
+            <button onclick="loadDetails(${item.id})"
+              class="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded-lg font-semibold text-sm transition">
+              View
+            </button>
+
           </div>
         `;
       });
+
+      hasNext = data.has_next;
+      currentPage += 1;
+
+      if (!hasNext) {
+        noMore.classList.remove("hidden");
+      }
+
+      loadingIndicator.classList.add("hidden");
+      loading = false;
+
     });
 }
 
-function loadHistoryItem(id) {
 
-  results.innerHTML = "<div class='text-gray-400'>Loading captions...</div>";
+// LOAD DETAILS
+function loadDetails(id) {
 
-  fetch(`/caption/history/${id}`)
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  modalContent.innerHTML = "<div class='text-gray-400'>Loading...</div>";
+
+  fetch(`/captions/history/item/${id}`)
     .then(res => res.json())
     .then(data => {
 
-      textarea.value = data.original_text;
+      modalContent.innerHTML = `
+        <div class="mb-4 p-3 bg-gray-800 rounded-lg text-gray-300">
+          <strong>Original:</strong><br>
+          ${data.original_text}
+        </div>
+      `;
 
-      results.innerHTML = "";
+      data.captions.forEach((c, index) => {
 
-      data.captions.forEach((post, index) => {
-
-        const bestBadge = index === 0
-          ? `<div class="border-2 border-yellow-400 bg-yellow-50 p-2 rounded mb-2 text-xs font-bold text-yellow-600">
-               BEST CAPTION
-             </div>`
+        const badge = index === 0
+          ? `<div class="text-xs font-bold text-yellow-400 mb-1">BEST CAPTION</div>`
           : "";
 
-        results.innerHTML += `
-          <div class="bg-gray-800 p-4 rounded-xl shadow-md">
-            ${bestBadge}
-            <p class="text-white text-lg">${post.text}</p>
+        modalContent.innerHTML += `
+          <div class="p-4 bg-gray-800 rounded-xl border border-gray-700">
+            ${badge}
+            <p class="text-white text-lg mb-2">${c.text}</p>
             <p class="text-gray-400 text-sm">
-              Style: ${post.style}, Confidence: ${post.confidence_score}%
-            </p>
-            <p class="text-gray-400 text-sm">
-              Best Posting Time: ${post.best_post_time || "Not specified"}
+              Style: ${c.style} | Confidence: ${c.confidence_score}%
             </p>
           </div>
         `;
       });
-
-      if (data.thread) {
-        results.innerHTML += `
-          <div class="mt-4 p-4 border-l-4 border-blue-500 bg-gray-800 rounded-xl">
-            <h3 class="text-lg font-bold mb-2 text-white">Generated Thread</h3>
-            ${data.thread.tweets.map(t => `<p class="text-white mb-1">• ${t}</p>`).join("")}
-          </div>
-        `;
-      }
-
-      closeDrawer();
-      results.scrollIntoView({ behavior: "smooth" });
 
     });
 }
-</script>
 
-<script>
-  // Toggle captions visibility on click
-  document.querySelectorAll('.history-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const id = item.dataset.itemId;
-      const captions = document.getElementById(`captions-${id}`);
-      captions.classList.toggle('hidden');
-    });
-  });
-  
-  function loadCaptionHistory(id) {
-    fetch(`/caption/history/${id}`)
-      .then(res => res.json())
-      .then(data => {
-        const editor = document.getElementById("editor");
-        editor.innerHTML = "";
-  
-        data.captions.forEach(c => {
-          editor.innerHTML += `
-            <div class="mb-3 p-3 border rounded">
-              <strong>${c.style}</strong><br>
-              ${c.caption}
-            </div>
-          `;
-        });
-      });
+
+function closeModal() {
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+
+// INFINITE SCROLL
+window.addEventListener("scroll", () => {
+  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
+    loadHistory();
   }
-</script>
+});
 
-<!-- JavaScript for interactive selection -->
-<script>
-  const plans = document.querySelectorAll(".plan-card");
 
-  plans.forEach(plan => {
-    plan.addEventListener("click", () => {
-      plans.forEach(p => {
-        // reset all cards
-        p.classList.remove("border-yellow-500");
-        p.querySelector(".badge").classList.add("hidden");
+// INITIAL LOAD
+loadHistory();
 
-        // reset buttons
-        const btn = p.querySelector(".plan-btn");
-        if (p.dataset.plan === "basic") {
-          btn.classList.remove("bg-yellow-500", "text-black", "font-semibold");
-          btn.classList.add("bg-gray-800", "text-white");
-        } else if (p.dataset.plan === "premium") {
-          btn.classList.remove("bg-yellow-500", "text-black", "font-semibold");
-          btn.classList.add("bg-gray-800", "text-white");
-        }
-      });
-
-      // apply selection to clicked plan
-      plan.classList.add("border-yellow-500");
-      const badge = plan.querySelector(".badge");
-      badge.classList.remove("hidden");
-
-      // update button
-      const btn = plan.querySelector(".plan-btn");
-      btn.classList.remove("bg-gray-800", "text-white");
-      btn.classList.add("bg-yellow-500", "text-black", "font-semibold");
-
-      // optional: change badge text for Basic
-      if(plan.dataset.plan === "basic") {
-        badge.textContent = "Basic Plan";
-      }
-    });
-  });
 </script>
 
 {% endblock %}

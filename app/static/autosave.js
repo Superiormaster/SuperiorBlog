@@ -1,9 +1,23 @@
 // autosave.js
 
+import { uploadImagesBeforeSave } from "./media.js";
+
 // -----------------------------
 // Auto-save draft every 10s
 // -----------------------------
 export function initAutoSave(editor, form) {
+  const draftBtn = document.getElementById("draftBtn");
+  let postIdInput = form.querySelector('[name="post_id"]');
+
+  if (!postIdInput) {
+    // Dynamically create hidden post_id input if missing
+    const hidden = document.createElement("input");
+    hidden.type = "hidden";
+    hidden.name = "post_id";
+    form.appendChild(hidden);
+    postIdInput = hidden;
+  }
+
   window.isUploadingImages = false;
 
   let timer;
@@ -11,20 +25,47 @@ export function initAutoSave(editor, form) {
   editor.addEventListener("input", () => {
     clearTimeout(timer);
     timer = setTimeout(async () => {
+      postIdInput = form.querySelector('[name="post_id"]');
+      const content = editor.innerHTML.trim();
+      if (!content) return;
+
       if (window.isUploadingImages) {
         console.log("Autosave skipped: images uploading");
         return;
       }
 
-      const data = new FormData(form);
-      data.set("content", editor.innerHTML);
-      data.set("status", "draft");
-
       try {
-        const res = await fetch("/post/draft", { method: "POST", body: data })
-        // Check HTTP status first
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        // Try to parse JSON safely
+        // -----------------------------
+        // Upload images first
+        // -----------------------------
+        await uploadImagesBeforeSave(editor, form.querySelector('[name="featured_image"]'));
+
+        // -----------------------------
+        // Prepare form data
+        // -----------------------------
+        const updatedContent = editor.innerHTML;
+        postIdInput = form.querySelector('[name="post_id"]');
+
+        const data = new FormData(form);
+        data.set("content", updatedContent);
+        data.set("title", form.title?.value || "Untitled Draft");
+        data.set("status", "draft");
+        data.set("post_id", postIdInput.value || "");
+
+        // -----------------------------
+        // Send to backend with credentials
+        // -----------------------------
+        const res = await fetch("/post/draft", {
+          method: "POST",
+          body: data,
+          credentials: "same-origin", // ✅ ensure cookies/session are sent
+        });
+
+        if (!res.ok) {
+          console.error("Server returned error", res.status, await res.text());
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
         let json;
         try {
           json = await res.json();
@@ -33,14 +74,12 @@ export function initAutoSave(editor, form) {
           json = {};
         }
 
+        // Update post_id if backend returned one
         if (json.post_id) {
-          const postIdInput = form.querySelector('[name="post_id"]');
-          if (postIdInput) {
-            postIdInput.value = json.post_id;
-          }
+          postIdInput.value = json.post_id;
         }
 
-        // Show a small confirmation for the user
+        // UI feedback
         if (json.status === "saved" || json.status === "updated") {
           if (draftBtn) draftBtn.textContent = "Draft Saved ✅";
           showDraftSavedMessage(`Draft ${json.status} successfully`);
@@ -58,14 +97,16 @@ export function initAutoSave(editor, form) {
           setTimeout(() => {
             draftBtn.textContent = "Draft";
             draftBtn.disabled = false;
-          }, 1500); // revert after 1.5s
+          }, 1500);
         }
       }
-    }, 10000);
+    }, 10000); // debounce 10s
   });
 }
 
+// -----------------------------
 // Optional: small UI message for auto-draft status
+// -----------------------------
 function showDraftSavedMessage(msg, isError = false) {
   const flash = document.getElementById("flash-messages");
   if (!flash) return;
@@ -78,6 +119,5 @@ function showDraftSavedMessage(msg, isError = false) {
 
   flash.appendChild(div);
 
-  // Remove after 3 seconds
   setTimeout(() => div.remove(), 3000);
 }

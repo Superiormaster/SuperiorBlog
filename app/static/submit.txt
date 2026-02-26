@@ -1,9 +1,10 @@
-// static/js/editor/submit.js
+// static/submit.js
 import { uploadImagesBeforeSave } from "./media.js";
 import { updateHiddenInput } from "./helper.js";
+import { setSafeRedirect } from "./utils.js";
 
 /**
- * Draft-only form submission
+ * Initialize form submission for drafts only
  * @param {HTMLElement} editor
  * @param {HTMLFormElement} form
  */
@@ -12,9 +13,16 @@ export function initSubmit(editor, form) {
 
   const contentInput = document.getElementById("content-hidden");
   const draftBtn = document.getElementById("draftBtn");
+  const contentInput = document.getElementById("content-hidden");
+  const statusInput = document.getElementById("post-status");
+  const scheduledInput = document.getElementById("scheduled_at");
 
-  if (!contentInput || !draftBtn) return;
+  const draftBtn = document.getElementById("draftBtn");
+  const confirmScheduleBtn = document.getElementById("confirmScheduleBtn");
 
+  if (!contentInput || !statusInput) return;
+  
+  const minWords = window.rules?.min_words || 150;
   const postIdInput = form.querySelector('[name="post_id"]') || (() => {
     const hidden = document.createElement("input");
     hidden.type = "hidden";
@@ -24,14 +32,14 @@ export function initSubmit(editor, form) {
   })();
 
   function resetButtons() {
-    draftBtn.textContent = "Save Draft";
-    draftBtn.disabled = false;
+    draftBtn && (draftBtn.textContent = "Save Draft", draftBtn.disabled = false);
+    confirmScheduleBtn && (confirmScheduleBtn.textContent = "Confirm Schedule", confirmScheduleBtn.disabled = false);
   }
 
   // -----------------------------
   // Draft button click
   // -----------------------------
-  draftBtn.addEventListener("click", async (e) => {
+  draftBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
     const content = editor.innerHTML.trim();
     if (!content) return;
@@ -56,8 +64,10 @@ export function initSubmit(editor, form) {
 
       draftBtn.textContent = "Draft Saved ✅";
 
-      // Optional: redirect to dashboard
-      setTimeout(() => window.location.href = "/dashboard", 1000);
+      // Optional redirect after save
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 1000);
 
     } catch (err) {
       console.error("Draft save failed:", err);
@@ -66,20 +76,54 @@ export function initSubmit(editor, form) {
       setTimeout(resetButtons, 1500);
     }
   });
+  
+  confirmScheduleBtn?.addEventListener("click", () => {
+    if (!scheduledInput?.value) return showError("Please select a schedule date");
+
+    const scheduledDate = new Date(scheduledInput.value);
+    const now = new Date();
+    if (scheduledDate <= now) return showError("The selected date must be in the future");
+
+    statusInput.value = "scheduled";
+    form.dataset.action = "schedule";
+    form.requestSubmit();
+  });
 
   // -----------------------------
-  // Form submit fallback
+  // Form submit handler (fallback)
   // -----------------------------
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (form.dataset.submitting === "true") return;
     form.dataset.submitting = "true";
 
+    const action = form.dataset.action;
+
     try {
+      setLoading(true);
+
+      if (action === "draft" && draftBtn) {
+        draftBtn.textContent = "Saving…";
+        draftBtn.disabled = true;
+      }
+      
+      if (action === "schedule" && confirmScheduleBtn) {
+        confirmScheduleBtn.textContent = "Confirming…";
+        confirmScheduleBtn.disabled = true;
+      }
+
+      if (!navigator.onLine) {
+        throw new Error("Network unavailable");
+      }
+
       await uploadImagesBeforeSave(editor);
 
       const content = editor.innerHTML.trim();
       if (!content) throw new Error("Post content cannot be empty");
+      
+      if (form.dataset.action === "scheduled" && !scheduledInput?.value) {
+        throw new Error("Schedule date missing");
+      }
 
       contentInput.value = content;
       updateHiddenInput(document.getElementById("tags-hidden"), window.selectedTags || []);
@@ -87,12 +131,11 @@ export function initSubmit(editor, form) {
       form.submit();
     } catch (err) {
       console.error(err);
-      draftBtn.textContent = "Draft ❌";
-      draftBtn.disabled = false;
+      if (draftBtn) { draftBtn.textContent = "Draft ❌"; draftBtn.disabled = false; }
       alert(err.message || "Submission failed");
     } finally {
+      delete form.dataset.action;
       form.dataset.submitting = "false";
       resetButtons();
     }
   });
-}

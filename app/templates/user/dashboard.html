@@ -11,7 +11,6 @@
       <a href="{{ url_for('public.create_post') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Create</a>
       <a href="{{ url_for('public.user_analysis') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Analysis</a>
       <a href="{{ url_for('public.user_profile', username=current_user.username) }}" class="block px-4 py-2 rounded hover:bg-gray-700">Account</a>
-      <!--<a href="{{ url_for('caption.caption_history_list') }}" class="sidebar-link block px-4 py-2 rounded hover:bg-gray-700">Caption History</a>-->
     </nav>
   </aside>
 
@@ -25,13 +24,12 @@
   </div>
   
     <div class="hidden md:block w-full bg-gray-200 dark:bg-gray-900 text-gray-900 dark:text-white mx-0 mt-2 text-white transform transition-transform duration-300 z-50">
-    <nav class="flex justify-between p-4 space-y-3">
-      <a href="{{ url_for('public.index') }}" data-redirect class="btn-primary btn-danger block px-4 py-2">Home</a>
-      <!--<a href="{{ url_for('caption.caption_page') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Caption Generator</a>-->
+    <nav class="flex justify-between text-gray-900 dark:text-white">
+      <a href="{{ url_for('public.index') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Home</a>
+      <a href="{{ url_for('caption.caption_page') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Caption Generator</a>
       <a href="{{ url_for('public.create_post') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Create</a>
       <a href="{{ url_for('public.user_analysis') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Analysis</a>
       <a href="{{ url_for('public.user_profile', username=current_user.username) }}" class="block px-4 py-2 rounded hover:bg-gray-700">Account</a>
-      <!--<a href="/captions/history" class="sidebar-link block px-4 py-2 rounded hover:bg-gray-700">Caption History</a>-->
       {% if current_user.is_authenticated %}
       <a href="{{ url_for('public.user_change_password') }}" class="block px-4 py-2 rounded hover:bg-gray-700 hover:underline">Change Password</a>
       <a href="{{ url_for('public.user_logout') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Logout</a>
@@ -92,7 +90,7 @@
         <tbody>
           {% for post in posts %}
           <tr class="border-t hover:bg-gray-50 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
-            <td class="px-4 dark:text-gray-800 py-3 font-medium">
+            <td class="px-4 dark:text-gray-300 text-gray-800 py-3 font-medium">
               {{ post.title }}
             </td>
             

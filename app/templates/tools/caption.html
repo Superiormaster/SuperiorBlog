@@ -7,13 +7,115 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
 {% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto mt-12 p-6 bg-white/5 backdrop-blur-md rounded-2xl shadow-lg relative">
+<div class="max-w-6xl mx-auto mt-12 p-6 bg-white/5 z-20 backdrop-blur-md rounded-2xl shadow-lg relative">
 
-  <!-- TOKEN / PREMIUM -->
+<aside id="sidebar"
+  class="fixed inset-y-0 left-0 w-64
+         bg-white dark:bg-gray-800
+         -translate-x-full md:translate-x-0
+         transition-transform duration-300
+         z-50 flex flex-col">
+
+  <!-- Header -->
+  <div class="p-5 flex items-center justify-between text-xl font-bold text-gray-700 dark:text-gray-200 border-b border-gray-300 dark:border-gray-700">
+    <span>X Creator Studio</span>
+  
+    <!-- Close Button (Mobile Only) -->
+    <button id="closeSidebar"
+            class="md:hidden text-gray-600 dark:text-gray-300 text-2xl hover:text-red-500 transition">
+      &times;
+    </button>
+  </div>
+
+  <!-- Links -->
+  <nav class="flex-1 p-4 space-y-3 text-gray-900 dark:text-yellow-600">
+
+    <a href="{{ url_for('billings.payment_history') }}"
+       class="block px-4 py-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+      💳 Payment History
+    </a>
+
+    <a href="{{ url_for('caption.caption_history_list') }}"
+       class="block px-4 py-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+      📝 Caption History
+    </a>
+
+    <a href="{{ url_for('public.contact', type='feedback') }}" class="block px-4 py-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition"><i class="fa-regular fa-message mr-2"></i>Write a feedback</a>
+
+  </nav>
+
+  <!-- Bottom Premium Section -->
+  <div class="p-5 border-t border-gray-300 dark:border-gray-700">
+
+    {% if current_user.is_premium %}
+      <div class="text-sm text-green-500 font-semibold">
+        🌟 Premium Active
+        <div class="text-xs text-gray-400 mt-1">
+          Expires {{ current_user.premium_expires_at.strftime('%d %b %Y') }}
+        </div>
+      </div>
+    {% else %}
+      <a href="{{ url_for('public.pricing') }}"
+         class="block text-center bg-yellow-500 hover:bg-yellow-400 text-black font-semibold py-3 rounded-lg transition">
+        Upgrade to Premium
+      </a>
+    {% endif %}
+
+  </div>
+</aside>
+
+  <div class="hidden md:block w-full bg-gray-200 dark:bg-gray-900 text-gray-900 dark:text-white mx-0 mt-2 text-white transform transition-transform duration-300 z-50">
+    <nav class="flex justify-between text-gray-900 dark:text-white">
+      <a href="{{ url_for('public.index') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Home</a>
+      <a href="/captions/history" class="sidebar-link block px-4 py-2 rounded hover:bg-gray-700">Caption History</a>
+      <a href="{{ url_for('public.user_analysis') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Payment History</a>
+
+      <!-- Premium Section -->
+        {% if current_user.is_premium %}
+          <div class="text-sm text-green-500 font-semibold">
+            🌟 Premium Active
+            <div class="text-xs text-gray-400 mt-1">
+              Expires {{ current_user.premium_expires_at.strftime('%d %b %Y') }}
+            </div>
+          </div>
+        {% else %}
+          <a href="{{ url_for('public.pricing') }}"
+             class="block text-center bg-yellow-500 hover:bg-yellow-400 text-black font-semibold px-2 py-3 rounded-lg transition">
+            Upgrade to Premium
+          </a>
+        {% endif %}
+    </nav>
+  </div>
+
   <div class="flex justify-between items-center mb-6">
+  
+    <!-- LEFT: MENU BUTTON -->
+    <button id="menuBtn" class="text-gray-600 text-2xl md:hidden">
+      <i class="fa fa-arrow-right"></i>
+    </button>
+  
+    <!-- RIGHT: TOKEN / PREMIUM -->
     {% if current_user.is_authenticated %}
       {% if current_user.tokens > 0 %}
-        <div class="px-4 py-2 bg-yellow-400 text-black font-semibold rounded-xl shadow-md">
+        <div id="tokenCount"
+             class="px-4 py-2 bg-yellow-400 md:hidden text-black font-semibold rounded-xl shadow-md">
+          🎟️ Tokens: {{ current_user.tokens }}
+        </div>
+      {% else %}
+        <a href="{{ url_for('public.pricing') }}" 
+           class="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-xl md:hidden shadow-md hover:bg-yellow-400 transition">
+          Upgrade to Premium 🌟
+        </a>
+      {% endif %}
+    {% endif %}
+  
+  </div>
+
+  <div class="mb-4 hidden md:flex">
+    {% if current_user.is_authenticated %}
+      {% if current_user.tokens > 0 %}
+        <div id="tokenCount"
+             class="px-4 py-2 bg-yellow-400 text-black font-semibold rounded-xl shadow-md">
           🎟️ Tokens: {{ current_user.tokens }}
         </div>
       {% else %}
@@ -24,6 +126,7 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
       {% endif %}
     {% endif %}
   </div>
+  
 
   <!-- HEADER -->
   <div class="text-center mb-6">
@@ -39,13 +142,13 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
   <!-- SERVER BEST CAPTION -->
   {% if captions %}
     {% set best = captions.captions[0] %}
-    <div class="mb-6 p-4 border-2 border-yellow-400 bg-yellow-50 rounded-xl shadow-md">
+    <div class="mb-6 p-4 border-2 border-yellow-400 dark:bg-gray-800 bg-yellow-50 rounded-xl shadow-md">
       <!-- BEST CAPTION PROGRESS -->
       <div class="border-2 border-yellow-400 bg-yellow-50 p-4 rounded-xl mb-2">
-        <span class="text-xs font-bold text-yellow-600">BEST CAPTION</span>
+        <span class="text-xs font-bold text-yellow-600">LAST GENERATED CAPTION</span>
       </div>
       <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
-        <div class="bg-green-500 h-2 rounded-full" style="width: 87%"></div>
+        <div class="bg-green-500 h-2 rounded-full" style="width: {{ best.confidence_score or 0 }}%"></div>
       </div>
       <p class="text-lg text-center font-semibold text-gray-900 dark:text-white">{{ best.text }}</p>
       {% if best.image_url %}
@@ -53,7 +156,7 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
           <img data-src="{{ best.image_url[0] }}" alt="Best caption image" class="lazy absolute inset-0 w-full h-full object-cover rounded-xl">
         </div>
       {% endif %}
-      <p class="text-gray-500 text-sm mt-1">Style: {{ best.style }}, Confidence: {{ best.confidence_score }}%</p>
+      <p class="text-gray-500 text-sm mt-1">Style: {{ best.style }}, Confidence: {{ best.confidence_score or 0 }}%</p>
       <p class="text-gray-500 text-sm mt-1">Suggested Replies: {{ best.suggested_replies | join(', ') }}</p>
       <p class="text-gray-500 text-sm mt-1">Best Posting Time: {{ best.best_post_time }}</p>
     </div>
@@ -64,22 +167,25 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
     <div class="mb-6">
       <textarea id="xText" 
         class="w-full h-40 p-4 rounded-xl bg-gray-200 dark:bg-gray-900 dark:text-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800" 
-        placeholder="Paste article content, or key points here…"></textarea>
+        placeholder="Paste article content, prompt or key points here…"></textarea>
+        {% if not current_user.is_premium %}
+          <small class="dark:text-yellow-400 text-yellow-600 text-xs">Thread, Reply, Engagement are premium-only.</small>
+        {% else %}
+          <small class="dark:text-yellow-400 text-yellow-600 text-xs">Image is only for Sports.</small>
+        {% endif %}
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
         <select id="xTone" class="bg-gray-400 rounded p-2 text-black dark:text-white dark:bg-gray-700">
-          <option value="neutral">Neutral</option>
-          <option value="breaking">Breaking</option>
-          <option value="viral">Viral</option>
-          <option value="emotional">Emotional</option>
-          <option value="professional">Professional</option>
+          {% for tone in allowed_tones %}
+            <option value="{{ tone }}">{{ tone.capitalize() }}</option>
+          {% endfor %}
         </select>
 
         <select id="xMode" class="bg-gray-400 rounded p-2 text-black dark:text-white dark:bg-gray-700">
           <option value="single">Single Post</option>
-          <option value="thread">Thread</option>
-          <option value="reply">Reply Optimized</option>
-          <option value="engagement">Engagement Hook</option>
+          <option value="thread" {% if not current_user.is_premium %}disabled{% endif %}>Thread</option>
+          <option value="reply" {% if not current_user.is_premium %}disabled{% endif %}>Reply Optimized</option>
+          <option value="engagement" {% if not current_user.is_premium %}disabled{% endif %}>Engagement Hook</option>
         </select>
 
         <label class="flex items-center gap-2 text-black dark:text-white text-sm">
@@ -88,8 +194,12 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
         </label>
 
         <label class="flex items-center gap-2 dark:text-white text-black text-sm">
-          <input type="checkbox" id="xGenerateImage" class="accent-blue-500">
-          Generate image
+        {% if current_user.is_premium %}
+          <input type="checkbox" id="xGenerateImage" class="accent-blue-500">Generate image
+        {% else %}
+          <input type="checkbox" disabled class="accent-blue-500 cursor-not-allowed">Generate image
+          <br><p class="dark:text-yellow-400 text-yellow-600 text-xs">(Premium only)</p>
+        {% endif %}
         </label>
 
         <button id="xGenerateBtn"
@@ -112,10 +222,6 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
   <!-- JS-rendered RESULTS -->
   <div id="xResults" class="mt-8 space-y-6"></div>
 
-  {% if current_user.is_premium %}
-    <p class="mt-6 text-gray-300">Premium expires on {{ current_user.premium_expires_at.strftime('%d %b %Y') }}</p>
-  {% endif %}
-
   <!-- SUBSCRIBE CTA -->
   <div class="mt-12 p-6 rounded-xl bg-gradient-to-r from-blue-600/20 to-cyan-500/20 border border-blue-500/20 text-center">
     <p class="text-black dark:text-white font-semibold mb-3">🚀 Want more creator & newsroom tools?</p>
@@ -126,4 +232,34 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
     </form>
   </div>
 </div>
+
+<!-- Backdrop -->
+<div 
+  id="backdrop"
+  class="fixed inset-0 z-40 bg-black/20 hidden pointer-events-none md:hidden">
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const sidebar = document.getElementById("sidebar");
+  const menuBtn = document.getElementById("menuBtn");
+  const backdrop = document.getElementById("backdrop");
+  const closeBtn = document.getElementById("closeSidebar");
+
+  function openSidebar() {
+    sidebar.classList.remove("-translate-x-full");
+    backdrop.classList.remove("hidden");
+  }
+
+  function closeSidebar() {
+    sidebar.classList.add("-translate-x-full");
+    backdrop.classList.add("hidden");
+  }
+
+  menuBtn.addEventListener("click", openSidebar);
+  backdrop.addEventListener("click", closeSidebar);
+  closeBtn.addEventListener("click", closeSidebar);
+});
+</script>
+
 {% endblock %}

@@ -33,29 +33,14 @@
         </a>
       {% endfor %}
      <!-- <a href="{{ url_for('caption.caption_page') }}">Generate Captions</a>-->
+     {% if current_user.is_authenticated %}
+        <a href="{{ url_for('public.user_dashboard') }}" data-redirect class="btn-primary btn-danger hidden md:flex text-gray-900 dark:text-yellow-600">Dashboard</a>
+        <a href="{{ url_for('public.user_change_password') }}" data-redirect class="btn-primary text-gray-900 dark:text-yellow-600 hidden md:flex btn-danger hover:underline">Change Password</a>
+        {% endif %}
     </div>
   </nav>
 </aside>
 
-<!--<div class="max-w-5xl mx-auto mt-14">
-  <h2 class="text-3xl font-bold mb-6">🔥 Editor's Pick Captions</h2>
-
-  {% if editor_picks %}
-    <div class="space-y-4">
-      {% for caption in editor_picks %}
-        <div class="bg-gray-800 p-4 rounded-xl shadow-md">
-          <p class="text-white text-lg">{{ caption.caption }}</p>
-          <p class="text-gray-400 text-sm">Platform: {{ caption.platform.upper() }}, Confidence: {{ caption.confidence }}%</p>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p class="text-gray-400 px-3">      
-    <a href="{{ url_for('caption.caption_page') }}">No premium captions yet. Generate some to see them here!</a>
-    </p>
-  {% endif %}
-</div>
--->
 <div class="flex flex-col">
 <form action="{{ url_for('public.search') }}" method="get" class="flex mb-6 mt-4 mx-2">
   <input
@@ -111,37 +96,6 @@
     </div>
   </div>-->
 
-{% for t in trending_posts %}
-<div class="p-3 rounded-lg bg-white dark:bg-gray-800">
-  <h3 class="text-center text-4xl mb-4 bg-red-600 text-white px-2 py-1 uppercase font-bold">
-    Trending News
-  </h3>
-
-  <div class="overflow-x-auto flex space-x-3 py-4" id="trending-slider">
-    {% if t.slug %}
-    <div class="min-w-[130px] lg:min-h-[250px] bg-gray-700 p-4 rounded flex-shrink-0">
-      <a href="{{ url_for('public.post_detail', slug=t.slug) }}" class="text-lg font-semibold hover:underline md:text-2xl text-gray-900 dark:text-yellow-600 truncate block line-clamp-1 mb-1 w-[8.5rem] leading-[1.5rem] overflow-hidden">
-        {{ t.title }}
-      </a>
-      {% if t.featured_image %}
-        <img
-          src="{{ t.featured_image }}"
-          loading="lazy"
-          decoding="async"
-          class="w-32 h-22 object-cover rounded"
-          alt="{{ t.title }}"
-        >
-        {% else %}
-        <div class="fallback-thumbnail border h-24 w-34 rounded border-gray-800 flex items-center justify-center">
-          <div class="bg-neutral-800 h-22 w-32"></div>
-        </div>
-        {% endif %}
-      <p class="text-sm text-gray-400 mt-2">{{ t.comments|length }} 💬</p>
-    </div>
-    {% endif %}
-  </div>
-{% endfor %}
-
 <!-- Popular / Most Reach Posts -->
 <div class="max-w-5xl bg-gray-100 dark:bg-gray-800 mx-auto">
   <div class="flex flex-col space-y-4">
@@ -166,6 +120,9 @@
     {% endfor %}
   </div>
 </div>
+
+{% set location = "home_mid" %}
+{% include "ads/adBlock.html" %}
 
 {% if latest_posts %}
 <div class="max-w-5xl p-2 bg-gray-100 dark:bg-gray-800 mx-auto mt-5">
@@ -230,12 +187,18 @@
           {% endfor %}
         </div>
   
-        <h3 class="text-xl md:text-2xl font-semibold dark:text-yellow-600 mt-5 leading-snug line-clamp-2">
+        <h3 class="text-xl md:text-2xl font-semibold text-gray-900 dark:text-yellow-600 mt- leading-snug line-clamp-2">
           <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
              class="text-gray-900 dark:text-yellow-600 hover:underline">
             {{ post.title }}
           </a>
         </h3>
+              <h3 class="text-lg font-semibold text-gray-700 dark:text-yellow-500 mb-1 leading-snug line-clamp-1">
+        <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
+           class="text-gray-800 dark:text-yellow-600 hover:underline">
+          {{ post.title }}
+        </a>
+      </h3>
   
         <p class="text-gray-500 text-sm">
           Published on {{ post.created_at.strftime('%B %d, %Y') }}
@@ -341,7 +304,7 @@
     </p>
   {% endfor %}
 </div>
-
+<!--
 <div id="feedback-modal" class="hidden fixed inset-0 dark:bg-black/50 z-50 flex items-center justify-center">
   <div class="bg-gray-100 dark:bg-gray-900 p-6 rounded-lg w-80 dark:text-white">
     <h3 class="text-lg font-semibold mb-2">Quick feedback?</h3>
@@ -371,7 +334,7 @@
     </form>
   </div>
 </div>
-
+-->
   <!-- components/creator_prompt.html -->
   {% if not current_user.is_authenticated %}
 
@@ -398,7 +361,7 @@
   <div class="flex items-center gap-2">
     <button
       onclick="openLoginModal()"
-      class="animate-pulse-slow flex items-center gap-2 rounded-full bg-primary px-5 py-2 border border-x-red-100 text-sm font-semibold text-white shadow hover:opacity-90 transition"
+      class="animate-pulse-slow flex items-center gap-2 rounded-full bg-primary px-5 py-2 border dark:border-x-red-100 border-red-100 text-sm font-semibold dark:text-white shadow hover:opacity-90 transition"
     >
       🚀 Start Writing
     </button>
@@ -420,31 +383,31 @@
 
 <div id="login-modal" class="fixed hidden inset-0 z-[60]">
   <div class="absolute inset-0 bg-black/40" onclick="closeLoginModal()"></div>
-  <div class="relative mx-auto mt-24 w-[90%] max-w-md rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white p-6 shadow-xl">
-    <h2 class="text-xl text-center font-bold mb-4">Login to start creating</h2>
+  <div class="relative mx-auto mt-24 w-[90%] max-w-md rounded-2xl bg-gray-100 dark:bg-gray-800 p-6 shadow-xl">
+    <h2 class="text-xl text-gray-900 dark:text-white text-center font-bold mb-4">Login to start creating</h2>
     <form method="POST" action="{{ url_for('public.user_login', next=url_for('public.create_post')) }}" class="space-y-4">
   {{ login_form.hidden_tag() }}
       {{ login_form.email(
       placeholder="Email",
-      class="w-full rounded-lg border px-3 py-2"
+      class="w-full rounded-lg border text-gray-900 px-3 py-2"
   ) }}
   {{ login_form.password(
       id="password",
       placeholder="Password",
-      class="w-full rounded-lg border px-3 py-2"
+      class="w-full text-gray-900 rounded-lg border px-3 py-2"
   ) }}
   <div class="form-check">
     <input type="checkbox" id="show_password" class="form-check-input" onclick="show_pass()">
-    <label class="form-check-label">Show Password</label>
+    <label class="form-check-label text-gray-900 dark:text-white">Show Password</label>
   </div>
   {{ login_form.submit(
       class="w-full rounded-full bg-blue-600 py-2 text-white font-semibold"
   ) }}
-  <p class="text-center text-sm mt-2">
+  <p class="text-center text-gray-900 dark:text-white text-sm mt-2">
     Don’t have an account?
     <a href="{{ url_for('public.user_register') }}" class="text-blue-400 dark:text-yellow-500">Sign up</a>
   </p>
-  <div class="text-center text-sm mt-2">Or SignUp With</div>
+  <div class="text-center text-gray-900 dark:text-white text-sm mt-2">Or SignUp With</div>
       <div class="space-x-4 bg-blue-600 rounded-full font-semibold mt-2 w-full">
       <a id="googleBtn" href="{{ url_for('public.google_login') }}"
           class="flex items-center justify-center gap-3 w-full h-12 rounded-full border border-yellow-500 text-gray-700 font-medium transition"
@@ -555,10 +518,10 @@
 
   <div class="max-w-5xl mx-auto grid grid-cols-1 gap-6 text-center md:text-left mb-8">
     <!-- Optional Extra / Generate Captions -->
-   <!-- <div class="md:hidden flex flex-col space-y-2">
+    <div class="md:hidden flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">Tools</h4>
       <a href="{{ url_for('caption.caption_page') }}" class="hover:text-white link-gold">Generate Captions</a>
-    </div>-->
+    </div>
 
     <!-- Social Links -->
     <div class="flex md:hidden flex-col space-y-2">
@@ -591,7 +554,7 @@
   </div>
 </footer>
 </div>
-
+<!--
 <script>
 (function () {
   const FEEDBACK_KEY = "feedback_shown";
@@ -687,7 +650,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 </script>
-
+-->
 <script>
 const modal = document.getElementById('login-modal');
 

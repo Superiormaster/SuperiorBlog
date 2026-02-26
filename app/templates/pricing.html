@@ -6,7 +6,7 @@
 
   <!-- Header -->
   <div class="text-center mb-12">
-    <h2 class="text-black dark:text-gray-200 text-4xl font-bold mb-4">SIMPLE, TRANSPARENT PRICING</h2>
+    <h2 class="text-black dark:text-gray-200 text-4xl font-bold mb-4">SIMPLE TRANSPARENT PRICING</h2>
     <p class="text-gray-400">Choose the plan that fits your needs</p>
   </div>
 
@@ -30,7 +30,7 @@
         <li>✔️ Best Posting Time Recommendation</li>
       </ul>
       <form method="POST" id="premiumForm" action="{{ url_for('billings.init_payment', plan='monthly') }}">
-        {{ csrf_token() }}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit"
                 class="plan-btn w-full py-3 dark:bg-gray-800 bg-gray-700 text-white rounded font-semibold hover:bg-gray-600">
           Upgrade Monthly
@@ -56,7 +56,7 @@
         <li>✔️ Extra Savings vs Monthly Plan</li>
       </ul>
       <form method="POST" id="premiumForm" action="{{ url_for('billings.init_payment', plan='yearly') }}">
-        {{ csrf_token() }}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit"
                 class="plan-btn w-full py-3 dark:bg-gray-800 bg-gray-700 text-white rounded font-semibold hover:bg-gray-600">
           Upgrade Yearly

@@ -1,10 +1,10 @@
-from flask import Blueprint, render_template, request, jsonify, redirect
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from flask_login import login_user, logout_user, current_user, login_required
 import requests
 from sqlalchemy import desc
 from datetime import date
 from app.extensions import db, csrf
-from app.models import CaptionHistory
+from app.models import CaptionHistory, XPost
 from app.utils.limits import can_generate
 from app.utils.db_helpers import safe_commit
 from app.utils.openai_service import generate_x_post_for_user
@@ -12,40 +12,78 @@ from app.forms import SubscribeForm
 
 caption_bp = Blueprint('caption', __name__)
 
+ALLOWED_TONES = ["neutral", "breaking", "viral", "emotional", "professional"]
 @caption_bp.route('/caption')
-@login_required
 def caption_page():
     form = SubscribeForm()
-    editor_picks = CaptionHistory.query \
-        .filter(CaptionHistory.style == "editor_pick") \
-        .order_by(desc(CaptionHistory.confidence)) \
-        .limit(5).all()
-    return render_template('tools/caption.html', form=form, editor_picks=editor_picks)
+    captions = None
+    if current_user.is_authenticated:
+        last_caption = XPost.query.filter_by(user_id=current_user.id)\
+                                    .order_by(XPost.created_at.desc())\
+                                    .first()
+        if last_caption:
+            captions = {
+                "captions": [
+                    {
+                        "text": last_caption.text,
+                        "confidence_score": last_caption.confidence_score,
+                        "style": last_caption.style,
+                        "suggested_replies": last_caption.suggested_replies or [],
+                        "best_post_time": last_caption.best_post_time,
+                        "image_url": last_caption.image_url
+                    }
+                ]
+            }
+    return render_template('tools/caption.html', form=form, captions=captions, allowed_tones=ALLOWED_TONES)
 
 @caption_bp.route("/captions/history")
-@login_required
+def caption_history_page():
+    return render_template("tools/caption_history.html")
+
+@caption_bp.route("/api/captions/history")
 def caption_history_list():
-    histories = CaptionHistory.query.filter_by(
-        user_id=current_user.id
-    ).order_by(CaptionHistory.created_at.desc()).all()
-    return render_template("tools/caption_history.html", histories=histories)
+    page = request.args.get("page", 1, type=int)
 
-@caption_bp.route("/captions/history/<int:id>")
-@login_required
-def caption_history(id):
-    items = CaptionHistory.query.filter_by(
+    pagination = CaptionHistory.query.filter_by(
         user_id=current_user.id
-    ).order_by(CaptionHistory.created_at.desc()).limit(20).all()
+    ).order_by(
+        CaptionHistory.created_at.desc()
+    ).paginate(page=page, per_page=20, error_out=False)
 
-    return jsonify([
+    items = [
         {
             "id": item.id,
             "platform": item.platform,
             "created_at": item.created_at.strftime("%b %d, %Y %H:%M"),
             "preview": item.caption[:120]
         }
-        for item in items
-    ])
+        for item in pagination.items
+    ]
+
+    return jsonify({
+        "items": items,
+        "has_next": pagination.has_next
+    })
+
+@caption_bp.route("/captions/history/item/<int:id>")
+@login_required
+def caption_history_item(id):
+    item = CaptionHistory.query.filter_by(
+        id=id,
+        user_id=current_user.id
+    ).first_or_404()
+
+    return jsonify({
+        "original_text": item.caption,
+        "captions": [
+            {
+                "text": c.caption,
+                "style": c.style,
+                "confidence_score": c.confidence
+            }
+            for c in item.captions
+        ]
+    })
 
 def use_token(user):
     if user.tokens > 0:
@@ -78,11 +116,20 @@ def generate_caption_route():
             }), 400
 
         tone = data.get("tone")
-        platform = data.get("platform")
-        intent = data.get("intent", "inform")
         mode = data.get("mode", "single")
+        premium_modes = ["thread", "engagement", "reply"]
+
+        if mode in premium_modes and not current_user.is_premium:
+            return jsonify({
+                "error": "premium_required",
+                "redirect": url_for("public.pricing")
+            }), 403
         avoid_clickbait = data.get("avoid_clickbait", False)
         custom_prompt = data.get("custom_prompt")
+        generate_image = data.get("generate_image")
+
+        if generate_image and not current_user.is_premium:
+            return jsonify({"error": "Image generation is premium only."}), 403
 
         if not text:
             return jsonify({"error": "Text is required"}), 400
@@ -107,7 +154,8 @@ def generate_caption_route():
             mode=mode,
             avoid_clickbait=avoid_clickbait, 
             custom_prompt=custom_prompt,
-            max_output_chars=MAX_OUTPUT_CHARS
+            max_output_chars=MAX_OUTPUT_CHARS,
+            generate_images=generate_image and current_user.is_premium
         )
 
         if not results:
@@ -122,7 +170,10 @@ def generate_caption_route():
             usage.count += 1
             safe_commit()
 
-        return jsonify(results)
+        return jsonify({
+            **results,
+            "tokens_remaining": current_user.tokens
+        })
 
     except requests.exceptions.Timeout:
         return jsonify({"error": "AI request timed out."}), 504
