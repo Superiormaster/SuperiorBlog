@@ -65,6 +65,14 @@ class Ad(db.Model):
         default=1,
         index=True
     )
+    
+    # in Ad model
+    internal = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False,
+        index=True
+    )
 
     start_date = db.Column(db.DateTime, nullable=True)
     end_date = db.Column(db.DateTime, nullable=True)

@@ -5,6 +5,9 @@
 {% set location = "post_top" %}
 {% include "ads/adBlock.html" %}
 
+{% set location = "sticky_bottom" %}
+{% include "ads/adBlock.html" %}
+
 <div class="flex-col mt-16 py-8 flex">
 <article class="shadow-md rounded p-6">
   {% if post.featured_image and post.featured_image not in post.content %}

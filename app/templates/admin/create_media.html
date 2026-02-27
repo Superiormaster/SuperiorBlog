@@ -9,43 +9,68 @@
         <div class="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8">
 
             <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">
-                Create Media Block
+                {{ 'Edit' if ad else 'Create' }} Ad / Media Block
             </h2>
 
-            <form method="POST" class="space-y-6">
+            <form method="POST" enctype="multipart/form-data" class="space-y-6">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <!-- Internal Name -->
                 <div>
                     <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                         Internal Name
                     </label>
-                    <input name="name" required
+                    <input type="text" name="name" required
                         class="w-full rounded-xl border border-gray-300 dark:border-gray-600
                                bg-white dark:bg-gray-700
                                text-gray-900 dark:text-white
                                px-4 py-2 focus:ring-2 focus:ring-blue-500
-                               focus:outline-none transition">
+                               focus:outline-none transition"
+                        value="{{ ad.name if ad else '' }}">
                 </div>
-
                 <!-- Location -->
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Location
-                    </label>
-                    <select name="location"
-                        class="w-full rounded-xl border border-gray-300 dark:border-gray-600
-                               bg-white dark:bg-gray-700
-                               text-gray-900 dark:text-white
-                               px-4 py-2 focus:ring-2 focus:ring-blue-500
-                               focus:outline-none transition">
+<div>
+    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        Location
+    </label>
 
-                        <option value="home_mid">Homepage Middle</option>
-                        <option value="post_top">Post Top</option>
-                        <option value="post_bottom">Post Bottom</option>
-                        <option value="sidebar">Sidebar</option>
+    <select name="location"
+        class="w-full rounded-xl border border-gray-300 dark:border-gray-600
+               bg-white dark:bg-gray-700
+               text-gray-900 dark:text-white
+               px-4 py-2 focus:ring-2 focus:ring-blue-500
+               focus:outline-none transition">
 
-                    </select>
-                </div>
+        <option value="home_top" {% if ad and ad.location=='home_top' %}selected{% endif %}>
+            Homepage Top
+        </option>
+
+        <option value="home_mid" {% if ad and ad.location=='home_mid' %}selected{% endif %}>
+            Homepage Middle
+        </option>
+
+        <option value="post_top" {% if ad and ad.location=='post_top' %}selected{% endif %}>
+            Post Top
+        </option>
+
+        <option value="post_mid" {% if ad and ad.location=='post_mid' %}selected{% endif %}>
+            Post Middle (In-Article)
+        </option>
+
+        <option value="post_bottom" {% if ad and ad.location=='post_bottom' %}selected{% endif %}>
+            Post Bottom
+        </option>
+
+        <option value="sidebar" {% if ad and ad.location=='sidebar' %}selected{% endif %}>
+            Sidebar
+        </option>
+
+        <option value="sticky_bottom" {% if ad and ad.location=='sticky_bottom' %}selected{% endif %}>
+            Sticky Bottom
+        </option>
+
+    </select>
+</div>
 
                 <!-- Type -->
                 <div>
@@ -59,9 +84,8 @@
                                px-4 py-2 focus:ring-2 focus:ring-blue-500
                                focus:outline-none transition">
 
-                        <option value="custom">Custom Banner</option>
-                        <option value="adsense">AdSense</option>
-                        <option value="affiliate">Affiliate</option>
+                        <option value="custom" {% if ad and ad.type=='custom' %}selected{% endif %}>Custom Banner</option>
+                        <option value="adsense" {% if ad and ad.type=='adsense' %}selected{% endif %}>AdSense</option>
 
                     </select>
                 </div>
@@ -69,43 +93,57 @@
                 <!-- Title -->
                 <div>
                     <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Title
+                        Title / CTA
                     </label>
-                    <input name="title"
+                    <input type="text" name="title"
                         class="w-full rounded-xl border border-gray-300 dark:border-gray-600
                                bg-white dark:bg-gray-700
                                text-gray-900 dark:text-white
                                px-4 py-2 focus:ring-2 focus:ring-blue-500
-                               focus:outline-none transition">
+                               focus:outline-none transition"
+                        value="{{ ad.title if ad else '' }}">
                 </div>
 
                 <!-- Image URL -->
-                <div>
+                <div class="space-y-1">
                     <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Image URL
+                        Image URL (optional)
                     </label>
-                    <input name="image_url"
+                    <input type="text" name="image_url"
                         class="w-full rounded-xl border border-gray-300 dark:border-gray-600
                                bg-white dark:bg-gray-700
                                text-gray-900 dark:text-white
                                px-4 py-2 focus:ring-2 focus:ring-blue-500
-                               focus:outline-none transition">
+                               focus:outline-none transition"
+                        value="{{ ad.image_url if ad else '' }}">
+                    <input type="file" name="image"
+                    class="w-full rounded-xl border px-4 py-2">
+                </div>
+                <div id="image-preview">
+                {% if ad and ad.image_url %}
+                <divclass="mt-3">
+                    <p class="text-sm text-gray-500 mb-2">Current Image:</p>
+                    <img src="{{ ad.image_url }}"
+                         class="w-full max-h-64 object-cover rounded-lg border">
+                </div>
+                {% endif %}
                 </div>
 
                 <!-- Target URL -->
                 <div>
                     <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Target URL
+                        Target URL (if external)
                     </label>
-                    <input name="target_url"
+                    <input type="text" name="target_url"
                         class="w-full rounded-xl border border-gray-300 dark:border-gray-600
                                bg-white dark:bg-gray-700
                                text-gray-900 dark:text-white
                                px-4 py-2 focus:ring-2 focus:ring-blue-500
-                               focus:outline-none transition">
+                               focus:outline-none transition"
+                        value="{{ ad.target_url if ad else '' }}">
                 </div>
 
-                <!-- HTML Code -->
+                <!-- HTML / AdSense Code -->
                 <div>
                     <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                         HTML / AdSense Code
@@ -115,8 +153,7 @@
                                bg-white dark:bg-gray-700
                                text-gray-900 dark:text-white
                                px-4 py-2 focus:ring-2 focus:ring-blue-500
-                               focus:outline-none transition resize-none">
-                    </textarea>
+                               focus:outline-none transition resize-none">{{ ad.html_code if ad else '' }}</textarea>
                 </div>
 
                 <!-- Priority -->
@@ -124,12 +161,25 @@
                     <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                         Priority
                     </label>
-                    <input name="priority" type="number" value="1"
+                    <input type="number" name="priority"
                         class="w-full rounded-xl border border-gray-300 dark:border-gray-600
                                bg-white dark:bg-gray-700
                                text-gray-900 dark:text-white
                                px-4 py-2 focus:ring-2 focus:ring-blue-500
-                               focus:outline-none transition">
+                               focus:outline-none transition"
+                        value="{{ ad.priority if ad else 1 }}">
+                </div>
+
+                <!-- Internal & Active Checkboxes -->
+                <div class="flex items-center gap-4">
+                    <label>
+                        <input type="checkbox" name="internal" {% if ad and ad.internal %}checked{% endif %}>
+                        Internal Ad (Caption Generator)
+                    </label>
+                    <label>
+                        <input type="checkbox" name="active" {% if not ad or ad.active %}checked{% endif %}>
+                        Active
+                    </label>
                 </div>
 
                 <!-- Submit Button -->
@@ -139,7 +189,7 @@
                                text-white font-semibold
                                py-3 rounded-xl shadow-md
                                transition duration-200">
-                        Create Media Block
+                        {{ 'Update' if ad else 'Create' }}
                     </button>
                 </div>
 
@@ -148,5 +198,23 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const imageInput = document.querySelector('input[name="image"]');
+    const previewDiv = document.getElementById("image-preview");
+
+    imageInput.addEventListener("change", function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewDiv.innerHTML = `<img src="${e.target.result}" class="w-full max-h-64 object-cover rounded-lg border">`;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+});
+</script>
 
 {% endblock %}

@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="min-h-screen bg-gray-100 dark:bg-gray-900 py-8 px-4">
+    <div class="max-w-6xl mx-auto">
+
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">
+                Custom Ads
+            </h1>
+
+            <a href="{{ url_for('admin.ad_form') }}"
+               class="inline-flex items-center justify-center
+                      bg-blue-600 hover:bg-blue-700
+                      text-white font-semibold
+                      px-4 py-2 rounded-xl shadow transition">
+                + Create New Ad
+            </a>
+        </div>
+
+        <!-- Desktop Table -->
+        <div class="hidden md:block bg-white dark:bg-gray-800 rounded-2xl shadow overflow-hidden">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
+                    <tr>
+                        <th class="px-6 py-4">Name</th>
+                        <th class="px-6 py-4">Title</th>
+                        <th class="px-6 py-4">Location</th>
+                        <th class="px-6 py-4">Internal</th>
+                        <th class="px-6 py-4">Active</th>
+                        <th class="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+
+                    {% for ad in ads %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-white">
+                            {{ ad.name }}
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
+                            {{ ad.title }}
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
+                            {{ ad.location }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs rounded-full
+                                {{ 'bg-green-100 text-green-700' if ad.internal else 'bg-gray-200 text-gray-700' }}">
+                                {{ "Yes" if ad.internal else "No" }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs rounded-full
+                                {{ 'bg-blue-100 text-blue-700' if ad.active else 'bg-red-100 text-red-700' }}">
+                                {{ "Active" if ad.active else "Inactive" }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right flex justify-end gap-2">
+
+                            <a href="{{ url_for('admin.ad_form', ad_id=ad.id) }}"
+                               class="px-3 py-1 text-xs font-medium
+                                      bg-yellow-500 hover:bg-yellow-600
+                                      text-white rounded-lg transition">
+                                Edit
+                            </a>
+
+                            <form action="{{ url_for('admin.delete_ad', ad_id=ad.id) }}"
+                                  method="POST"
+                                  onsubmit="return confirm('Delete this ad?');">
+
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                                <button type="submit"
+                                    class="px-3 py-1 text-xs font-medium
+                                           bg-red-600 hover:bg-red-700
+                                           text-white rounded-lg transition">
+                                    Delete
+                                </button>
+                            </form>
+
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Card Layout -->
+        <div class="md:hidden space-y-4">
+            {% for ad in ads %}
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow p-5 space-y-3">
+
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="font-semibold text-gray-800 dark:text-white">
+                            {{ ad.name }}
+                        </h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ ad.title }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="text-sm text-gray-600 dark:text-gray-300">
+                    <p><strong>Location:</strong> {{ ad.location }}</p>
+                    <p><strong>Internal:</strong> {{ "Yes" if ad.internal else "No" }}</p>
+                    <p><strong>Status:</strong>
+                        <span class="{{ 'text-blue-600' if ad.active else 'text-red-500' }}">
+                            {{ "Active" if ad.active else "Inactive" }}
+                        </span>
+                    </p>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+
+                    <a href="{{ url_for('admin.ad_form', ad_id=ad.id) }}"
+                       class="flex-1 text-center px-3 py-2 text-sm font-medium
+                              bg-yellow-500 hover:bg-yellow-600
+                              text-white rounded-lg transition">
+                        Edit
+                    </a>
+
+                    <form action="{{ url_for('admin.delete_ad', ad_id=ad.id) }}"
+                          method="POST"
+                          class="flex-1"
+                          onsubmit="return confirm('Delete this ad?');">
+
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <button type="submit"
+                            class="w-full px-3 py-2 text-sm font-medium
+                                   bg-red-600 hover:bg-red-700
+                                   text-white rounded-lg transition">
+                            Delete
+                        </button>
+                    </form>
+
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

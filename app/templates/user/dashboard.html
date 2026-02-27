@@ -231,7 +231,8 @@
   <div class="flex justify-center my-3 gap-2 text-gray-900 dark:text-gray-100">
     {% if posts.has_prev %}
       <a href="{{ url_for('public.user_dashboard', page=posts.prev_num, q=q, status=status) }}"
-         class="px-3 py-1 border hover:bg-gray-200 dark:hover:bg-gray-700 rounded">Prev</a>
+         class="px-3 py-1 border hover:bg-gray-200
+         dark:hover:bg-gray-700 bg-gray-300 dark:bg-gray-800 text-black dark:text-white rounded">Prev</a>
     {% endif %}
 
     <span class="px-3 py-1 text-gray-500">
@@ -241,7 +242,7 @@
     {% if posts.has_next %}
       <a href="{{ url_for('public.user_dashboard', page=posts.next_num, q=q, status=status) }}"
          class="px-3 py-1 border hover:bg-gray-200
-         dark:hover:bg-gray-700 rounded">Next</a>
+         dark:hover:bg-gray-700 bg-gray-300 dark:bg-gray-800 text-black dark:text-white rounded">Next</a>
     {% endif %}
   </div>
 </div>

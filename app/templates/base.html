@@ -85,7 +85,7 @@
             </div>
           {% endif %}
         {% endwith %}
-        <button class="fixed right-10 bottom-10 text-gray-100 text-2xl border rounded-xl py-2 px-1 text-white z-50" id="btn">↑</button>
+        <button class="fixed right-10 bottom-10 text-2xl border rounded-xl py-2 px-1 text-black dark:text-white z-50" id="btn">↑</button>
         {% block content %}{% endblock %}
     </main>
   </div>
@@ -120,8 +120,8 @@
         <ul class="nav-list text-gray-800 dark:text-yellow-600" id="drawerNav">
           <li><a href="{{ url_for('public.index') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-home mr-2" aria-hidden="true"></i>Home</a></li>
         {% if current_user.is_authenticated %}
-        <li><a href="{{ url_for('admin.dashboard') }}" data-redirect class="btn-primary btn-danger mr-2"><i class="fa fa-dashboard"></i> Admin Dashboard</a></li>
-        <li><a href="{{ url_for('admin.change_password') }}" data-redirect class="btn-primary btn-danger text-blue-500 hover:underline"><i class="fa fa-eraser mr-2" aria-hidden="true"></i>Change Password</a></li>
+        <li><a href="{{ url_for('admin.dashboard') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-dashboard mr-2"></i> Admin Dashboard</a></li>
+        <li><a href="{{ url_for('admin.change_password') }}" data-redirect class="btn-primary btn-danger hover:underline"><i class="fa fa-eraser mr-2" aria-hidden="true"></i>Change Password</a></li>
         <li><a href="{{ url_for('admin.logout') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-out mr-2" aria-hidden="true"></i>Logout</a></li>
         {% else %}
           <li><a href="{{ url_for('admin.login') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-in mr-2"></i> Login</a></li>

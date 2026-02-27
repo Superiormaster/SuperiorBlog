@@ -78,6 +78,12 @@ def create_app():
             "breaking": breaking_post
         }
 
+    @app.before_request
+    def redirect_root_to_www():
+        # Redirect only if host is root domain
+        if request.host == "superiornews.app":
+            return redirect("https://www.superiornews.app" + request.full_path, code=301)
+
     @app.context_processor
     def inject_year():
         return {'year': datetime.now().year}

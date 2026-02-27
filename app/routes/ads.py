@@ -1,5 +1,7 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, redirect
+from flask_login import current_user
 from app.models import Ad, AdClick, AdImpression
+from app.extensions import db
 from app.utils.db_helpers import safe_commit
 
 ads_bp = Blueprint("ads", __name__)

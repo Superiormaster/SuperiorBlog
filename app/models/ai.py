@@ -8,20 +8,6 @@ import threading
 from flask import current_app
 from sqlalchemy.orm import sessionmaker
 
-class CaptionHistory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    input_text = db.Column(db.Text, nullable=False)
-    confidence = db.Column(db.Integer)
-    tone = db.Column(db.String(50))
-    caption = db.Column(db.Text, nullable=False)
-    length = db.Column(db.String(50))
-    platform = db.Column(db.String(50))
-    captions = db.Column(db.JSON)
-    style = db.Column(db.String(20))
-    created_at = db.Column(db.DateTime, default=db.func.now())
-
-
 def run_generate_x_post(app, target_text, user_id):
     """
     Runs generate_x_post_for_user in a separate thread/session

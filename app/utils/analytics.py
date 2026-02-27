@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from app.extensions import db
-from app.models import Post, User, Comment, CaptionHistory, Repost, PageView
+from app.models import Post, User, Comment, Repost, PageView
 
 def get_range(days):
     end = datetime.utcnow()

@@ -4,7 +4,7 @@ import requests
 from sqlalchemy import desc
 from datetime import date
 from app.extensions import db, csrf
-from app.models import CaptionHistory, XPost
+from app.models import XPost
 from app.utils.limits import can_generate
 from app.utils.db_helpers import safe_commit
 from app.utils.openai_service import generate_x_post_for_user
@@ -37,25 +37,27 @@ def caption_page():
     return render_template('tools/caption.html', form=form, captions=captions, allowed_tones=ALLOWED_TONES)
 
 @caption_bp.route("/captions/history")
+@login_required
 def caption_history_page():
     return render_template("tools/caption_history.html")
 
 @caption_bp.route("/api/captions/history")
+@login_required
 def caption_history_list():
     page = request.args.get("page", 1, type=int)
 
-    pagination = CaptionHistory.query.filter_by(
+    pagination = XPost.query.filter_by(
         user_id=current_user.id
     ).order_by(
-        CaptionHistory.created_at.desc()
+        XPost.created_at.desc()
     ).paginate(page=page, per_page=20, error_out=False)
 
     items = [
         {
             "id": item.id,
-            "platform": item.platform,
+            "platform": "X",
             "created_at": item.created_at.strftime("%b %d, %Y %H:%M"),
-            "preview": item.caption[:120]
+            "preview": item.text[:120]
         }
         for item in pagination.items
     ]
@@ -68,20 +70,20 @@ def caption_history_list():
 @caption_bp.route("/captions/history/item/<int:id>")
 @login_required
 def caption_history_item(id):
-    item = CaptionHistory.query.filter_by(
+    item = XPost.query.filter_by(
         id=id,
         user_id=current_user.id
     ).first_or_404()
 
     return jsonify({
-        "original_text": item.caption,
+        "original_text": item.text,
         "captions": [
             {
-                "text": c.caption,
+                "text": c,
                 "style": c.style,
                 "confidence_score": c.confidence
             }
-            for c in item.captions
+            for c in item.suggested_replies or []
         ]
     })
 

@@ -4,7 +4,7 @@ from app.models import Ad
 def get_active_ads(location):
     now = datetime.utcnow()
 
-    return (
+    ad = (
         Ad.query
         .filter_by(active=True, location=location)
         .filter(
@@ -12,5 +12,8 @@ def get_active_ads(location):
             (Ad.end_date == None) | (Ad.end_date >= now)
         )
         .order_by(Ad.priority.desc())
-        .all()
+        .first()
     )
+
+    # Always return a list (empty if no ad)
+    return [ad] if ad else []

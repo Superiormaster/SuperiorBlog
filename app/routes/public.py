@@ -1,5 +1,5 @@
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, current_app, flash, make_response
-from app.models import Post, Comment, Like, Subscriber, ContactMessage, CaptionHistory, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit, FootballCache, PageView
+from app.models import Post, Comment, Like, Subscriber, ContactMessage, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit, FootballCache, PageView
 import os, traceback, re, base64, requests, secrets, uuid
 from requests.exceptions import ConnectionError
 from urllib.parse import quote
@@ -610,6 +610,7 @@ def user_create_or_edit(id=None):
         # Assign tags
         raw_tags = request.form.get("tags", "")
         post.tags = process_tags(raw_tags)
+        print("Draft content size (bytes):", len(request.form.get("content", "").encode("utf-8")))
 
         safe_commit()
 
@@ -648,7 +649,7 @@ def save_draft():
         is_new = True
 
     # --- Save content and basic info ---
-    #content_html = inject_inpost_ads(content_html)
+    content_html = inject_inpost_ads(content_html)
     post.content = content_html
     post.title = title
     post.featured_image = featured_image
@@ -1094,15 +1095,8 @@ def index():
         .limit(10)
         .all()
     )
-    
-    editor_picks = CaptionHistory.query \
-        .filter(CaptionHistory.style == "editor_pick") \
-        .order_by(desc(CaptionHistory.confidence)) \
-        .limit(5).all()
 
-    print("Live Matches:", live_matches)
-    print("League Table:", league_table)
-    return render_template("homepage.html", posts=posts, popular_posts=popular_posts, popular_tags=popular_tags, latest_posts=latest_posts, breaking_posts=breaking_posts, Post=Post, live_matches=live_matches, league_table=league_table, form=form, editor_picks=editor_picks)
+    return render_template("homepage.html", posts=posts, popular_posts=popular_posts, popular_tags=popular_tags, latest_posts=latest_posts, breaking_posts=breaking_posts, Post=Post, live_matches=live_matches, league_table=league_table, form=form)
 
 @public_bp.route("/post/<slug>", endpoint='post_detail')
 def post_detail(slug):

@@ -8,8 +8,9 @@ from flask_login import (
 )
 from sqlalchemy import or_
 from app.utils.db_helpers import safe_commit
+from app.utils.cloudinary_helper import upload_image_file, allowed_file
 from app.utils.email import send_email
-from app.models import Post, AppSettings, CaptionHistory, User, ContactMessage, Repost, Subscriber, DigestDraft, Ad, BreakingNews, Tag, Comment, PageView
+from app.models import Post, AppSettings, User, ContactMessage, Repost, Subscriber, DigestDraft, Ad, BreakingNews, Tag, Comment, PageView
 from app.extensions import db, csrf
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.utils.admin_email import send_latest_breaking_news, send_weekly_digest_to_all, send_welcome_email, log_email
@@ -596,31 +597,81 @@ def analytics():
         total_engagement_rate_growth=growth_defaults,
     )
 
-@admin_bp.route("/create", methods=["GET", "POST"])
+# ---------- LIST ADS ----------
+@admin_bp.route("/ads")
 @login_required
-@csrf.exempt
-def create_media():
+def ads_list():
+    ads = Ad.query.order_by(Ad.priority.desc(), Ad.created_at.desc()).all()
+    return render_template("admin/ads_list.html", ads=ads)
+  
+def upload_to_cloudinary(file):
+    """
+    Upload a Flask FileStorage object to Cloudinary and return the secure URL.
+    """
+    try:
+        return upload_image_file(file, folder="SuperiorNews/ads")
+    except Exception as e:
+        current_app.logger.error(f"Cloudinary upload failed: {e}")
+        return None
+
+# ---------- CREATE NEW AD ----------
+@admin_bp.route("/ads/form", methods=["GET", "POST"])
+@admin_bp.route("/ads/form/<int:ad_id>", methods=["GET", "POST"])
+@login_required
+def ad_form(ad_id=None):
+
+    ad = Ad.query.get(ad_id) if ad_id else None
+
     if request.method == "POST":
 
-        media = Ad(
-            name=request.form["name"],
-            location=request.form["location"],
-            type=request.form["type"],
-            title=request.form.get("title"),
-            image_url=request.form.get("image_url"),
-            target_url=request.form.get("target_url"),
-            html_code=request.form.get("html_code"),
-            priority=int(request.form.get("priority", 1)),
-            active=True
-        )
+        # Upload image if provided
+        image_file = request.files.get("image")
+        image_url = request.form.get("image_url") or (ad.image_url if ad else None)
 
-        db.session.add(media)
+        if image_file and image_file.filename != "":
+          if allowed_file(image_file.filename):
+              uploaded_url = upload_to_cloudinary(image_file)
+              if uploaded_url:
+                  image_url = uploaded_url
+          else:
+              flash("Invalid image type.", "danger")
+              return redirect(request.url)
+
+        if not ad:
+            ad = Ad()
+            db.session.add(ad)
+
+        # Assign fields
+        ad.name = request.form["name"]
+        ad.title = request.form.get("title")
+        ad.image_url = image_url
+        ad.target_url = request.form.get("target_url")
+        ad.html_code = request.form.get("html_code")
+        ad.type = request.form.get("type", "custom")
+        ad.internal = "internal" in request.form
+        ad.location = request.form["location"]
+        ad.priority = int(request.form.get("priority", 1))
+        ad.active = "active" in request.form
+
         safe_commit()
 
-        flash("Ad added!", "success")
-        return redirect(url_for("admin.create_media"))
+        flash(
+            "Ad updated successfully!" if ad_id else "Ad created successfully!",
+            "success"
+        )
+        return redirect(url_for("admin.ads_list"))
 
-    return render_template("admin/create_media.html")
+    return render_template("admin/create_media.html", ad=ad)
+
+# ---------- DELETE AD ----------
+@admin_bp.route("/ads/delete/<int:ad_id>", methods=["POST"])
+@login_required
+def delete_ad(ad_id):
+    ad = Ad.query.get_or_404(ad_id)
+    db.session.delete(ad)
+    safe_commit()
+    flash("Ad deleted successfully!", "success")
+    return redirect(url_for("admin.ads_list"))
 
 @admin_bp.route("/tags")
 @login_required

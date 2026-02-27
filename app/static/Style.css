@@ -49,6 +49,15 @@ button {
   text-decoration: underline;
 }
 
+/* Advertisement */
+.ad-container img {
+    width: 100%;
+    height: auto;         /* maintain aspect ratio */
+    max-height: 400px;    /* for top/mid ads */
+    object-fit: cover;    /* fill container without distortion */
+    border-radius: 12px;
+}
+
 /* Header Setting */
 header{
   height: 56px;

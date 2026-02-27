@@ -1,6 +1,15 @@
 {% extends 'user/base.html' %} 
 {% block content %}
 
+{% set location = 'sidebar' %}
+<div class="hidden lg:block">
+    {% include "ads/adBlock.html" %}
+</div>
+{% set location = "sticky_bottom" %}
+{% include "ads/adBlock.html" %}
+{% set location = "home_top" %}
+{% include "ads/adBlock.html" %}
+
 {% if breaking_posts %}
 <div id="breaking-banner" class="bg-red-600 text-white py-2 px-4 breaking-banner font-bold top-16 w-full">
   <div class="flex items-center gap-4 px-4 py-2 overflow-hidden">
@@ -154,6 +163,9 @@
 </div>
 {% endif %}
 
+{% set location = "home_mid" %}
+{% include "ads/adBlock.html" %}
+
 <div class="py-6 hidden md:block space-y-4">
     {% for post in posts %}
     <div class="flex flex-row gap-4 bg-gray-100 dark:bg-gray-800 shadow-sn rounded p-4 hover:shadow-lg transition">
@@ -193,12 +205,6 @@
             {{ post.title }}
           </a>
         </h3>
-              <h3 class="text-lg font-semibold text-gray-700 dark:text-yellow-500 mb-1 leading-snug line-clamp-1">
-        <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
-           class="text-gray-800 dark:text-yellow-600 hover:underline">
-          {{ post.title }}
-        </a>
-      </h3>
   
         <p class="text-gray-500 text-sm">
           Published on {{ post.created_at.strftime('%B %d, %Y') }}
@@ -269,7 +275,7 @@
       </div>
 
       <!-- Title -->
-      <h3 class="text-base md:text-xl font-semibold 
+      <h3 class="text-base md:text-xl font-semibold text-gray-900 dark:text-yellow-600
                  leading-tight line-clamp-2">
         <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
            class="text-gray-900 dark:text-yellow-600 hover:underline">
