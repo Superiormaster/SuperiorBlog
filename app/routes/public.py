@@ -1019,7 +1019,7 @@ def index():
         .filter(
             Post.is_published == True,
             Post.status == "published",
-            Post.created_at >= twelve_hours_ago,
+            Post.created_at >= one_day_ago,
             ~Post.id.in_(latest_ids)
         )
         .order_by(desc("popularity"))
@@ -1313,7 +1313,7 @@ def subscribe():
     send_welcome_email(email, token)
 
     flash("Thanks for subscribing", "success")
-    return redirect(url_for("public.index"))
+    return redirect(request.referrer)
 
 @public_bp.route('/unsubscribe/<token>')
 def unsubscribe(token):

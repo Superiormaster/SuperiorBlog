@@ -12,64 +12,117 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
   <!-- HERO + COUNTDOWN -->
   <div class="text-center mb-12">
     <h1 class="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-400">
-      Generate Viral X Captions Instantly
+      Turn Breaking News Into High-Impact X Threads — Instantly
     </h1>
     <p class="text-gray-500 dark:text-gray-300 mt-2 text-lg">
-      Turn news, sports highlights, and events into high-performing X posts & threads — for creators, journalists & marketers.
+      Engineered for Real-Time News.
     </p>
-    <span class="text-gray-400 dark:text-gray-500 mt-1 block mb-4">Launches in:</span>
+    <p class="text-gray-400 dark:text-gray-00 mt-2 text-lg">
+      Transform breaking stories into structured, high-retention X threads in seconds.
+    </p>
+    <span class="text-gray-400 dark:text-gray-500 mt-1 block mb-4">Public Launch In:</span>
     <div id="countdown" class="flex justify-center gap-4 text-black dark:text-white font-bold text-xl"></div>
   </div>
 
   <!-- CTA / WAITLIST FORM -->
   <div class="mb-12 p-6 rounded-xl bg-gradient-to-r from-blue-600/20 to-cyan-500/20 border border-blue-500/20 text-center">
     <p class="text-black dark:text-white font-semibold mb-4">🚀 Join the early access waitlist and get exclusive perks!</p>
-    <form action="{{ url_for('public.subscribe') }}" method="post" class="flex flex-col md:flex-row gap-3 justify-center items-center">
-      {{ form.hidden_tag() }}
-      {{ form.email(class="flex-1 p-3 rounded-lg bg-gray-200 dark:bg-gray-800 dark:text-white text-black placeholder-gray-500", placeholder="Your email address") }}
-      {{ form.submit(class="btn btn-primary font-medium text-white px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700") }}
+    <form action="{{ url_for('caption.subscribe') }}" method="post" class="flex flex-col md:flex-row gap-3 justify-center items-center">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input 
+        type="email" 
+        name="email" 
+        placeholder="Enter your email"
+        required
+        class="p-3 rounded-lg bg-gray-200 dark:bg-gray-800 dark:text-white text-black placeholder-gray-500"
+      >
+    
+      <button 
+        type="submit"
+        class="bg-blue-600 hover:bg-blue-700 btn btn-primary font-medium text-white px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition"
+      >
+        Join Waitlist
+      </button>
     </form>
   </div>
 
   <!-- FEATURES -->
   <div class="grid space-y-2 md:grid-cols-3 gap-8 mb-12">
     <div class="p-6 bg-gray-100 dark:bg-gray-800 rounded-xl shadow-md text-center">
-      <h3 class="font-bold text-black text-blue-500 text-xl mb-2">Instant Captions</h3>
-      <p class="text-gray-600 dark:text-gray-300">Generate scroll-stopping captions in seconds — no more writer’s block.</p>
+      <h3 class="font-bold text-black text-blue-500 text-xl mb-2">News-Optimized</h3>
+      <p class="text-gray-600 dark:text-gray-300">
+        Built specifically for breaking stories and real-time updates.
+        Turns raw news into compelling threads.</p>
     </div>
     <div class="p-6 bg-gray-100 dark:bg-gray-800 rounded-xl shadow-md text-center">
-      <h3 class="font-bold text-blue-500 text-xl mb-2">Viral Optimization</h3>
-      <p class="text-gray-600 dark:text-gray-300">AI suggests the best tone, style, and posting time for maximum engagement.</p>
+      <h3 class="font-bold text-blue-500 text-xl mb-2">Instant Threads</h3>
+      <p class="text-gray-600 dark:text-gray-300">
+        Generate structured X threads in seconds. Publish while the story is still hot.</p>
     </div>
     <div class="p-6 bg-gray-100 dark:bg-gray-800 rounded-xl shadow-md text-center">
-      <h3 class="font-bold text-blue-500 text-xl mb-2">Premium Features</h3>
-      <p class="text-gray-600 dark:text-gray-300">Create threads, reply-optimized posts, engagement hooks & sports images.</p>
+      <h3 class="font-bold text-blue-500 text-xl mb-2">Engagement-Focused</h3>
+      <p class="text-gray-600 dark:text-gray-300">
+        Crafted to maximize retention and repost potential. Hooks, pacing, and clarity built-in.
+        </p>
     </div>
   </div>
 
-  <!-- DEMO SECTION -->
-  {% if captions %}
-    {% set best = captions.captions[0] %}
-    <div class="mb-12 p-6 bg-gray-50 dark:bg-gray-900 rounded-xl shadow-lg text-center">
-      <h3 class="font-bold text-blue-500 text-2xl mb-4">Sample Generated Caption</h3>
-      <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ best.text }}</p>
-      {% if best.image_url %}
-        <div class="relative w-full h-64 mt-4 rounded-xl overflow-hidden">
-          <img data-src="{{ best.image_url[0] }}" alt="Best caption image" class="lazy absolute inset-0 w-full h-full object-cover rounded-xl">
-        </div>
-      {% endif %}
-      <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">Style: {{ best.style }} | Confidence: {{ best.confidence_score or 0 }}%</p>
-      <p class="text-gray-500 dark:text-gray-400 text-sm">Best Posting Time: {{ best.best_post_time }}</p>
+<!-- DEMO SECTION -->
+<div class="mb-12 p-8 bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg text-center">
+  <h3 class="font-bold text-blue-500 text-2xl mb-6">
+    Sample Generated News Thread
+  </h3>
+
+  <div class="space-y-4 text-left max-w-2xl mx-auto">
+    <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow">
+      <p class="text-gray-900 dark:text-white font-semibold">
+        🚨 BREAKING: Israel launches preemptive strikes on Iran as explosions hit Tehran.
+      </p>
     </div>
-  {% endif %}
+
+    <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow">
+      <p class="text-gray-700 dark:text-gray-300">
+        Sirens sound across Jerusalem while Iran confirms multiple blasts in the north and east of Tehran.
+      </p>
+    </div>
+
+    <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow">
+      <p class="text-gray-700 dark:text-gray-300">
+        Israel cites ballistic missile threats. Iran vows retaliation. Regional escalation now depends on the next 72 hours.
+      </p>
+    </div>
+
+    <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow">
+      <p class="text-gray-700 dark:text-gray-300">
+        Oil markets, Hezbollah, US military presence — everything is now in play.
+      </p>
+    </div>
+  </div>
+
+  <div class="mt-6 text-sm text-gray-500 dark:text-gray-400">
+    Style: Engineered News Thread | Confidence: 92%
+  </div>
+</div>
 
   <!-- LAUNCH CTA AGAIN -->
   <div class="mt-12 p-6 rounded-xl bg-gradient-to-r from-blue-600/20 to-cyan-500/20 border border-blue-500/20 text-center">
     <p class="text-black dark:text-white font-semibold mb-4">🎯 Ready to create viral captions? Join early access now!</p>
-    <form action="{{ url_for('public.subscribe') }}" method="post" class="flex flex-col md:flex-row gap-3 justify-center items-center">
-      {{ form.hidden_tag() }}
-      {{ form.email(class="flex-1 p-3 rounded-lg bg-gray-200 dark:bg-gray-800 dark:text-white text-black placeholder-gray-500", placeholder="Your email address") }}
-      {{ form.submit(class="btn btn-primary font-medium text-white px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700") }}
+    <form action="{{ url_for('caption.subscribe') }}" method="post" class="flex flex-col md:flex-row gap-3 justify-center items-center">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input 
+        type="email" 
+        name="email" 
+        placeholder="Enter your email"
+        required
+        class="p-3 rounded-lg bg-gray-200 dark:bg-gray-800 dark:text-white text-black placeholder-gray-500"
+      >
+    
+      <button 
+        type="submit"
+        class="bg-blue-600 hover:bg-blue-700 btn btn-primary font-medium text-white px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition"
+      >
+        Join Waitlist
+      </button>
     </form>
   </div>
 

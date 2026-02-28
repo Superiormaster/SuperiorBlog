@@ -8,7 +8,6 @@ from app.models import XPost
 from app.utils.limits import can_generate
 from app.utils.db_helpers import safe_commit
 from app.utils.openai_service import generate_x_post_for_user
-from app.forms import SubscribeForm
 
 caption_bp = Blueprint('caption', __name__)
 
@@ -20,7 +19,6 @@ def landing_page():
     Shows countdown, sample caption (if available), and waitlist form.
     """
     # Fetch latest generated caption for demo (optional)
-    form = SubscribeForm()
     latest_caption = None
     demo_posts = XPost.query.order_by(XPost.created_at.desc()).limit(1).all()
     if demo_posts:
@@ -43,7 +41,6 @@ def landing_page():
     return render_template(
         "tools/landing.html",
         captions=latest_caption,
-        form=form,
         allowed_tones=allowed_tones
     )
 

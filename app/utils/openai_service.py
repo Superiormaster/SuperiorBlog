@@ -151,12 +151,6 @@ Rules:
 - If mode is NOT thread → include one best caption ONLY
 - If mode is thread → caption must equal first tweet of thread
 - Thread first tweet must be a hook
-
-Instructions for best posting time:
-- Suggest the single hour of the day (HH:00) when engagement is expected to be highest
-- Include predicted **best posting hour** in HH:00
-- Consider global audience engagement patterns for {niche} content
-- Return exactly one hour in HH:00 format
 """
 
     if niche == "sports":
@@ -223,7 +217,6 @@ Return JSON:
   "caption": "...",
   "replies": ["...", "...", "..."],
   "thread": [],
-  "best_hour": "HH:00"
 }}
 
 Content:
