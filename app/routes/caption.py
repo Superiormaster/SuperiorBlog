@@ -13,6 +13,80 @@ from app.forms import SubscribeForm
 caption_bp = Blueprint('caption', __name__)
 
 ALLOWED_TONES = ["neutral", "breaking", "viral", "emotional", "professional"]
+@caption_bp.route('/landing')
+def landing_page():
+    """
+    Landing page for the X Caption Engine.
+    Shows countdown, sample caption (if available), and waitlist form.
+    """
+    # Fetch latest generated caption for demo (optional)
+    form = SubscribeForm()
+    latest_caption = None
+    demo_posts = XPost.query.order_by(XPost.created_at.desc()).limit(1).all()
+    if demo_posts:
+        post = demo_posts[0]
+        latest_caption = {
+            "captions": [
+                {
+                    "text": post.text,
+                    "style": post.style,
+                    "confidence_score": post.confidence_score,
+                    "best_post_time": post.best_post_time,
+                    "image_url": post.image_url
+                }
+            ]
+        }
+
+    # Allowed tones (example)
+    allowed_tones = ["funny", "serious", "informative", "casual"]
+
+    return render_template(
+        "tools/landing.html",
+        captions=latest_caption,
+        form=form,
+        allowed_tones=allowed_tones
+    )
+
+@caption_bp.route("/subscribe", methods=["POST"])
+def subscribe():
+    """
+    Handles waitlist subscriptions via email.
+    """
+    email = request.form.get("email")
+    if not email:
+        flash("Please enter a valid email address.", "error")
+        return redirect(url_for("caption.landing_page"))
+
+    # Check if already subscribed
+    existing = Subscriber.query.filter_by(email=email).first()
+    if existing:
+        flash("You are already on the waitlist! 🎉", "info")
+        return redirect(url_for("caption.landing_page"))
+
+    # Add subscriber
+    new_sub = Subscriber(email=email)
+    db.session.add(new_sub)
+    safe_commit()
+
+    flash("Thank you for joining the waitlist! 🚀", "success")
+    return redirect(url_for("caption.landing_page"))
+
+@caption_bp.route("/api/demo-caption")
+def demo_caption():
+    """
+    Returns latest generated caption as JSON for landing page demo (optional).
+    """
+    demo_post = XPost.query.order_by(XPost.created_at.desc()).first()
+    if demo_post:
+        return {
+            "text": demo_post.text or "",
+            "style": demo_post.style,
+            "confidence_score": demo_post.confidence_score or 0,
+            "best_post_time": demo_post.best_post_time,
+            "image_url": demo_post.image_url,
+        }
+    return {}
+
 @caption_bp.route('/caption')
 def caption_page():
     form = SubscribeForm()

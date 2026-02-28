@@ -78,7 +78,7 @@
       <h3 class="text-sm text-gray-400">Total time on page</h3>
       <span class="text-emerald-400">↑ {{ total_time_on_page_growth }}%</span>
     </div>
-    <p class="text-2xl font-bold">{{ total_time_on_page }}</p>
+    <p class="text-2xl font-bold">{{ total_time_on_page | round(2) }}</p>
   </div>
 
   <div class="panel bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1">
@@ -97,6 +97,7 @@
     <p class="text-2xl font-bold">{{ total_shares }}</p>
   </div>
   
+  
   <div class="panel md:hidden bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
     <div class="flex justify-between text-xs">
       <h3 class="text-sm text-gray-400">Caption Users</h3>
@@ -107,10 +108,10 @@
   
   <div class="panel hidden md:block bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
     <div class="flex justify-between text-xs">
-      <h3 class="text-sm text-gray-400">Caption Users</h3>
+      <h3 class="text-sm text-gray-400">Caption generated</h3>
       <span class="text-emerald-400">↑ {{ total_caption_users_growth }}%</span>
     </div>
-    <p class="text-2xl font-bold">{{ total_caption_users }}</p>
+    <p class="text-2xl font-bold">{{ total_caption_generated }}</p>
   </div>
 </div>
 
@@ -255,11 +256,63 @@
 
 <canvas id="userActivityChart"></canvas>
 
+
+<div class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6 mt-12 px-4">
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Long Captions</h3>
+      <span class="text-emerald-400">↑ {{ total_repost_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ long_posts }}</p>
+  </div>
+  
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Medium Captions</h3>
+      <span class="text-emerald-400">↑ {{ long_posts }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ medium_posts }}</p>
+  </div>
+  
+  <div class="bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <h3 class="text-sm text-gray-400">Short Captions</h3>
+      <span class="text-emerald-400">↑ {{ total_profile_visits_growth }}%</span>
+    </div>
+    <p class="text-2xl font-bold">{{ short_posts }}</p>
+  </div>
+
+  <div class="panel md:hidden bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <p class="text-sm text-gray-400">Length of Captions</p>
+    </div>
+    <h3 class="text-3xl font-bold">{{ avg_caption_length }}</h3>
+  </div>
+</div>
+
+  <div class="panel md:hidden bg-gray-800 border border-gray-700 mb-3 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <p class="text-sm text-gray-400">Top Captions Creators</p>
+    </div>
+    <h3 class="text-sm font-bold">{% for creator in top_x_creators_display %}
+    {{ creator.username }} ({{ creator.posts }})<br>
+  {% endfor %}</h3>
+  </div>
+
+  <div class="panel md:hidden bg-gray-800 border border-gray-700 shadow rounded-xl p-4 flex-1 text-center">
+    <div class="flex justify-between text-xs">
+      <p class="text-sm text-gray-400">Total Caption Created</p>
+    </div>
+    <h3 class="text-sm font-bold">{% for item in caption_counts_display %}
+    {{ item.date }} ({{ item.count }})<br>
+  {% endfor %}</h3>
+  </div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 const labels = {{ labels | tojson }};
-const platformLabels = {{ platform_labels | tojson }};
+const platformLabels = {{ xpost_labels | tojson }};
 
 new Chart(document.getElementById("postChart"), {
   type: 'bar',
@@ -314,7 +367,7 @@ new Chart(document.getElementById("captionChart"), {
     datasets: [
       {
         label: "Captions",
-        data: {{ caption_data | tojson }},
+        data: {{ xpost_data | tojson }},
         borderWidth: 2,
         tension: 0.4
       },

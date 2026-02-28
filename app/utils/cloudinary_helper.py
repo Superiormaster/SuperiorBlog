@@ -1,18 +1,24 @@
 import cloudinary.uploader
 from cloudinary.exceptions import Error as CloudinaryError
 from flask import current_app
-import re
+import re, io
 import base64
 from io import BytesIO
+from PIL import Image
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def upload_image_file(file, folder="SuperiorNews"):
+
+def upload_image_file(file, folder="SuperiorNews", width=None, height=None, crop_for_ads=False, max_height=None):
     """
-    Uploads a normal file object (from <input type="file">)
+    Uploads a file object to Cloudinary.
+    
+    - crop_for_ads=True + width+height → Cloudinary crop (object-cover)
+    - max_height → local proportional resize
+    - default → upload as-is
     """
     if not file:
         current_app.logger.error("No file received")
@@ -22,15 +28,41 @@ def upload_image_file(file, folder="SuperiorNews"):
         return None
 
     try:
+        # If we need proportional resize locally
+        if max_height:
+            image = Image.open(file)
+            orig_width, orig_height = image.size
+            if orig_height > max_height:
+                new_width = int((max_height / orig_height) * orig_width)
+                image = image.resize((new_width, max_height), Image.Resampling.LANCZOS)
+
+                buf = io.BytesIO()
+                image.save(buf, format="JPEG", quality=85)
+                buf.seek(0)
+                file_to_upload = buf
+            else:
+                file_to_upload = file
+        else:
+            file_to_upload = file
+
+        # If we want Cloudinary to crop for ads
+        transformations = []
+        if crop_for_ads and width and height:
+            transformations.append({"width": width, "height": height, "crop": "fill"})
+
         result = cloudinary.uploader.upload(
-            file,
+            file_to_upload,
             folder=folder,
             resource_type="image",
-            timeout=60
+            timeout=60,
+            transformation=transformations if transformations else None
         )
         return result.get("secure_url")
     except CloudinaryError as e:
         current_app.logger.error(f"Cloudinary upload failed: {e}")
+        return None
+    except Exception as e:
+        current_app.logger.error(f"Unexpected error: {e}")
         return None
 
 

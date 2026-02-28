@@ -7,8 +7,13 @@
 </div>
 {% set location = "sticky_bottom" %}
 {% include "ads/adBlock.html" %}
-{% set location = "home_top" %}
-{% include "ads/adBlock.html" %}
+
+<div class="max-w-5xl mb-3 bg-gray-100 dark:bg-gray-800 mx-auto rounded-lg overflow-hidden shadow-sm">
+  <div class="flex justify-center p-2">
+    {% set location = "home_top" %}
+    {% include "ads/adBlock.html" %}
+  </div>
+</div>
 
 {% if breaking_posts %}
 <div id="breaking-banner" class="bg-red-600 text-white py-2 px-4 breaking-banner font-bold top-16 w-full">
@@ -106,7 +111,7 @@
   </div>-->
 
 <!-- Popular / Most Reach Posts -->
-<div class="max-w-5xl bg-gray-100 dark:bg-gray-800 mx-auto">
+<div class="max-w-5xl mb-3 bg-gray-100 dark:bg-gray-800">
   <div class="flex flex-col space-y-4">
     {% for post in popular_posts %}
       <div class="flex flex-col md:flex-row gap-4 bg-white/5 shadow-sm rounded p-4 hover:shadow-sm transition">
@@ -523,10 +528,10 @@
   </div>
 
   <div class="max-w-5xl mx-auto grid grid-cols-1 gap-6 text-center md:text-left mb-8">
-    <!-- Optional Extra / Generate Captions -->
+    <!-- Optional Extra / Generate Captions --><!--
     <div class="md:hidden flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">Tools</h4>
-      <a href="{{ url_for('caption.caption_page') }}" class="hover:text-white link-gold">Generate Captions</a>
+      <a href="{{ url_for('caption.caption_page') }}" class="hover:text-white link-gold">Generate Captions</a>-->
     </div>
 
     <!-- Social Links -->

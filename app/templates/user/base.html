@@ -109,7 +109,7 @@
             </div>
           {% endif %}
         {% endwith %}
-        <button class="fixed right-10 bottom-0 text-gray-900 dark:text-gray-100 text-2xl border rounded-xl py-2 px-1 z-50" id="btn">↑</button>
+        <button class="fixed right-10 bottom-10 text-gray-900 dark:text-gray-100 text-2xl border rounded-xl py-2 px-1 z-50" id="btn">↑</button>
         {% block content %}{% endblock %}
     </main>
 
@@ -221,6 +221,7 @@
     <script src="{{ url_for('static', filename='caption.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='create.js') }}"></script>
     <script src="{{ url_for('static', filename='comment.js') }}"></script>
+    <script src="{{ url_for('static', filename='comment_ads.js') }}"></script>
     <script src="{{ url_for('static', filename='top_ad.js') }}"></script>
     <script src="{{ url_for('static', filename='button.js') }}"></script>
     <script src="{{ url_for('static', filename='login.js') }}"></script>

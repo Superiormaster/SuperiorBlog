@@ -10,7 +10,7 @@ from sqlalchemy import or_
 from app.utils.db_helpers import safe_commit
 from app.utils.cloudinary_helper import upload_image_file, allowed_file
 from app.utils.email import send_email
-from app.models import Post, AppSettings, User, ContactMessage, Repost, Subscriber, DigestDraft, Ad, BreakingNews, Tag, Comment, PageView
+from app.models import Post, AppSettings, User, ContactMessage, Repost, Subscriber, DigestDraft, Ad, XPost, BreakingNews, Tag, Comment, PageView
 from app.extensions import db, csrf
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.utils.admin_email import send_latest_breaking_news, send_weekly_digest_to_all, send_welcome_email, log_email
@@ -352,7 +352,10 @@ def view_message(id):
 @admin_bp.route("/analytics")
 @login_required
 def analytics():
-    range_days = int(request.args.get("range", 7))
+    try:
+        range_days = int(request.args.get("range", 7))
+    except (TypeError, ValueError):
+        range_days = 7
 
     growth_defaults = 0
     # -----------------------------
@@ -363,40 +366,49 @@ def analytics():
         Post, Post.created_at, range_days
     )
     
-    # TOTAL UNIQUE USERS
-    unique_visitors = db.session.query(
+    # TOTAL REGISTERED USERS
+    total_registered_users = User.query.count()
+    now = datetime.utcnow()
+
+    current_users = User.query.filter(
+        User.created_at >= now - timedelta(days=range_days)
+    ).count()
+    
+    previous_users = User.query.filter(
+        User.created_at.between(
+            now - timedelta(days=range_days * 2),
+            now - timedelta(days=range_days)
+        )
+    ).count()
+    
+    total_registered_users_growth = percentage_growth(
+        current_users,
+        previous_users
+    )
+    
+    #-----------------------------
+    # FOR FUTURE CALCULATION
+    #-----------------------------
+    total_time_on_page = db.session.query(
+        func.coalesce(func.sum(PageView.read_time) / 60.0, 0)
+    ).filter(
+        PageView.created_at >= datetime.utcnow() - timedelta(days=range_days)
+    ).scalar()
+    
+    total_unique_sessions = db.session.query(
         func.count(func.distinct(PageView.session_id))
     ).filter(
         PageView.created_at >= datetime.utcnow() - timedelta(days=range_days)
     ).scalar() or 0
     
-    # TOTAL REGISTERED USERS
-    total_registered_users = User.query.count()
-    new_users_in_range = User.query.filter(
-        User.created_at >= datetime.utcnow() - timedelta(days=range_days)
-    ).count()
-
-    total_registered_users_growth = percentage_growth(
-        new_users_in_range,
-        total_registered_users
+    avg_time_per_session = ( total_time_on_page / total_unique_sessions
+      if total_unique_sessions > 0 else 0
     )
-    
-    total_time_minutes = db.session.query(
-        func.coalesce(func.sum(PageView.read_time), 0)
-    ).filter(
-        PageView.created_at >= datetime.utcnow() - timedelta(days=range_days)
-    ).scalar()
-    
-    total_time_on_page = db.session.query(
-        func.coalesce(func.sum(PageView.read_time), 0)
-    ).filter(
-        PageView.created_at >= datetime.utcnow() - timedelta(days=range_days)
-    ).scalar()
     
     # TOTAL DELETED ACCOUNTS
     total_deleted_accounts = User.query.filter_by(is_deleted=True).count()
 
-    total_caption_users = CaptionHistory.query.distinct(CaptionHistory.user_id).count()
+    total_caption_users = XPost.query.distinct(XPost.user_id).count()
 
     #-----------------------------
     # AVG POSTS AND AVG CAPTIONS
@@ -408,7 +420,7 @@ def analytics():
     ) if total_users else 0
     
     total_avg_caption = round(
-        CaptionHistory.query.count() / total_users, 2
+        XPost.query.count() / total_users, 2
     ) if total_users else 0
     
     total_avg_posts_growth = growth_defaults
@@ -423,23 +435,27 @@ def analytics():
     # DAU, MAU AND WAU INDUSTRIAL CALCULATION
     #-----------------------------
     now = datetime.utcnow()
-    DAU = active_users(1)
-    WAU = active_users(7)
-    MAU = active_users(30)
     dau_labels, dau_values = active_users_by_day(7)
 
     DAU = db.session.query(
         func.count(func.distinct(User.id))
-    ).filter(User.last_login >= now - timedelta(days=1)).scalar()
+    ).filter(User.last_login >= now - timedelta(days=1)).scalar() or 0
     
     WAU = db.session.query(
         func.count(func.distinct(User.id))
-    ).filter(User.last_login >= now - timedelta(days=7)).scalar()
+    ).filter(User.last_login >= now - timedelta(days=7)).scalar() or 0
     
     MAU = db.session.query(
         func.count(func.distinct(User.id))
-    ).filter(User.last_login >= now - timedelta(days=30)).scalar()
-    DAU_prev = active_users(2)
+    ).filter(User.last_login >= now - timedelta(days=30)).scalar() or 0
+    DAU_prev = db.session.query(
+        func.count(func.distinct(User.id))
+    ).filter(
+        User.last_login.between(
+            now - timedelta(days=2),
+            now - timedelta(days=1)
+        )
+    ).scalar() or 0
     WAU_prev = db.session.query(
         func.count(func.distinct(User.id))
     ).filter(
@@ -465,7 +481,11 @@ def analytics():
     # -----------------------------
     # VIEWS & ENGAGEMENT
     # -----------------------------
-    total_views = db.session.query(db.func.sum(Post.views)).scalar() or 0
+    total_views = db.session.query(
+        func.count(PageView.id)
+    ).filter(
+        PageView.created_at >= now - timedelta(days=range_days)
+    ).scalar() or 0
     posts = Post.query.order_by(Post.created_at.asc()).all()
     total_impressions = db.session.query(db.func.sum(Post.impressions)).scalar() or 0
     total_profile_visits = db.session.query(db.func.sum(User.profile_visits)).scalar() or 0
@@ -474,7 +494,7 @@ def analytics():
     #-----------------------------
     # ENGAGEMENT
     #-----------------------------
-    total_engagements = total_likes + total_replies + total_shares
+    total_engagements = total_likes + total_replies + total_shares + total_repost
     total_engagement_rate = (
         round((total_engagements / total_impressions) * 100, 2)
         if total_impressions > 0 else 0
@@ -489,13 +509,14 @@ def analytics():
 
     #-----------------------------
     # NUMBER OF CREATORS AND ACTIVENESS
+    # FOR FUTURE PURPOSE
     #-----------------------------
     total_content_creators = db.session.query(
         db.func.count(db.func.distinct(Post.user_id))
     ).scalar() or 0
     total_logged_in_users = User.query.filter(User.last_login.isnot(None)).count()
     active_last_7_days = User.query.filter(
-        User.last_login >= datetime.utcnow() - timedelta(days=7)
+        User.last_login >= now - timedelta(days=7)
     ).count()
 
     # -----------------------------
@@ -510,11 +531,12 @@ def analytics():
     post_data = [d[1] for d in post_counts]
     
     like_counts = db.session.query(
-        func.date(Post.created_at), func.count(Post.id)
+        func.date(Post.created_at),
+        func.sum(Post.likes)
     ).group_by(func.date(Post.created_at)).all()
+    likes_labels = [str(d[0]) for d in like_counts]
+    likes_data = [d[1] for d in like_counts]
     
-    likes_labels = [str(d[0]) for d in like_counts]  # date
-    likes_data = [d[1] for d in like_counts]        # count
     #like_counts = [post.likes.count() for post in posts]
     
     view_counts = db.session.query(
@@ -525,14 +547,99 @@ def analytics():
     views_labels = [str(d[0]) for d in view_counts]
     views_data = [d[1] for d in view_counts]
     
-    platforms = db.session.query(
-        CaptionHistory.platform,
-        func.count(CaptionHistory.id)
-    ).group_by(CaptionHistory.platform).all()
-    
-    platform_labels = [p[0] for p in platforms]
-    caption_data = [p[1] for p in platforms]
+    caption_data = []
 
+    xpost_counts = db.session.query(
+        func.date(XPost.created_at),
+        func.count(XPost.id)
+    ).group_by(
+        func.date(XPost.created_at)
+    ).order_by(
+        func.date(XPost.created_at)
+    ).all()
+
+    xpost_labels = [p[0] for p in xpost_counts]
+    xpost_data = [p[1] for p in xpost_counts]
+
+    #-----------------------------
+    # CAPTION ANALYSIS
+    #-----------------------------
+    avg_caption_length = db.session.query(
+          func.avg(func.length(XPost.text))
+      ).scalar() or 0
+    
+    short_posts = db.session.query(func.count(XPost.id)).filter(
+        func.length(XPost.text) <= 120
+    ).scalar()
+    
+    medium_posts = db.session.query(func.count(XPost.id)).filter(
+        func.length(XPost.text).between(121, 200)
+    ).scalar()
+    
+    long_posts = db.session.query(func.count(XPost.id)).filter(
+        func.length(XPost.text) > 200
+    ).scalar()
+    
+    avg_confidence = db.session.query(
+        func.avg(XPost.confidence_score)
+    ).scalar() or 0
+    
+    best_times = db.session.query(
+        XPost.best_post_time,
+        func.count(XPost.id)
+    ).group_by(
+        XPost.best_post_time
+    ).order_by(
+        func.count(XPost.id).desc()
+    ).limit(5).all()
+    
+    best_time_labels = [str(t[0]) for t in best_times]
+    best_time_data = [t[1] for t in best_times]
+    
+    xposts = XPost.query.all()
+
+    total_predicted = 0
+    for post in xposts:
+        if post.predicted_engagement:
+            total_predicted += sum(post.predicted_engagement.values())
+    
+    avg_predicted_engagement = (
+        total_predicted / len(xposts)
+    ) if xposts else 0
+    
+    top_x_creators = db.session.query(
+        User.username,
+        func.count(XPost.id)
+    ).join(XPost, XPost.user_id == User.id)\
+    .group_by(User.username)\
+    .order_by(func.count(XPost.id).desc())\
+    .limit(5).all()
+
+    top_x_creators_display = [
+        {"username": u, "posts": c} for u, c in top_x_creators
+    ]
+    
+    length_engagement = []
+
+    for post in xposts:
+        if post.metrics:
+            total_eng = sum(
+                m.likes + m.replies 
+                for m in post.metrics
+            )
+            length_engagement.append({
+                "length": len(post.text),
+                "engagement": total_eng
+            })
+    
+    caption_counts = db.session.query(
+        func.date(XPost.created_at),
+        func.count(XPost.id)
+    ).group_by(func.date(XPost.created_at)).all()
+
+    caption_counts_display = [
+        {"date": str(d[0]), "count": d[1]} for d in caption_counts
+    ]
 
     return render_template(
         "admin/analytics.html",
@@ -543,7 +650,7 @@ def analytics():
         total_read_time=total_read_time,
         total_active_users=total_logged_in_users,
         total_time_on_page=total_time_on_page,
-        total_time_minutes=total_time_minutes,
+        avg_time_per_session=round(avg_time_per_session, 2),
         DAU=DAU,
         WAU=WAU,
         MAU=MAU,
@@ -564,16 +671,26 @@ def analytics():
         total_avg_caption_growth=total_avg_caption_growth,
         total_avg_posts=total_avg_posts,
         total_avg_posts_growth=total_avg_posts_growth,
-        unique_visitors=unique_visitors,
+        unique_visitors=total_unique_sessions,
 
+        avg_caption_length=round(avg_caption_length, 2),
+        short_posts=short_posts,
+        medium_posts=medium_posts,
+        long_posts=long_posts,
+        avg_confidence=round(avg_confidence, 2),
+        top_x_creators_display=top_x_creators_display,
+        caption_counts_display=caption_counts_display,
+        best_time_labels=best_time_labels,
+        best_time_data=best_time_data,
+        avg_predicted_engagement=round(avg_predicted_engagement, 2),
         total_repost=total_repost,
         total_impressions=total_impressions,
         views_data=safe_list(views_data),
         likes_data=safe_list(likes_data),
         labels=labels,
         post_data=post_data,
-        platform_labels=platform_labels,
-        caption_data=caption_data,
+        xpost_labels=xpost_labels,
+        xpost_data=xpost_data,
         total_profile_visits=total_profile_visits,
         total_shares=total_shares,
         total_engagements=total_engagements,
@@ -603,13 +720,14 @@ def analytics():
 def ads_list():
     ads = Ad.query.order_by(Ad.priority.desc(), Ad.created_at.desc()).all()
     return render_template("admin/ads_list.html", ads=ads)
-  
-def upload_to_cloudinary(file):
+
+def upload_to_cloudinary(file, width,
+    height=200):
     """
     Upload a Flask FileStorage object to Cloudinary and return the secure URL.
     """
     try:
-        return upload_image_file(file, folder="SuperiorNews/ads")
+        return upload_image_file(file, folder="SuperiorNews/ads", max_height=200, crop_for_ads=True, width=width, height=height)
     except Exception as e:
         current_app.logger.error(f"Cloudinary upload failed: {e}")
         return None
@@ -624,13 +742,20 @@ def ad_form(ad_id=None):
 
     if request.method == "POST":
 
+        ad_width_value = request.form.get("ad_width")
+
+        if ad_width_value:
+            ad_width = int(ad_width_value)
+        else:
+            ad_width = 600
+
         # Upload image if provided
         image_file = request.files.get("image")
         image_url = request.form.get("image_url") or (ad.image_url if ad else None)
 
         if image_file and image_file.filename != "":
           if allowed_file(image_file.filename):
-              uploaded_url = upload_to_cloudinary(image_file)
+              uploaded_url = upload_to_cloudinary(image_file, width=ad_width_value)
               if uploaded_url:
                   image_url = uploaded_url
           else:

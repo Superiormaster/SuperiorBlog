@@ -50,12 +50,27 @@ button {
 }
 
 /* Advertisement */
-.ad-container img {
+.pull-tab {
+    transition: transform 0.3s;
+}
+
+.pull-tab.expanded {
+    transform: rotate(180deg);
+}
+
+.ad-inner img {
     width: 100%;
-    height: auto;         /* maintain aspect ratio */
-    max-height: 400px;    /* for top/mid ads */
-    object-fit: cover;    /* fill container without distortion */
-    border-radius: 12px;
+    height: auto;
+    max-height: 192px; /* adjust as needed */
+}
+
+.sticky-ad.bottom {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 50;
+    transition: transform 0.3s ease-in-out;
 }
 
 /* Header Setting */

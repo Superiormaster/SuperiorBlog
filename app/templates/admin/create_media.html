@@ -116,16 +116,21 @@
                                px-4 py-2 focus:ring-2 focus:ring-blue-500
                                focus:outline-none transition"
                         value="{{ ad.image_url if ad else '' }}">
-                    <input type="file" name="image"
+                    <input type="file" name="image" id="imageUpload"
                     class="w-full rounded-xl border px-4 py-2">
                 </div>
+                <input type="hidden" name="ad_width" id="adWidth">
                 <div id="image-preview">
                 {% if ad and ad.image_url %}
-                <divclass="mt-3">
+                <div class="mt-3">
                     <p class="text-sm text-gray-500 mb-2">Current Image:</p>
                     <img src="{{ ad.image_url }}"
-                         class="w-full max-h-64 object-cover rounded-lg border">
+                         class="w-full h-[200] object-cover rounded-lg border">
                 </div>
+                <p id="dimensions" class="text-sm text-gray-600 mt-1"></p>
+                {% else %}
+                  <img id="previewImage" class="w-full max-h-[400px] object-contain rounded-lg border hidden">
+                  <p id="dimensions" class="text-sm text-gray-600 mt-1"></p>
                 {% endif %}
                 </div>
 
@@ -201,20 +206,54 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    const imageInput = document.querySelector('input[name="image"]');
-    const previewDiv = document.getElementById("image-preview");
+    const input = document.getElementById("imageUpload");
+    const previewImage = document.getElementById("previewImage");
+    const adWidthInput = document.getElementById("adWidth");
+    const dimensions = document.getElementById("dimensions");
 
-    imageInput.addEventListener("change", function() {
-        const file = this.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewDiv.innerHTML = `<img src="${e.target.result}" class="w-full max-h-64 object-cover rounded-lg border">`;
-            }
-            reader.readAsDataURL(file);
-        }
+    if (!previewImage || !input) return;
+
+    const targetHeight = 200;
+
+    input.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+
+        img.onload = () => {
+            const containerWidth = previewImage.parentElement.offsetWidth;
+            adWidthInput.value = containerWidth;
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            canvas.width = containerWidth;
+            canvas.height = targetHeight;
+
+            // Calculate cropping (object-cover style)
+            const scale = Math.max(
+                containerWidth / img.width,
+                targetHeight / img.height
+            );
+
+            const scaledWidth = img.width * scale;
+            const scaledHeight = img.height * scale;
+
+            const dx = (containerWidth - scaledWidth) / 2;
+            const dy = (targetHeight - scaledHeight) / 2;
+
+            ctx.drawImage(img, dx, dy, scaledWidth, scaledHeight);
+
+            previewImage.src = canvas.toDataURL("image/jpeg", 0.85);
+            previewImage.classList.remove("hidden");
+
+            dimensions.textContent =
+                `Final size: ${containerWidth} x ${targetHeight}px`;
+        };
     });
 });
+
 </script>
 
 {% endblock %}

@@ -23,14 +23,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         setTimeout(collapse, 5000);
-
-        const footer = document.querySelector("footer");
-        window.addEventListener("scroll", () => {
-            if(!footer) return;
-            const footerTop = footer.getBoundingClientRect().top;
-            const windowHeight = window.innerHeight;
-            ad.style.bottom = footerTop < windowHeight ? (windowHeight - footerTop) + "px" : "0px";
-        });
     });
 
     // Sticky top ads
@@ -43,9 +35,16 @@ document.addEventListener("DOMContentLoaded", function () {
         const collapsedPosition = "translateY(-100%)";
         const expandedPosition = "translateY(0%)";
 
-        function expand() { ad.style.transform = expandedPosition; tab.innerHTML = "▼"; expanded = true; }
-        function collapse() { ad.style.transform = collapsedPosition; tab.innerHTML = "▲"; expanded = false; }
-
+        function expand() { 
+            ad.style.transform = expandedPosition; 
+            tab.innerHTML = "▼"; 
+            expanded = true; 
+        }
+        function collapse() { 
+            ad.style.transform = collapsedPosition; 
+            tab.innerHTML = "▲"; 
+            expanded = false; 
+        }
         tab.addEventListener("click", () => expanded ? collapse() : expand());
 
         ad.addEventListener("touchstart", e => { ad.dataset.startY = e.touches[0].clientY; });
