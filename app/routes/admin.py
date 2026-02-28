@@ -6,7 +6,7 @@ from flask_login import (
     login_user, logout_user,
     login_required, current_user
 )
-from sqlalchemy import or_
+from sqlalchemy import or_, func, cast, Integer
 from app.utils.db_helpers import safe_commit
 from app.utils.cloudinary_helper import upload_image_file, allowed_file
 from app.utils.email import send_email
@@ -15,7 +15,6 @@ from app.extensions import db, csrf
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.utils.admin_email import send_latest_breaking_news, send_weekly_digest_to_all, send_welcome_email, log_email
 from app.utils.analytics import analytics_block, get_range, percentage_growth, safe_list, active_users_by_day, active_users, track_login
-from sqlalchemy import func
 from werkzeug.utils import secure_filename
 from slugify import slugify
 import os
@@ -532,7 +531,7 @@ def analytics():
     
     like_counts = db.session.query(
         func.date(Post.created_at),
-        func.sum(Post.likes)
+        func.sum(cast(Post.id == Like.post_id, Integer))
     ).group_by(func.date(Post.created_at)).all()
     likes_labels = [str(d[0]) for d in like_counts]
     likes_data = [d[1] for d in like_counts]

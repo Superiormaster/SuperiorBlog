@@ -1,5 +1,5 @@
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, current_app, flash, make_response
-from app.models import Post, Comment, Like, Subscriber, ContactMessage, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit, FootballCache, PageView
+from app.models import Post, Comment, Like, Subscriber, ContactMessage, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit, FootballCache, PageView, Ad
 import os, traceback, re, base64, requests, secrets, uuid
 from requests.exceptions import ConnectionError
 from urllib.parse import quote
@@ -986,7 +986,7 @@ def index():
     seven_days_ago = datetime.utcnow() - timedelta(days=7)
     six_hours_ago = datetime.utcnow() - timedelta(hours=6)
     one_day_ago = datetime.utcnow() - timedelta(days=1)
-    twelve_hours_ago = datetime.utcnow() - timedelta(days=2)
+    twelve_hours_ago = datetime.utcnow() - timedelta(hours=12)
 
     # Latest posts (3)
     latest_posts = (
