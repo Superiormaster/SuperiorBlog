@@ -757,8 +757,6 @@ def submit_user_post(id):
         post.status = "draft"
         post.is_published = False
         safe_commit()
-        print("FORM DATA:", request.form)
-        print("LABELS:", request.form.getlist("labels"))
 
         flash(
             "Moderation service unavailable. Post saved as draft.",
@@ -988,7 +986,7 @@ def index():
     seven_days_ago = datetime.utcnow() - timedelta(days=7)
     six_hours_ago = datetime.utcnow() - timedelta(hours=6)
     one_day_ago = datetime.utcnow() - timedelta(days=1)
-    two_days_ago = datetime.utcnow() - timedelta(days=2)
+    twelve_hours_ago = datetime.utcnow() - timedelta(days=2)
 
     # Latest posts (3)
     latest_posts = (
@@ -1021,7 +1019,7 @@ def index():
         .filter(
             Post.is_published == True,
             Post.status == "published",
-            Post.created_at >= two_days_ago,
+            Post.created_at >= twelve_hours_ago,
             ~Post.id.in_(latest_ids)
         )
         .order_by(desc("popularity"))
