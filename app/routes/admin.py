@@ -530,9 +530,9 @@ def analytics():
     post_data = [d[1] for d in post_counts]
     
     like_counts = db.session.query(
-        func.date(Post.created_at),
-        func.sum(cast(Post.id == Like.post_id, Integer))
-    ).group_by(func.date(Post.created_at)).all()
+        func.date(Post.created_at).label("date"),
+        func.sum(Post.like_count).label("likes_count")
+    ).group_by(func.date(Post.created_at)).order_by(func.date(Post.created_at)).all()
     likes_labels = [str(d[0]) for d in like_counts]
     likes_data = [d[1] for d in like_counts]
     
