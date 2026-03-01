@@ -113,6 +113,11 @@
             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">
               {{ post.created_at.strftime('%B %d, %Y') }}
             </td>
+            
+            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">
+              {{ post.rejection_reason or 'No issues detected' }}
+            </td>
+
 
             <td class="px-4 py-3 text-right space-x-3 flex justify-end">
               {% if post.status in ['draft', 'rejected'] and (post.resubmission_count or 0) < 2 %}
@@ -186,6 +191,9 @@
         <span class="text-gray-500 dark:text-gray-400">
           {{ post.created_at.strftime('%b %d, %Y') }}
         </span>
+        <p class="text-sm text-gray-500 dark:text-gray-300 mb-3">
+          {{ post.rejection_reason or 'No issues detected' }}
+        </p>
       </div>
   
       <div class="flex justify-end gap-4 text-sm mt-4">
