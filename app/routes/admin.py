@@ -797,6 +797,17 @@ def delete_ad(ad_id):
     flash("Ad deleted successfully!", "success")
     return redirect(url_for("admin.ads_list"))
 
+@admin_bp.route("/click/<int:ad_id>")
+def ad_click(ad_id):
+    ad = Ad.query.get_or_404(ad_id)
+
+    target = ad.target_url.strip()
+
+    if not target.startswith(("http://", "https://")):
+        target = "https://" + target
+
+    return redirect(target)
+
 @admin_bp.route("/tags")
 @login_required
 def tags():
