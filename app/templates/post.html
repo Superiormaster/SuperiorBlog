@@ -19,6 +19,10 @@
   <p class="text-sm text-gray-400 mb-8">
     By <b>{{ post.author.username }}</b>
   </p>
+  <a href="{{ url_for('caption.generate_thread_from_post', post_id=post.id) }}"
+   class="text-blue-500 hover:underline">
+   Generate X Thread
+  </a>
   <div class="prose post-content max-w-3xl w-full mx-auto dark:prose-invert px-1 break-words">
     {{ post.content | safe }}
   </div>
@@ -437,18 +441,18 @@
       </div>
     </div>
 
-    <!--<div class="md:flex hidden flex flex-col space-y-2">
+    <div class="md:flex hidden flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">Tools</h4>
       <a href="{{ url_for('caption.caption_page') }}" class="hover:text-white link-gold">Generate Captions</a>
-    </div>-->
+    </div>
   </div>
 
   <div class="max-w-5xl mx-auto grid grid-cols-1 gap-6 text-center md:text-left mb-8">
-    <!-- Optional Extra / Generate Captions --><!--
+    <!-- Optional Extra / Generate Captions -->
     <div class="md:hidden flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">Tools</h4>
       <a href="{{ url_for('caption.caption_page') }}" class="hover:text-white link-gold">Generate Captions</a>
-    </div>-->
+    </div>
 
     <!-- Social Links -->
     <div class="flex md:hidden flex-col space-y-2">

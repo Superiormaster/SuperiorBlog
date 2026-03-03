@@ -12,7 +12,7 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
 <aside id="sidebar"
   class="fixed inset-y-0 left-0 w-64
          bg-white dark:bg-gray-800
-         -translate-x-full md:translate-x-0
+         -translate-x-full md:translate-x-0 md:hidden
          transition-transform duration-300
          z-50 flex flex-col">
 
@@ -35,7 +35,7 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
       💳 Payment History
     </a>
 
-    <a href="{{ url_for('caption.caption_history_list') }}"
+    <a href="{{ url_for('caption.caption_history_page') }}"
        class="block px-4 py-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition">
       📝 Caption History
     </a>
@@ -101,6 +101,13 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
              class="px-4 py-2 bg-yellow-400 md:hidden text-black font-semibold rounded-xl shadow-md">
           🎟️ Tokens: {{ current_user.tokens }}
         </div>
+      {% elif current_user.is_premium %}
+        <div class="text-sm text-green-500 font-semibold">
+          🌟 Premium Active
+          <div class="text-xs text-gray-400 mt-1">
+            Expires {{ current_user.premium_expires_at.strftime('%d %b %Y') }}
+          </div>
+        </div>
       {% else %}
         <a href="{{ url_for('public.pricing') }}" 
            class="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-xl md:hidden shadow-md hover:bg-yellow-400 transition">
@@ -127,6 +134,11 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
     {% endif %}
   </div>
   
+  <div class="mb-5">
+    {% if not current_user.is_authenticated %}
+    <a class="text-blue-500 dark:text-yellow-600 underline" href="{{ url_for('public.user_login', next=url_for('caption.caption_page')) }}">Login to use</a>
+    {% endif %}
+  </div>
 
   <!-- HEADER -->
   <div class="text-center mb-6">
@@ -151,14 +163,8 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
         <div class="bg-green-500 h-2 rounded-full" style="width: {{ best.confidence_score or 0 }}%"></div>
       </div>
       <p class="text-lg text-center font-semibold text-gray-900 dark:text-white">{{ best.text }}</p>
-      {% if best.image_url %}
-        <div class="relative w-full h-64 bg-gray-700 rounded-xl overflow-hidden mt-2">
-          <img data-src="{{ best.image_url[0] }}" alt="Best caption image" class="lazy absolute inset-0 w-full h-full object-cover rounded-xl">
-        </div>
-      {% endif %}
       <p class="text-gray-500 text-sm mt-1">Style: {{ best.style }}, Confidence: {{ best.confidence_score or 0 }}%</p>
       <p class="text-gray-500 text-sm mt-1">Suggested Replies: {{ best.suggested_replies | join(', ') }}</p>
-      <p class="text-gray-500 text-sm mt-1">Best Posting Time: {{ best.best_post_time }}</p>
     </div>
   {% endif %}
 
@@ -167,11 +173,9 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
     <div class="mb-6">
       <textarea id="xText" 
         class="w-full h-40 p-4 rounded-xl bg-gray-200 dark:bg-gray-900 dark:text-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800" 
-        placeholder="Paste article content, prompt or key points here…"></textarea>
+        placeholder="Paste article content, prompt or key points here…">{{ snippet or "" }}</textarea>
         {% if not current_user.is_premium %}
           <small class="dark:text-yellow-400 text-yellow-600 text-xs">Thread, Reply, Engagement are premium-only.</small>
-        {% else %}
-          <small class="dark:text-yellow-400 text-yellow-600 text-xs">Image is only for Sports.</small>
         {% endif %}
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
@@ -187,19 +191,20 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
           <option value="reply" {% if not current_user.is_premium %}disabled{% endif %}>Reply Optimized</option>
           <option value="engagement" {% if not current_user.is_premium %}disabled{% endif %}>Engagement Hook</option>
         </select>
+      
+      <select id="xPlatform" class="bg-gray-400 rounded p-2 text-black dark:text-white dark:bg-gray-700">
+        <option value="x">X(Twitter)</option>
+       <!-- <option value="facebook" {% if not can_use_facebook %}disabled{% endif %}>Facebook</option>-->
+      </select>
+
+<!--        <select id="xPlatform" class="bg-gray-400 rounded p-2 text-black dark:text-white dark:bg-gray-700">
+          <option value="x">X(Twitter)</option>
+          <option value="facebook" {% if not current_user.is_premium %}disabled{% endif %}>Facebook</option>
+        </select>-->
 
         <label class="flex items-center gap-2 text-black dark:text-white text-sm">
           <input type="checkbox" id="xAvoidClickbait" class="accent-blue-500">
           Avoid clickbait
-        </label>
-
-        <label class="flex items-center gap-2 dark:text-white text-black text-sm">
-        {% if current_user.is_premium %}
-          <input type="checkbox" id="xGenerateImage" class="accent-blue-500">Generate image
-        {% else %}
-          <input type="checkbox" disabled class="accent-blue-500 cursor-not-allowed">Generate image
-          <br><p class="dark:text-yellow-400 text-yellow-600 text-xs">(Premium only)</p>
-        {% endif %}
         </label>
 
         <button id="xGenerateBtn"

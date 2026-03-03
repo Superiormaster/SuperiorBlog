@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="p-6 mt-6 max-w-7xl mx-auto">
+
+  <h2 class="text-2xl text-black dark:text-gray-200 font-bold mb-6">Payment Management</h2>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full border border-gray-300 text-sm">
+      <thead class="bg-gray-200 text-black dark:text-white dark:bg-gray-700">
+        <tr>
+          <th class="p-2 text-left">User</th>
+          <th class="p-2 text-left">Plan</th>
+          <th class="p-2 text-left">Amount</th>
+          <th class="p-2 text-left">Status</th>
+          <th class="p-2 text-left">Date</th>
+          <th class="p-2 text-left">Expiry</th>
+          <th class="p-2 text-left">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody class="text-black dark:text-white">
+        {% for payment in payments %}
+        <tr class="border-t">
+          <td class="p-2">{{ payment.email }}</td>
+          <td class="p-2 capitalize">{{ payment.plan }}</td>
+          <td class="p-2">₦{{ payment.amount / 100 }}</td>
+          <td class="p-2">
+            {% if payment.status == "success" %}
+              <span class="text-green-600 font-semibold">Success</span>
+            {% else %}
+              <span class="text-yellow-600 font-semibold">Pending</span>
+            {% endif %}
+          </td>
+          <td class="p-2">
+            {{ payment.created_at.strftime("%Y-%m-%d %H:%M") }}
+          </td>
+          <td class="p-2">
+            {% for u in users %}
+              {% if u.email == payment.email %}
+                {{ u.premium_expires_at.strftime("%Y-%m-%d %H:%M") if u.premium_expires_at else "-" }}
+              {% endif %}
+            {% endfor %}
+          </td>
+          <td class="p-2 space-x-2">
+
+            {% if payment.status == "pending" %}
+            <!-- Verify with Paystack -->
+            <form method="POST"
+                  action="{{ url_for('billings.manual_verify', reference=payment.reference) }}"
+                  style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
+                Verify
+              </button>
+            </form>
+
+            <!-- Manual Toggle -->
+            <form method="POST"
+                  action="{{ url_for('billings.toggle_payment', reference=payment.reference) }}"
+                  style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">
+                Activate
+              </button>
+            </form>
+            {% else %}
+              <span class="text-gray-500">No Action</span>
+            {% endif %}
+
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

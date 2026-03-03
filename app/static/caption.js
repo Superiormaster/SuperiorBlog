@@ -81,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!data?.captions?.length) return;
 
     const best = data.captions[0];
+    const isPremium = data.type === "premium";
 
     // BEST CAPTION DIV
     const bestDiv = document.createElement("div");
@@ -88,31 +89,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     bestDiv.innerHTML = `
       <div class="border-2 border-yellow-400 bg-yellow-50 p-4 rounded-xl mb-2">
-        <span class="text-xs font-bold text-yellow-600">BEST CAPTION</span>
+        <span class="text-xs font-bold text-yellow-600">CAPTION GENERATED</span>
       </div>
 
+      ${isPremium ? `
       <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
         <div class="bg-green-500 h-2 rounded-full" style="width:${best.confidence_score || 0}%"></div>
       </div>
+    ` : ""}
 
       <p class="text-lg text-center font-semibold text-gray-900 dark:text-white">${best.text}</p>
 
-      ${best.image_url ? `
-        <div class="relative w-full h-64 bg-gray-700 rounded-xl overflow-hidden mt-2">
-          <img src="${Array.isArray(best.image_url) ? best.image_url[0] : best.image_url}"
-               class="absolute inset-0 w-full h-full object-cover rounded-xl">
-        </div>
-      ` : ""}
-
-      <p class="text-gray-500 text-sm mt-1">Style: ${best.style}, Confidence: ${best.confidence_score || 0}%</p>
-
-      ${best.suggested_replies?.length ? `
-        <div class="flex flex-wrap gap-2 mt-2">
-          ${best.suggested_replies.map(r => `<span class="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-xs">${r}</span>`).join("")}
-        </div>
-      ` : ""}
-
-      <p class="text-gray-500 text-sm mt-1">Best Posting Time: ${best.best_post_time || "N/A"}</p>
+      <p class="text-gray-500 text-sm mt-1">
+        Style: ${best.style}${isPremium ? `, Confidence: ${best.confidence_score || 0}%` : ""}
+      </p>
     `;
 
     // COPY BUTTON
@@ -175,7 +165,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showError(msg) {
-    errorEl.innerText = msg;
+    console.log('Showing error:', msg);  // Log to verify the function is triggered
+    errorEl.innerText = msg || "An unknown error occurred.";  // Show a default message if none is provided
     errorEl.classList.remove("hidden");
     setTimeout(() => errorEl.classList.add("hidden"), 5000);
   }
@@ -189,5 +180,4 @@ document.addEventListener("DOMContentLoaded", () => {
     sec.appendChild(header);
     return sec;
   }
-
 });

@@ -5,174 +5,158 @@ Caption History – SuperiorNews
 {% endblock %}
 
 {% block content %}
+<div class="max-w-5xl mx-auto mt-14 dark:bg-white/5 backdrop-blur rounded-2xl shadow-lg p-8">
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-bold tracking-tight dark:text-white">
+            Your Generated Captions History
+        </h1>
+        <p class="text-gray-400 mt-2">
+            Scroll to load more or click “Load More” to see full captions.
+        </p>
+    </div>
 
-<div class="max-w-5xl mx-auto mt-14 bg-white/5 backdrop-blur rounded-2xl shadow-lg p-8">
+    <!-- HISTORY LIST -->
+    <div id="historyList" class="space-y-4"></div>
 
-  <div class="mb-8 text-center">
-    <h1 class="text-3xl font-bold tracking-tight text-white">
-      Your Generated Captions History
-    </h1>
-    <p class="text-gray-400 mt-2">
-      Scroll to load more. Click “View” to see full captions.
-    </p>
-  </div>
+    <!-- Load More Button -->
+    <div id="loadMoreContainer" class="text-center mt-6">
+        <button id="loadMoreBtn" class="bg-blue-500 hover:bg-blue-400 text-white px-6 py-2 rounded-lg font-semibold text-sm transition">
+            Load More
+        </button>
+    </div>
 
-  <!-- HISTORY LIST -->
-  <div id="historyList" class="space-y-4"></div>
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="text-center text-gray-400 mt-6 hidden">
+        Loading more...
+    </div>
 
-  <div id="loadingIndicator" class="text-center text-gray-400 mt-6 hidden">
-    Loading more...
-  </div>
-
-  <div id="noMore" class="text-center text-gray-500 mt-6 hidden">
-    No history yet.
-  </div>
-
+    <div id="noMore" class="text-center dark:text-gray-500 text-gray-700 mt-6 hidden">
+        No history yet.
+    </div>
 </div>
-
 
 <!-- MODAL -->
-<div id="historyModal"
-     class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
-
-  <div class="bg-gray-900 w-full max-w-2xl rounded-2xl p-6 relative shadow-2xl max-h-[80vh] overflow-y-auto">
-
-    <button onclick="closeModal()"
-            class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">
-      ✕
-    </button>
-
-    <h2 class="text-xl font-bold text-white mb-4">
-      Caption Details
-    </h2>
-
-    <div id="modalContent" class="space-y-4"></div>
-
-  </div>
+<div id="historyModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+    <div class="bg-gray-900 w-full max-w-2xl rounded-2xl p-6 relative shadow-2xl max-h-[80vh] overflow-y-auto">
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">✕</button>
+        <h2 class="text-xl font-bold text-white mb-4">Caption Details</h2>
+        <div id="modalContent" class="space-y-4"></div>
+    </div>
 </div>
 
-
 <script>
-let currentPage = 1;
-let loading = false;
-let hasNext = true;
+document.addEventListener("DOMContentLoaded", () => {
+    const historyList = document.getElementById("historyList");
+    const loadingIndicator = document.getElementById("loadingIndicator");
+    const noMore = document.getElementById("noMore");
+    let currentPage = 1;
+    let loading = false;
+    let hasNext = true;
 
-const historyList = document.getElementById("historyList");
-const loadingIndicator = document.getElementById("loadingIndicator");
-const noMore = document.getElementById("noMore");
-const modal = document.getElementById("historyModal");
-const modalContent = document.getElementById("modalContent");
+    // Load captions history page data
+    function loadHistory() {
+        if (loading || !hasNext) return;
 
+        loading = true;
+        loadingIndicator.classList.remove("hidden");
 
-// LOAD PAGE
-function loadHistory() {
+        fetch(`/api/captions/history?page=${currentPage}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.items.length === 0) {
+                    noMore.classList.remove("hidden");
+                    return;
+                }
 
-  if (loading || !hasNext) return;
+                // Render captions
+                data.items.forEach(item => {
+                    const historyItem = document.createElement("div");
+                    historyItem.className = "p-4 rounded-xl bg-gray-900/50 border border-gray-700 shadow";
+                    historyItem.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-400">${item.created_at}</span>
+                            <span class="text-lg font-semibold uppercase text-white">${item.platform}</span>
+                        </div>
+                        <p class="text-gray-300 mb-3">${item.preview}...</p>
+                        <button onclick="loadDetails(${item.id})" class="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded-lg font-semibold text-sm transition">
+                            View
+                        </button>
+                    `;
+                    historyList.appendChild(historyItem);
+                });
 
-  loading = true;
-  loadingIndicator.classList.remove("hidden");
+                // Check for next page
+                hasNext = data.has_next;
+                currentPage += 1;
 
-  fetch(`/api/captions/history?page=${currentPage}`)
-    .then(res => res.json())
-    .then(data => {
+                if (!hasNext) {
+                    noMore.classList.remove("hidden");
+                }
 
-      data.items.forEach(item => {
+                loadingIndicator.classList.add("hidden");
+                loading = false;
+            })
+            .catch(err => {
+                console.error('Error fetching captions history:', err);
+                loadingIndicator.classList.add("hidden");
+                loading = false;
+            });
+    }
 
-        historyList.innerHTML += `
-          <div class="p-4 rounded-xl bg-gray-900/50 border border-gray-700 shadow">
+    // Load details for a particular caption item
+    window.loadDetails = function(id) {
+        const modalContent = document.getElementById("modalContent");
+        const modal = document.getElementById("historyModal");
 
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm text-gray-400">
-                ${item.created_at}
-              </span>
-              <span class="text-lg font-semibold uppercase text-white">
-                ${item.platform}
-              </span>
-            </div>
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        modalContent.innerHTML = "<div class='text-gray-400'>Loading...</div>";
 
-            <p class="text-gray-300 mb-3">
-              ${item.preview}...
-            </p>
+        fetch(`/captions/history/item/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                modalContent.innerHTML = `
+                    <div class="mb-4 p-3 bg-gray-800 rounded-lg text-gray-300">
+                        <strong>Original:</strong><br>
+                        ${data.original_text}
+                    </div>
+                `;
 
-            <button onclick="loadDetails(${item.id})"
-              class="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded-lg font-semibold text-sm transition">
-              View
-            </button>
+                // Render suggested captions
+                data.captions.forEach((caption, index) => {
+                    const badge = index === 0 ? `<div class="text-xs font-bold text-yellow-400 mb-1">BEST CAPTION</div>` : "";
+                    modalContent.innerHTML += `
+                        <div class="p-4 bg-gray-800 rounded-xl border border-gray-700">
+                            ${badge}
+                            <p class="text-white text-lg mb-2">${caption.text}</p>
+                            <p class="text-gray-400 text-sm">
+                                Style: ${caption.style} | Confidence: ${caption.confidence_score}%
+                            </p>
+                        </div>
+                    `;
+                });
+            })
+            .catch(err => {
+                console.error('Error fetching caption details:', err);
+                modalContent.innerHTML = "<div class='text-gray-400'>Failed to load details.</div>";
+            });
+    };
 
-          </div>
-        `;
-      });
-
-      hasNext = data.has_next;
-      currentPage += 1;
-
-      if (!hasNext) {
-        noMore.classList.remove("hidden");
-      }
-
-      loadingIndicator.classList.add("hidden");
-      loading = false;
-
+    // Infinite Scroll logic
+    window.addEventListener("scroll", () => {
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
+            loadHistory();
+        }
     });
-}
 
-
-// LOAD DETAILS
-function loadDetails(id) {
-
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
-  modalContent.innerHTML = "<div class='text-gray-400'>Loading...</div>";
-
-  fetch(`/captions/history/item/${id}`)
-    .then(res => res.json())
-    .then(data => {
-
-      modalContent.innerHTML = `
-        <div class="mb-4 p-3 bg-gray-800 rounded-lg text-gray-300">
-          <strong>Original:</strong><br>
-          ${data.original_text}
-        </div>
-      `;
-
-      data.captions.forEach((c, index) => {
-
-        const badge = index === 0
-          ? `<div class="text-xs font-bold text-yellow-400 mb-1">BEST CAPTION</div>`
-          : "";
-
-        modalContent.innerHTML += `
-          <div class="p-4 bg-gray-800 rounded-xl border border-gray-700">
-            ${badge}
-            <p class="text-white text-lg mb-2">${c.text}</p>
-            <p class="text-gray-400 text-sm">
-              Style: ${c.style} | Confidence: ${c.confidence_score}%
-            </p>
-          </div>
-        `;
-      });
-
-    });
-}
-
-
-function closeModal() {
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
-}
-
-
-// INFINITE SCROLL
-window.addEventListener("scroll", () => {
-  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
+    // Initial load
     loadHistory();
-  }
 });
-
-
-// INITIAL LOAD
-loadHistory();
-
+function closeModal() {
+    const modal = document.getElementById("historyModal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+}
 </script>
 
 {% endblock %}

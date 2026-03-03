@@ -188,8 +188,10 @@ def user_change_password():
 @public_bp.route("/profile/setup", methods=["GET", "POST"])
 @login_required
 def profile_setup():
+    next_page = request.args.get('next', url_for('public.user_dashboard'))
+
     if current_user.profile_completed:
-        return redirect(url_for("public.user_dashboard"))
+        return redirect(next_page)
 
     form = ProfileForm(obj=current_user)
 
@@ -200,7 +202,9 @@ def profile_setup():
           print("Failed to setup profile")
 
         flash("Profile completed successfully", "success")
-        return redirect(url_for("public.user_dashboard"))
+        next_page = request.args.get('next', url_for('caption.caption_page'))
+
+        return redirect(next_page)
 
     return render_template(
         "user/profile_setup.html",

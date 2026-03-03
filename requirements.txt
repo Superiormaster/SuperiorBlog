@@ -57,3 +57,4 @@ google-auth
 google-auth-oauthlib 
 pytz
 Pillow
+Flask-Dance

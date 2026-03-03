@@ -1,18 +1,14 @@
-import requests
-import uuid
-import hmac
-import hashlib
-
+import requests, uuid, hmac, hashlib
+from sqlalchemy import func
 from flask import (
     Blueprint, request, redirect,
     url_for, flash, current_app, render_template
 )
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
-
 from app.extensions import db, csrf
 from app.utils.db_helpers import safe_commit
-from app.models import Payment, User  # make sure this import exists
+from app.models import Payment, User
 
 
 billing_bp = Blueprint("billings", __name__)
@@ -98,8 +94,67 @@ def init_payment(plan):
 @billing_bp.route("/payment/success")
 @login_required
 def payment_success():
-    flash("Payment processing... Please wait.", "info")
-    return redirect(url_for("user.dashboard"))
+
+    reference = request.args.get("reference")
+
+    if not reference:
+        flash("No payment reference found.", "danger")
+        return redirect(url_for("public.pricing"))
+
+    try:
+        secret_key = current_app.config["PAYSTACK_SECRET_KEY"]
+        base_url = current_app.config["PAYSTACK_BASE_URL"]
+
+        headers = {
+            "Authorization": f"Bearer {secret_key}"
+        }
+
+        response = requests.get(
+            f"{base_url}/transaction/verify/{reference}",
+            headers=headers,
+            timeout=20
+        ).json()
+
+        payment = Payment.query.filter_by(reference=reference).first()
+
+        if not payment:
+          flash("Payment record not found.", "danger")
+          return redirect(url_for("public.pricing"))
+
+        if (
+            response.get("status") and
+            response["data"]["status"] == "success" and
+            response["data"]["amount"] == payment.amount
+        ):
+
+            if payment and payment.status != "success":
+
+                payment.status = "success"
+
+                duration = PLANS[payment.plan]["duration_days"]
+
+                user = User.query.filter_by(email=payment.email).first()
+                if user.premium_expires_at and user.premium_expires_at > datetime.utcnow():
+                    new_expiry = user.premium_expires_at + timedelta(days=duration)
+                else:
+                    new_expiry = datetime.utcnow() + timedelta(days=duration)
+
+                user.is_premium = True
+                user.premium_expires_at = new_expiry
+
+                safe_commit()
+                db.session.refresh(current_user)
+
+            flash("Payment successful! Premium activated.", "success")
+            return redirect(url_for("caption.caption_page"))
+
+        flash("Payment verification failed.", "danger")
+        return redirect(url_for("public.pricing"))
+
+    except Exception as e:
+        print("Verification error:", e)
+        flash("Something went wrong verifying payment.", "danger")
+        return redirect(url_for("public.pricing"))
 
 
 @billing_bp.route("/subscription/cancel", methods=["POST"])
@@ -180,6 +235,116 @@ def payment_history():
         "tools/history.html",
         payments=payments
     )
+
+
+@billing_bp.route("/admin/payments")
+@login_required
+def admin_payments():
+    if not current_user.is_admin:
+        flash("Access denied.", "danger")
+        return redirect(url_for("public.user_login"))
+
+    subquery = (
+        db.session.query(
+            Payment.email,
+            Payment.plan,
+            func.max(Payment.created_at).label("latest_date")
+        )
+        .group_by(Payment.email, Payment.plan)
+        .subquery()
+    )
+
+    # Join back to payments table to get full payment details
+    latest_payments = (
+        db.session.query(Payment)
+        .join(
+            subquery,
+            (Payment.email == subquery.c.email) &
+            (Payment.plan == subquery.c.plan) &
+            (Payment.created_at == subquery.c.latest_date)
+        )
+        .order_by(Payment.created_at.desc())
+        .all()
+    )
+
+    users = User.query.all()
+
+    return render_template(
+        "admin/payments.html",
+        payments=latest_payments,
+        users=users
+    )
+
+
+@billing_bp.route("/admin/verify/<reference>", methods=["POST"])
+@login_required
+def manual_verify(reference):
+
+    payment = Payment.query.filter_by(reference=reference).first()
+
+    if not payment:
+        flash("Payment not found.", "danger")
+        return redirect(url_for("billings.admin_payments"))
+
+    secret_key = current_app.config["PAYSTACK_SECRET_KEY"]
+    base_url = current_app.config["PAYSTACK_BASE_URL"]
+
+    headers = {"Authorization": f"Bearer {secret_key}"}
+
+    response = requests.get(
+        f"{base_url}/transaction/verify/{reference}",
+        headers=headers
+    ).json()
+
+    if response.get("status") and response["data"]["status"] == "success":
+
+        payment.status = "success"
+
+        user = User.query.filter_by(email=payment.email).first()
+
+        if user:
+            duration = PLANS[payment.plan]["duration_days"]
+
+            if user.premium_expires_at and user.premium_expires_at > datetime.utcnow():
+                new_expiry = user.premium_expires_at + timedelta(days=duration)
+            else:
+                new_expiry = datetime.utcnow() + timedelta(days=duration)
+
+            user.is_premium = True
+            user.premium_expires_at = new_expiry
+
+        safe_commit()
+        flash("Payment verified and activated.", "success")
+    else:
+        flash("Verification failed.", "danger")
+
+    return redirect(url_for("billings.admin_payments"))
+
+@billing_bp.route("/admin/toggle/<reference>", methods=["POST"])
+@login_required
+def toggle_payment(reference):
+
+    payment = Payment.query.filter_by(reference=reference).first()
+
+    if not payment:
+        flash("Payment not found.", "danger")
+        return redirect(url_for("billings.admin_payments"))
+
+    payment.status = "success"
+
+    user = User.query.filter_by(email=payment.email).first()
+
+    if user:
+        duration = PLANS[payment.plan]["duration_days"]
+
+        user.is_premium = True
+        user.premium_expires_at = datetime.utcnow() + timedelta(days=duration)
+
+    safe_commit()
+    flash("Payment manually activated.", "success")
+
+    return redirect(url_for("billings.admin_payments"))
+
 
 # ----------------------------
 # AUTO EXPIRY CHECK

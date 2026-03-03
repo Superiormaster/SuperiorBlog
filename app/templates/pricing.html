@@ -6,8 +6,8 @@
 
   <!-- Header -->
   <div class="text-center mb-12">
-    <h2 class="text-black dark:text-gray-200 text-4xl font-bold mb-4">SIMPLE TRANSPARENT PRICING</h2>
-    <p class="text-gray-400">Choose the plan that fits your needs</p>
+    <h2 class="text-black dark:text-gray-200 text-4xl font-bold mb-4">Boost Your Engagement with Premium</h2>
+    <p class="text-gray-400">Unlock advanced features designed to save time, increase reach, and maximize engagement</p>
   </div>
 
   <!-- Plans Grid -->
@@ -21,15 +21,16 @@
       <h3 class="text-2xl text-black dark:text-gray-200 font-semibold mb-2">Premium Monthly</h3>
       <p class="text-gray-600 dark:text-gray-400 mb-4">₦2,000 / month</p>
       <ul class="text-left text-gray-800 dark:text-gray-300 mb-6 space-y-2">
-        <li>✔️ Calendar and scheduling</li>
-        <li>✔️ Conferencing</li>
-        <li>✔️ Unlimited Data Removal</li>
+        <li>✔️ Unlimited Caption Generation</li>
+        <li>✔️ Save & Track Caption History</li>
         <li>✔️ Predictive Engagement Score</li>
         <li>✔️ Suggested Replies & Thread Generator</li>
-        <li>✔️ Image Generation for Posts</li>
-        <li>✔️ Best Posting Time Recommendation</li>
+        <li>✔️ Confidence Score & Performance Analysis</li>
       </ul>
-      <form method="POST" id="premiumForm" action="{{ url_for('billings.init_payment', plan='monthly') }}">
+      <p class="text-sm text-gray-500 mb-4">
+        Free users can generate captions, but only Premium lets you <strong>store, analyze, and optimize your content</strong>.
+      </p>
+      <form method="POST" id="premiumFormMonthly" action="{{ url_for('billings.init_payment', plan='monthly') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit"
                 class="plan-btn w-full py-3 dark:bg-gray-800 bg-gray-700 text-white rounded font-semibold hover:bg-gray-600">
@@ -46,16 +47,17 @@
       <h3 class="text-2xl text-black dark:text-gray-200 font-semibold mb-2">Premium Yearly</h3>
       <p class="text-gray-600 dark:text-gray-400 mb-4">₦20,000 / year <span class="text-sm text-green-700">(Save ₦4,000!)</span></p>
       <ul class="text-left text-gray-800 dark:text-gray-300 mb-6 space-y-2">
-        <li>✔️ Calendar and scheduling</li>
-        <li>✔️ Conferencing</li>
-        <li>✔️ Unlimited Data Removal</li>
+        <li>✔️ Unlimited Caption Generation</li>
+        <li>✔️ Save & Track Caption History</li>
         <li>✔️ Predictive Engagement Score</li>
         <li>✔️ Suggested Replies & Thread Generator</li>
-        <li>✔️ Image Generation for Posts</li>
-        <li>✔️ Best Posting Time Recommendation</li>
+        <li>✔️ Confidence Score & Performance Analysis</li>
         <li>✔️ Extra Savings vs Monthly Plan</li>
       </ul>
-      <form method="POST" id="premiumForm" action="{{ url_for('billings.init_payment', plan='yearly') }}">
+      <p class="text-sm text-gray-500 mb-4">
+        Yearly subscribers get the full suite of tools with significant savings and long-term content optimization.
+      </p>
+      <form method="POST" id="premiumFormYearly" action="{{ url_for('billings.init_payment', plan='yearly') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit"
                 class="plan-btn w-full py-3 dark:bg-gray-800 bg-gray-700 text-white rounded font-semibold hover:bg-gray-600">
@@ -65,5 +67,28 @@
     </div>
 
   </div>
+
+  <!-- Premium Feature Highlights -->
+  <div class="mt-12 text-center">
+    <h3 class="text-3xl font-bold text-black dark:text-gray-200 mb-4">Why Premium Matters</h3>
+    <p class="text-gray-500 mb-6 max-w-3xl mx-auto">
+      Premium users enjoy tools that turn ideas into high-performing content effortlessly. Save time, maximize reach, and track which captions drive real engagement.
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+      <div class="feature-card p-4 bg-gray-200 dark:bg-gray-900 rounded-lg">
+        <h4 class="font-semibold dark:text-white mb-2">Engagement Insights</h4>
+        <p class="text-gray-600 dark:text-gray-400 text-sm">Analyze performance and optimize content with confidence scores and retention metrics.</p>
+      </div>
+      <div class="feature-card p-4 bg-gray-200 dark:bg-gray-900 rounded-lg">
+        <h4 class="dark:text-white font-semibold mb-2">Thread & Replies</h4>
+        <p class="text-gray-600 dark:text-gray-400 text-sm">Generate entire X/Twitter threads and suggested replies to boost interaction.</p>
+      </div>
+      <div class="feature-card p-4 bg-gray-200 dark:bg-gray-900 rounded-lg">
+        <h4 class="dark:text-white font-semibold mb-2">Unlimited Storage</h4>
+        <p class="text-gray-600 dark:text-gray-400 text-sm">Save all your captions and track history for long-term strategy and growth.</p>
+      </div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}

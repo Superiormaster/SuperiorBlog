@@ -15,6 +15,7 @@
           View Message
         </a>
       {% endfor %}
+      <a href="{{ url_for('billings.admin_payments') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Revenue</a>
       <a href="{{ url_for('admin.list_subscribers') }}" class="block px-4 py-2 rounded hover:bg-gray-800">View Subscribers</a>
       <a href="{{ url_for('admin.create_draft') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Create Drafts</a>
       <a href="{{ url_for('admin.list_drafts') }}" class="block px-4 py-2 rounded hover:bg-gray-800">View All Drafts</a>
@@ -41,6 +42,7 @@
           View Message
         </a>
       {% endfor %}
+      <a href="{{ url_for('billings.admin_payments') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Revenue</a>
       <a href="{{ url_for('admin.list_subscribers') }}" class="block px-4 py-2 rounded hover:bg-gray-400 snap-start">View Subscribers</a>
       <a href="{{ url_for('admin.create_draft') }}" class="block px-4 py-2 rounded hover:bg-gray-400">Create New Draft</a>
       <a href="{{ url_for('admin.list_drafts') }}" class="block px-4 py-2 rounded hover:bg-gray-400 snap-start">View All Drafts</a>
