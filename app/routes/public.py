@@ -1428,7 +1428,7 @@ def contact():
             name=request.form.get("name", "Anonymous"),
             email=request.form.get("email", "anonymous@superiornewsw.app"),
             subject=request.form.get("subject", "Feedback"),
-            message=request.form.get("content", ""),
+            message=request.form.get("message", ""),
             type=request.form.get("type", "feedback")  # contact | feedback | report
         )
 
@@ -1449,7 +1449,7 @@ def contact():
 @public_bp.route("/contact_feedback", methods=["GET", "POST"])
 @csrf.exempt
 def contact_feedback():
-    content = request.form.get("content", "").strip()
+    content = request.form.get("message", "").strip()
 
     if not content:
         flash("Feedback cannot be empty.", "error")
@@ -1468,7 +1468,7 @@ def contact_feedback():
             name=request.form.get("name", "Anonymous"),
             email=request.form.get("email", "anonymous@superiornews.app"),
             subject=request.form.get("subject", "Feedback"),
-            message=request.form.get("content", ""),
+            message=request.form.get("message", ""),
             type=request.form.get("type", "feedback")
         )
 

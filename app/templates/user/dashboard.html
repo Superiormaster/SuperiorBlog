@@ -191,10 +191,10 @@
         <span class="text-gray-500 dark:text-gray-400">
           {{ post.created_at.strftime('%b %d, %Y') }}
         </span>
-        <p class="text-sm text-gray-500 dark:text-gray-300 mb-3">
-          {{ post.rejection_reason or 'No issues detected' }}
-        </p>
       </div>
+      <p class="text-sm text-gray-500 dark:text-gray-300 mb-3">
+          {{ post.rejection_reason or 'No issues detected' }}
+      </p>
   
       <div class="flex justify-end gap-4 text-sm mt-4">
         {% if post.status in ['draft', 'rejected'] and (post.resubmission_count or 0) < 2 %}

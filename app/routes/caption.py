@@ -1,74 +1,30 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required
-import requests, re, urllib.parse
+import requests, re, urllib.parse, pytz
 from sqlalchemy import desc
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.extensions import db, csrf
 from app.models import XPost, Post
 from app.utils.limits import can_generate
 from app.utils.db_helpers import safe_commit
+from sqlalchemy import or_
 from bs4 import BeautifulSoup
 from app.forms import SubscribeForm
 from app.utils.openai_service import generate_x_post_for_user
 
 caption_bp = Blueprint('caption', __name__)
 
+local_tz = pytz.timezone("Africa/Lagos")
 ALLOWED_TONES = ["neutral", "breaking", "viral", "emotional", "professional"]
 @caption_bp.route('/landing')
 def landing_page():
     """
     Landing page for the X Caption Engine.
-    Shows countdown, sample caption (if available), and waitlist form.
     """
-    # Fetch latest generated caption for demo (optional)
-    latest_caption = None
-    demo_posts = XPost.query.order_by(XPost.created_at.desc()).limit(1).all()
-    if demo_posts:
-        post = demo_posts[0]
-        latest_caption = {
-            "captions": [
-                {
-                    "text": post.text,
-                    "style": post.style,
-                    "confidence_score": post.confidence_score,
-                    "best_post_time": post.best_post_time,
-                    "image_url": post.image_url
-                }
-            ]
-        }
-
-    # Allowed tones (example)
-    allowed_tones = ["funny", "serious", "informative", "casual"]
 
     return render_template(
-        "tools/landing.html",
-        captions=latest_caption,
-        allowed_tones=allowed_tones
+        "tools/landing.html"
     )
-
-@caption_bp.route("/subscribe", methods=["POST"])
-def subscribe():
-    """
-    Handles waitlist subscriptions via email.
-    """
-    email = request.form.get("email")
-    if not email:
-        flash("Please enter a valid email address.", "error")
-        return redirect(url_for("caption.landing_page"))
-
-    # Check if already subscribed
-    existing = Subscriber.query.filter_by(email=email).first()
-    if existing:
-        flash("You are already on the waitlist! 🎉", "info")
-        return redirect(url_for("caption.landing_page"))
-
-    # Add subscriber
-    new_sub = Subscriber(email=email)
-    db.session.add(new_sub)
-    safe_commit()
-
-    flash("Thank you for joining the waitlist! 🚀", "success")
-    return redirect(url_for("caption.landing_page"))
 
 @caption_bp.route('/caption')
 def caption_page():
@@ -88,9 +44,7 @@ def caption_page():
                 "captions": [
                     {
                         "text": last_caption.text,
-                        "confidence_score": last_caption.confidence_score,
                         "style": last_caption.style,
-                        "suggested_replies": last_caption.suggested_replies or [],
                     }
                 ]
             }
@@ -125,68 +79,128 @@ def caption_history_page():
 @caption_bp.route("/api/captions/history")
 @login_required
 def caption_history_list():
-    page = request.args.get("page", 1, type=int)
+    try:
+      page = request.args.get("page", 1, type=int)
+      start_date_str = request.args.get("start_date")
+      end_date_str = request.args.get("end_date")
+  
+      query = XPost.query.filter_by(user_id=current_user.id)
+  
+      if start_date_str:
+          start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+          query = query.filter(XPost.created_at >= start_date)
+  
+      if end_date_str:
+          end_date = datetime.strptime(end_date_str, "%Y-%m-%d") + timedelta(days=1)
+          query = query.filter(XPost.created_at < end_date)
+  
+      pagination = query.order_by(XPost.created_at.desc()).paginate(
+          page=page, per_page=20, error_out=False
+      )
+  
+      nigeria_tz = pytz.timezone("Africa/Lagos")
 
-    pagination = XPost.query.filter_by(
-        user_id=current_user.id
-    ).order_by(
-        XPost.created_at.desc()
-    ).paginate(page=page, per_page=20, error_out=False)
+      items = []
+      for item in pagination.items:
+            captions = getattr(item, "captions", []) or []
+            preview_text = captions[0]["text"] if captions else item.text
 
-    items = [
-        {
-            "id": item.id,
-            "platform": "X",
-            "created_at": item.created_at.strftime("%b %d, %Y %H:%M"),
-            "preview": item.text[:120]
-        }
-        for item in pagination.items
-    ]
+            created_local = item.created_at.replace(tzinfo=pytz.utc).astimezone(nigeria_tz)
+            created_str = created_local.strftime("%b %d, %Y %H:%M")
 
-    return jsonify({
-        "items": items,
-        "has_next": pagination.has_next
-    })
+            items.append({
+                "id": item.id,
+                "platform": "X",
+                "created_at": created_str,
+                "preview": preview_text[:120]
+            })
+
+      return jsonify({
+          "items": items,
+          "has_next": pagination.has_next
+      })
+    except Exception as e:
+        return jsonify({"error": str(e), "items": [], "has_next": False})
 
 @caption_bp.route("/captions/history/item/<int:id>")
 @login_required
 def caption_history_item(id):
-    item = XPost.query.filter_by(
-        id=id,
-        user_id=current_user.id
-    ).first_or_404()
+    try:
+        item = XPost.query.filter_by(id=id, user_id=current_user.id).first_or_404()
 
-    return jsonify({
-        "original_text": item.text,
-        "captions": [
-            {
-                "text": caption.text,
-                "style": caption.style,
-                "confidence_score": caption.confidence
-            }
-            for caption in item.suggested_replies or []
-        ]
-    })
+        captions_json = getattr(item, "captions", []) or []
+
+        captions_list = []
+        for cap in captions_json:
+            captions_list.append({
+                "text": cap.get("text", ""),
+                "style": cap.get("style", item.style),
+                "suggested_replies": cap.get("suggested_replies", []) or [],
+                "thread": cap.get("thread", []) or item.threads or []
+            })
+
+        if not captions_list and item.text:
+            captions_list.append({
+                "text": item.text,
+                "style": item.style,
+                "suggested_replies": item.suggested_replies or [],
+                "thread": item.threads or []
+            })
+
+        return jsonify({
+            "original_text": item.original_text or item.text,
+            "captions": captions_list
+        })
+    except Exception as e:
+        return jsonify({
+            "error": "failed_to_load",
+            "message": str(e),
+            "original_text": "",
+            "captions": []
+        }), 500
+
+@caption_bp.route("/caption/guidelines")
+@login_required
+def caption_guidelines():
+    return render_template("tools/caption_guidelines.html")
 
 def use_token(user):
+    if user.is_premium:
+        return True
+
     if user.tokens > 0:
         user.tokens -= 1
         safe_commit()
         return True
     return False
 
+def check_user_tokens(user):
+    if user.is_premium:
+        return {"allowed": True}
+    if user.tokens > 0:
+        return {"allowed": True}
+    return {
+        "allowed": False,
+        "error": "tokens_exhausted",
+        "message": "You have no more tokens. Please upgrade to premium to continue."
+    }
+
 @caption_bp.route('/caption/generate', methods=['POST'])
 @csrf.exempt
 def generate_caption_route():
     if not current_user.is_authenticated:
-        flash("You need to be logged in to generate captions.", "error")
-        return redirect(url_for('public.user_login'))
+        return jsonify({
+            "error": "auth_required",
+            "message": "You must be logged in."
+        }), 401
 
     try:
         # ---- Validate JSON ----
         if not request.is_json:
-            flash("Invalid JSON format. Please check your input and try again.", "error")
-            return redirect(url_for('caption.caption_page'))
+            return jsonify({
+                "error": "invalid_request",
+                "message": "Invalid JSON format."
+            }), 400
 
         data = request.get_json()
         MAX_INPUT_CHARS = 500
@@ -194,38 +208,40 @@ def generate_caption_route():
 
         text = data.get("text", "").strip()
         if not text:
-            flash("Text is required.", "error")
-            return redirect(url_for('caption.caption_page'))
+            return jsonify({"error": "Text is required."}), 400
         
         if len(text) > MAX_INPUT_CHARS:
-            flash(f"Text exceeds max length of {MAX_INPUT_CHARS} characters.", "error")
-            return redirect(url_for('caption.caption_page'))
+            return jsonify({
+                "error": f"Text exceeds {MAX_INPUT_CHARS} characters."
+            }), 400
 
         tone = data.get("tone")
         mode = data.get("mode", "single")
-        premium_modes = ["thread", "engagement", "reply"]
+        premium_modes = ["thread", "engagement", "reply", "ultra_viral", "3_captions"]
 
         if mode in premium_modes and not current_user.is_premium:
-            flash("Premium access required for this mode. Please upgrade.", "error")
-            return redirect(url_for("public.pricing"))
+            return jsonify({
+                "error": "premium_required",
+                "message": "Premium required for this mode.",
+                "redirect": url_for("public.pricing")
+            }), 403
 
         avoid_clickbait = data.get("avoid_clickbait", False)
         custom_prompt = data.get("custom_prompt")
-        generate_image = data.get("generate_image")
 
         # ---- Daily Limit Check ----
-        allowed, usage = can_generate(current_user)
+        if not current_user.is_premium:
+          allowed, usage = can_generate(current_user)
+  
+          if not allowed:
+            return jsonify({
+                    "error": "daily_limit_reached",
+                    "message": "Daily limit reached. Upgrade to continue."
+                }), 403
 
-        print(f"User: {current_user}, Allowed: {allowed}, Usage: {usage}")
-
-        if not allowed:
-          flash("You've reached your daily limit. Please try again tomorrow or upgrade to premium.", "error")
-          return redirect(url_for("caption.caption_page"))
-
-        # ---- Token Check ----
-        if not current_user.is_premium and current_user.tokens <= 0:
-            flash("You need more tokens. Please upgrade to premium for unlimited access.", "error")
-            return redirect(url_for("public.pricing"))
+        token_status = check_user_tokens(current_user)
+        if not token_status["allowed"]:
+            return jsonify(token_status), 403
 
         # ---- Generate X Post Package ----
         results = generate_x_post_for_user(
@@ -235,14 +251,14 @@ def generate_caption_route():
             mode=mode,
             avoid_clickbait=avoid_clickbait, 
             custom_prompt=custom_prompt,
-            max_output_chars=MAX_OUTPUT_CHARS
         )
 
-        if not results:
-            flash("Caption generation failed. Please try again.", "error")
-            return redirect(url_for('caption.caption_page'))
+        if not results or not results.get("captions"):
+            return jsonify({
+                "error": "generation_failed",
+                "message": "Caption generation failed."
+            }), 500
 
-        # ---- Deduct Token ONCE ----
         use_token(current_user)
 
         # ---- Update Usage for Free Users ----
@@ -250,16 +266,25 @@ def generate_caption_route():
             usage.count += 1
             safe_commit()
 
+        warning_msg = None
+        if not current_user.is_premium and current_user.tokens <= 3:
+            warning_msg = f"⚠️ Only {current_user.tokens} tokens remaining."
+
         return jsonify({
             **results,
-            "tokens_remaining": current_user.tokens
+            "tokens_remaining": current_user.tokens,
+            "warning": warning_msg
         })
 
     except requests.exceptions.Timeout:
-        flash("AI request timed out. Please try again.", "error")
-        return redirect(url_for('caption.caption_page'))
+        return jsonify({
+          "error": "server timeout",
+          "message": "AI request timeout. Please try again."
+        }), 504
 
     except Exception as e:
         print("❌ SERVER ERROR:", e)
-        flash("A server error occurred. Please try again later.", "error")
-        return redirect(url_for('caption.caption_page'))
+        return jsonify({
+          "error": "server failed",
+          "message": "Server error occurred. Please try again later."
+        }), 500

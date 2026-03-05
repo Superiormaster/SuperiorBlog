@@ -15,125 +15,46 @@ def log_safe(msg, *args):
     except Exception as e:
         print("Logging failed:", e)
 
-def score_hook(text):
-    first_line = text.strip().split("\n")[0]
-    score = 0
-    if len(first_line.split()) <= 12:
-        score += 25
-    if "?" in first_line:
-        score += 15
-    if any(char.isdigit() for char in first_line):
-        score += 20
-    keywords = ["why", "how", "this", "stop", "never", "no one", "everyone", "most people"]
-    if any(w in first_line.lower() for w in keywords):
-        score += 20
-    return min(score, 100)
-
-def score_retention(text):
-    score = 0
-    lines = [l for l in text.split("\n") if l.strip()]
-    if len(lines) >= 2:
-        score += 20
-    if len(text) <= 260:
-        score += 20
-    transitions = ["but", "however", "instead"]
-    if any(w in text.lower() for w in transitions):
-        score += 20
-    bullets = ["→",  "'n", "-", "•"]
-    if any(w in text.lower() for w in bullets):
-        score += 20
-    if text.count("\n") >= 1:
-        score += 20
-    return min(score, 100)
-
-def score_monetization(text):
-    score = 0
-    strong_ctas = ["follow", "subscribe", "read", "link in comment section"]
-    if any(w in text.lower() for w in strong_ctas):
-        score += 40
-    lead_magnets = ["guide", "free", "download", "course"]
-    if any(w in text.lower() for w in lead_magnets):
-        score += 30
-    action_triggers = ["dm me", "comment", "reply"]
-    if any(w in text.lower() for w in action_triggers):
-        score += 30
-    return min(score, 100)
-
-def detect_psychological_triggers(text):
-    triggers = []
-    loss = ["fear", "risk", "lose"]
-    curiosity = ["secret", "unknown", "no one tells"]
-    contrast = ["most people", "everyone", "nobody"]
-    authority = ["proof", "results", "data"]
-    if any(w in text.lower() for w in loss):
-        triggers.append("Loss Aversion")
-    if any(w in text.lower() for w in curiosity):
-        triggers.append("Curiosity Gap")
-    if any(w in text.lower() for w in contrast):
-        triggers.append("Social Contrast")
-    if any(w in text.lower() for w in authority):
-        triggers.append("Authority Signal")
-    return triggers
-
-def generate_captions(text, user, tone="neutral", mode="single", max_tweets=4, niche="news", breaking=False, max_output_chars=280, avoid_clickbait=False, platform="x", custom_prompt=None):
+def generate_captions(text, user, tone="neutral", mode="single", max_tweets=4, niche="general", breaking=False, avoid_clickbait=False, platform="x", custom_prompt=None):
 
     tone = (tone or "neutral").lower()
     mode = (mode or "single").lower()
     is_premium = user and user.is_authenticated and user.is_premium
+    caption_count = 3 if is_premium else 1
 
     SYSTEM_PROMPT = f"""
 You are a professional social media Editor specializing in {niche}.
-Your job is to research and generate high-performing captions for breaking or trending news.
+Your job is to generate high-performing social media captions based strictly on the user's provided topic.
+Do NOT introduce unrelated political, economic, or news themes unless explicitly requested.
 Follow these instructions:
 
-1. **Focus**: 
-    - Political news, breaking updates, public policy, verified facts, emotional yet factual delivery.
+1. **Focus**:
+    - Ensure content is clear, engaging, and factual (or logical/entertaining if the topic is humorous), and shareable
+    - Content must remain factual even when written in a viral style.
+    - Do not invent facts.
 
 2. **Engagement**: 
     - Maximize engagement through high engagement hooks, high retention in threads, and psychological triggers.
+    - Create hooks that grab attention within the first line.
+    - Maximize retention and encourage discussion in threads.
+    - Use curiosity and contrast naturally to encourage engagement.
 
-3. **Content Rules**: 
-    - **Max {max_output_chars} characters per post.**
-    - Include factual hooks and details (e.g., rates, policies).
-    - No fluff, no clichés, avoid AI language.
+3. **Content Rules**:
+    - Avoid filler language.
+    - Keep writing clear, concise, and engaging.
     - Only include emojis or hashtags if they are natural and enhance engagement.
-    - **Recent, trending content only.**
-    - **If mode is "single"**: return only one high-performing post.
-    - **If mode is "thread"**: return a complete thread, with the first tweet being a hook.
-    - **High engagement**: Posts should be emotionally compelling, but not misleading.
 
-Rules:
-- Include the exact rate (e.g., 26.5%) or specific policy action in the hook.
-- Make the first line factual and specific to show expertise. 
-- Make it engaging, factual, and shareable
-- Thread first tweet must be a hook
-- Accurate and factual
-- Clear first line with specific detail
-- High engagement
-- Encourage discussion
+4. Platform Limits
+- Never exceed the character limits defined by the platform rules.
 
-4. **Instructions for Specific Platforms**: 
-    - **For X (Twitter)**: Short, punchy, and under 280 characters.
-    - **For Facebook**: Slightly longer and more conversational (max 500 characters).
-    
-5. **Mode Instructions**: 
-    - **single**: Return one post only.
-    - **thread**: Return a complete {max_tweets}-tweet thread, with a strong hook in the first tweet.
-    - **reply**: Generate a reply-optimized, Comment-style post designed to spark discussion
-    - **engagement**: Generate Curiosity-driven posts designed to maximize engagement and replies.
-
-6. **Breaking News**: 
-    - If this is breaking news, prioritize clarity and verified facts.
-
-7. **Avoid Clickbait**: 
-    - Only include clickbait if the option is turned on (`avoid_clickbait=False`).
+Always base captions strictly on the text or custom prompt provided by the user.
 """
 
     if platform == "facebook":
         platform_instruction = """
 Write for Facebook:
 - Slightly longer (up to 500 characters)
-- Conversational, encourage comments
+- Conversational tone, encourage comments
 - No hashtags unless natural
 """
     else:
@@ -144,58 +65,117 @@ Write for X:
 - Scroll-stopping content
 """
 
+    clickbait_rule = (
+    "Strictly avoid clickbait." if avoid_clickbait
+    else "Clickbait is allowed if it increases engagement."
+    )
+
     reply_instruction = """
-Replies should:
+Reply rules:
 - Ask meaningful follow-up questions
 - Add strategic insight
 - Encourage discussion
+- If not reply mode, replies should be empty.
 Avoid generic praise.
 """
 
-    breaking_instruction = (
-        "This is BREAKING NEWS. Prioritize clear and verified facts."
-        if breaking else ""
-    )
-
     MODE_INSTRUCTIONS = {
-        "single": "Write a single high-impact post.",
-        "reply": "Write a comment/reply-optimized post designed to spark responses and engagement.",
-        "thread": f"Write a complete {max_tweets}-tweet high-retention thread with hooks and insight.",
-        "engagement": "Write a curiosity-driven post to maximize replies."
+        "single": "Write 1 high-impact caption." if not is_premium else "Write 3 high-impact captions.",
+        "3_captions": "Write 3 high-impact captions." if is_premium else "Write 1 caption only.",
+        "engagement": f"Write a curiosity-driven caption(s) to maximize engagement and replies.",
+        "reply": f"Write reply-style caption(s) designed to spark discussion and engagement.",
+        "thread": "Create a structured multi-tweet thread.",
+        "ultra_viral" : f"""
+Generate ONE ultra-viral caption designed to explode engagement.
+
+Rules for ultra_viral:
+- Use shock, tension, boldness, contrast.
+- Make it impossible to scroll past.
+- It must feel controversial, powerful, or disruptive.
+- If the caption feels weak, rewrite it stronger.
+- If it exceeds 20 words, rewrite shorter.
+"""
     }
     mode_instruction = MODE_INSTRUCTIONS.get(mode, "single post")
+
+    TONE_INSTRUCTIONS = {
+
+    "neutral": """
+Neutral Tone Rules:
+- Clear and straightforward.
+- Informative without emotional bias.
+- No exaggeration.
+""",
+
+    "breaking": """
+Breaking Tone Rules:
+- Urgent and direct.
+- Prioritize clear and verified facts.
+- Short sentences.
+- Lead with the most important update.
+- Avoid speculation.
+""",
+
+    "viral": """
+Viral Tone Rules:
+- Short, punchy sentences.
+- Prioritize emotional impact over explanation.
+- Use bold, high-contrast phrasing.
+- Avoid formal or corporate tone.
+- Maximum 20 words OR 120 characters preferred.
+- Think like a headline that stops scrolling.
+""",
+
+    "emotional": """
+Emotional Tone Rules:
+- Trigger empathy or passion.
+- Use strong feeling-based words.
+- Personal, human-centered phrasing.
+- Make readers feel involved.
+""",
+
+    "professional": """
+Professional Tone Rules:
+- Structured and authoritative.
+- Fact-driven.
+- Confident but not sensational.
+- Clear and concise.
+"""
+    }
+    tone_instruction = TONE_INSTRUCTIONS.get(tone, "")
 
     thread_rules = f"""
 Thread Rules:
 - If mode is NOT "thread", return "thread": []
 - If mode is "thread", return exactly {max_tweets} tweets.
 - Tweet 1 = Powerful factual Hook (<12 words)
-- Tweet 2-3 = Insight/Emotion
-- Last Tweet = Strong closing insight or discussion trigger
+- Tweet 2 to {max_tweets-1} = Insight/Emotion
+- Tweet {max_tweets} = Strong closing insight or discussion trigger
 - Each tweet under 280 characters
-- Clear separation of ideas
 """
 
+    captions_template = "[" + ",".join(['{"text":"","replies":[]}' for _ in range(caption_count)]) + "]"
     prompt_content = custom_prompt or text
     thread_rules_text = thread_rules if mode=="thread" else ""
     prompt = f"""
 {SYSTEM_PROMPT}
 
 Tone: {tone}
+{tone_instruction}
 Mode: {mode_instruction}
-Avoid clickbait: {avoid_clickbait}
-{breaking_instruction}
 {thread_rules_text}
+{reply_instruction if mode=="reply" else ""}
+Clickbait Rule:
+{clickbait_rule}
 Platform Rules:
 {platform_instruction}
 
-Return JSON:
+Return ONLY valid JSON using this exact structure.
+Do not include any text before or after the JSON.
 
 {{
-  "caption": "...",
-  "replies": ["...", "...", "..."],
-  "confidence_score": null,
-  "thread": [],
+ "captions": {captions_template},
+ "thread":[]
 }}
 
 Content:
@@ -205,124 +185,126 @@ Content:
     max_tokens = 250 if mode != "thread" else 500
     try:
         ai_response = call_ai(prompt, max_tokens=max_tokens) or ""
-        data = json.loads(ai_response)
+        if isinstance(ai_response, str):
+          try:
+              match = re.search(r'\{.*\}', ai_response, re.S)
+
+              if match:
+                  data = json.loads(match.group())
+              else:
+                  raise json.JSONDecodeError("No JSON found", ai_response, 0)
+          except json.JSONDecodeError:
+              log_safe("AI returned invalid JSON, using raw text fallback")
+              data = {"caption": ai_response, "replies": [], "thread": []}
+        elif isinstance(ai_response, dict):
+          data = ai_response
+        else:
+          data = {
+           "captions":[{"text": ai_response, "replies":[]}],
+           "thread":[]
+          }
     except json.JSONDecodeError:
-        # Fallback to safe default
+        log_safe("AI returned invalid JSON, returning minimal fallback.")
         data = {
-            "caption": text[:max_output_chars],
-            "replies": [],
-            "confidence_score": None,
-            "thread": [text[:max_output_chars]] if mode == "thread" else []
+         "captions":[{"text": ai_response, "replies":[]}],
+         "thread":[]
         }
     except Exception as e:
-        # Log any unexpected errors
-        log_safe("AI call failed: %s", e)
+        log_safe("AI call completely failed: %s", e)
         data = {
-            "caption": "⚠️ Could not generate AI caption. Using default text.",
-            "replies": [],
-            "confidence_score": None,
-            "thread": [text[:max_output_chars]] if mode == "thread" else []
+         "captions":[{"text": ai_response, "replies":[]}],
+         "thread":[]
         }
 
-    caption = (data.get("caption") or "")[:max_output_chars]
-    replies = data.get("replies", [])
+    raw_captions = data.get("captions", [])
+
+    captions = []
+    limit = caption_count
+
+    for item in raw_captions[:limit]:
+
+      text = (item.get("text") or "").strip()
+      replies = item.get("replies") or []
+      if not isinstance(replies, list):
+          replies = [str(replies)]
+
+      captions.append({
+          "style": tone,
+          "text": text,
+          "suggested_replies": replies if is_premium else [],
+          "thread": None
+      })
+    
+    if not raw_captions:
+      captions = [{
+          "style": tone,
+          "text": "⚠️ AI generation failed. Please try again.",
+          "suggested_replies": [],
+          "thread": None
+      }]
+
     thread = data.get("thread", [])
 
-    if mode == "thread":
-        thread = data.get("thread", [])
-        thread = [str(t) for t in thread][:max_tweets]
-        while len(thread) < max_tweets:
-            thread.append(caption if len(thread)==0 else "Continue...")
-    else:
-        thread = None
+    # --- Thread normalization ---
+    try:
+      if mode == "thread":
+          normalized_thread = []
+          for t in thread[:max_tweets]:
+              if isinstance(t, dict): normalized_thread.append(str(t.get("text","Continue...")))
+              else: normalized_thread.append(str(t))
+          while len(normalized_thread) < max_tweets:
+              normalized_thread.append("Continue...")
+          thread = normalized_thread
+      else:
+          thread = []
+    except Exception:
+        thread = []
 
-    hook = score_hook(caption)
-    retention = score_retention(caption)
-    monetization = score_monetization(caption)
-    system_confidence = round(hook*0.4 + retention*0.4 + monetization*0.2, 1)
-
-    confidence_score = data.get("confidence_score")
-    if confidence_score is None:
-        confidence_score = system_confidence
-
-    analysis = {
-        "hook_score": score_hook(caption),
-        "retention_score": score_retention(caption),
-        "monetization_score": score_monetization(caption),
-        "niche": niche,
-        "psychological_triggers": detect_psychological_triggers(caption)
-    }
-
-    return [{
-        "style": "engineered",
-        "text": caption,
-        "analysis": analysis,
-        "confidence_score": confidence_score,
-        "suggested_replies": replies if is_premium else [],
-        "thread": thread,
-    }]
+    return captions, thread
 
 def generate_x_post_for_user(
     text,
     user,
-    teams=None,
-    event_time=None,
     tone="neutral",
     mode="single",
     platform="x",
     max_tweets=4,
     avoid_clickbait=False,
     custom_prompt=None,
-    max_output_chars=280,
 ):
     tone = (tone or "neutral").lower()
-    niche = "news"
+    niche = "general"
 
-    captions = generate_captions(
+    captions, thread_data= generate_captions(
       text=text,
       user=user,
       tone=tone,
       mode=mode,
       platform=platform,
       avoid_clickbait=avoid_clickbait,
-      max_output_chars=max_output_chars,
       custom_prompt=custom_prompt
     )
 
     is_premium = user and user.is_authenticated and user.is_premium
 
-    thread = captions[0].get("thread", [])
-    thread_texts = []
-    if mode == "thread" and thread:
-        for i in range(max_tweets):
-            try:
-                val = thread[i]
-                thread_texts.append(val if isinstance(val, str) else str(val.get("text","Continue...")))
-            except IndexError:
-                thread_texts.append("Continue..." if i>0 else captions[0].get("text","No caption generated"))
+    if mode=="thread" and thread_data:
+        thread_data = [t for t in thread_data if t not in [c['text'] for c in captions]]
+        thread_data = thread_data[:max_tweets]
 
-    for cap in captions:
-        confidence_score = cap.get("confidence_score", 0)
-        analysis = cap.get("analysis", {}) or {}
+    if is_premium and captions:
+          preview_text = captions[0]["text"] if captions else text
+          first_cap = captions[0]
 
-        hook = int(analysis.get("hook_score") or 0)
-        retention = int(analysis.get("retention_score") or 0)
-        monetization = int(analysis.get("monetization_score") or 0)
-        
-        confidence_score = round(hook*0.4 + retention*0.4 + monetization*0.2, 1)
-
-        if is_premium:
           new_post = XPost(
-            user_id=user.id,
-            text=cap["text"],
-            style=cap["style"],
-            confidence_score=confidence_score,
-            predicted_engagement={
-                "retention": analysis.get("retention_score", 0),
-                "monetization": analysis.get("monetization_score", 0)
-            },
-            suggested_replies=cap.get("suggested_replies", []),
-            created_at=datetime.utcnow()
+              user_id=user.id,
+              original_text=text,
+              text=preview_text,
+              captions=captions,
+              style=first_cap["style"],
+              predicted_engagement=None,
+              suggested_replies=first_cap.get("suggested_replies", []),
+              threads=thread_data,
+              created_at=datetime.utcnow()
           )
           try:
               db.session.add(new_post)
@@ -338,11 +320,10 @@ def generate_x_post_for_user(
     return {
         "type": "premium" if is_premium else "free",
         "captions": captions,
-        "thread": [{"text": t} for t in thread_texts] if mode=="thread" else [],
+        "thread": [{"text": t} for t in thread_data] if thread_data else [],
         "replies": [
             r for cap in captions
             for r in cap.get("suggested_replies", []) if r
         ],
-        "confidence_score": confidence_score or 0,
         "engagement_score": None
     }

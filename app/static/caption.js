@@ -47,27 +47,40 @@ document.addEventListener("DOMContentLoaded", () => {
           tone: document.getElementById("xTone").value,
           mode: document.getElementById("xMode").value,
           avoid_clickbait: document.getElementById("xAvoidClickbait").checked,
-          generate_image: document.getElementById("xGenerateImage")?.checked || false
         })
       });
-
-      if (!res.ok) throw new Error("Server error");
-
-      const data = await res.json();
-
-      if (data.error) {
-        if (data.error === "premium_required") {
+    
+      let data = null;
+    
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        throw new Error("Invalid server response");
+      }
+    
+      // Handle ALL error responses first
+      if (!res.ok) {
+        if (data?.error === "tokens_exhausted") {
+          showError(data.message);
+          setTimeout(() => { window.location.href = "/pricing"; }, 2500);
+          return;
+        }
+    
+        if (data?.error === "premium_required") {
           window.location.href = data.redirect;
           return;
         }
-        return showError(data.error);
+    
+        showError(data?.message || "Something went wrong.");
+        return;
       }
-
+    
+      // Successful response
       renderResults(data);
-
+    
     } catch (err) {
-      console.error(err);
-      showError("Something went wrong. Try again.");
+      console.error("Fetch error:", err);
+      showError("Server connection issue. Please try again.");
     } finally {
       toggleLoading(false);
     }
@@ -80,39 +93,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!data?.captions?.length) return;
 
-    const best = data.captions[0];
     const isPremium = data.type === "premium";
 
     // BEST CAPTION DIV
-    const bestDiv = document.createElement("div");
-    bestDiv.className = "mb-6 p-4 border-2 border-yellow-400 dark:bg-gray-800 bg-yellow-50 rounded-xl shadow-md";
-
-    bestDiv.innerHTML = `
-      <div class="border-2 border-yellow-400 bg-yellow-50 p-4 rounded-xl mb-2">
-        <span class="text-xs font-bold text-yellow-600">CAPTION GENERATED</span>
-      </div>
-
-      ${isPremium ? `
-      <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
-        <div class="bg-green-500 h-2 rounded-full" style="width:${best.confidence_score || 0}%"></div>
-      </div>
-    ` : ""}
-
-      <p class="text-lg text-center font-semibold text-gray-900 dark:text-white">${best.text}</p>
-
-      <p class="text-gray-500 text-sm mt-1">
-        Style: ${best.style}${isPremium ? `, Confidence: ${best.confidence_score || 0}%` : ""}
-      </p>
-    `;
-
-    // COPY BUTTON
-    const copyBtn = document.createElement("button");
-    copyBtn.className = "px-3 py-1 text-xs rounded bg-blue-600 hover:bg-blue-700 mt-2";
-    copyBtn.innerText = "Copy";
-    copyBtn.addEventListener("click", () => navigator.clipboard.writeText(best.text));
-    bestDiv.appendChild(copyBtn);
-
-    results.appendChild(bestDiv);
+    data.captions.forEach((cap) => {
+      const capDiv = document.createElement("div");
+      capDiv.className = "mb-6 p-4 border-2 border-yellow-400 dark:bg-gray-800 bg-yellow-50 rounded-xl shadow-md";
+  
+      capDiv.innerHTML = `
+        <div class="border-2 border-yellow-400 bg-yellow-50 p-4 rounded-xl mb-2">
+          <span class="text-xs font-bold text-yellow-600">CAPTION GENERATED</span>
+        </div>
+  
+        ${isPremium ? `
+        <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
+          <div class="bg-green-500 h-2 rounded-full" style="width:${cap.confidence_score || 0}%"></div>
+        </div>
+        ` : ""}
+  
+        <p class="text-lg text-center font-semibold text-gray-900 dark:text-white">${cap.text}</p>
+        <p class="text-gray-500 text-sm mt-1">Style: ${cap.style}</p>
+      `;
+  
+      // COPY BUTTON
+      const copyBtn = document.createElement("button");
+      copyBtn.className = "px-3 py-1 text-xs rounded bg-blue-600 hover:bg-blue-700 mt-2";
+      copyBtn.innerText = "Copy";
+      copyBtn.addEventListener("click", () => navigator.clipboard.writeText(cap.text));
+      capDiv.appendChild(copyBtn);
+  
+      results.appendChild(capDiv);
+    });
 
     // THREAD
     if (data.thread?.length) {
@@ -130,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // REPLIES
     if (data.replies?.length) {
       const repliesSec = createSection("Suggested Replies");
-      data.replies.forEach(reply => {
+      data.replies.forEach((reply) => {
         const el = document.createElement("div");
         el.className = "text-white bg-gray-900 p-2 rounded cursor-pointer hover:bg-gray-700";
         el.innerText = reply;
@@ -165,8 +176,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showError(msg) {
-    console.log('Showing error:', msg);  // Log to verify the function is triggered
-    errorEl.innerText = msg || "An unknown error occurred.";  // Show a default message if none is provided
+    console.log('Showing error:', msg);
+    errorEl.innerText = msg || "An unknown error occurred.";
     errorEl.classList.remove("hidden");
     setTimeout(() => errorEl.classList.add("hidden"), 5000);
   }

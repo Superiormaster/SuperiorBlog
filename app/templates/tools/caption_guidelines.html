@@ -1,0 +1,61 @@
+{% extends 'user/base.html' %}
+
+{% block title %}Caption Generator Guidelines{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto mt-12 p-8 bg-white dark:bg-white/10 rounded-2xl shadow-lg">
+
+    <h1 class="text-3xl bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-400 text-center font-bold mb-6">How To Get Viral Captions</h1>
+
+    <p class="mb-6 text-gray-600 dark:text-gray-300">
+        Follow these simple rules to maximize engagement, reach, and performance.
+    </p>
+
+    <!-- Step 1 -->
+    <h2 class="text-xl dark:text-gray-100 text-gray-800 font-semibold mt-6 mb-3">1. Be Specific</h2>
+    <p class="mb-4 text-gray-700 dark:text-gray-300">
+        Instead of writing: <strong>"Politics in Nigeria"</strong><br>
+        Write: <strong>"Tinubu signs new tax reform bill"</strong>
+    </p>
+
+    <!-- Step 2 -->
+    <h2 class="text-xl dark:text-gray-100 text-gray-800 font-semibold mt-6 mb-3">2. Choose the Right Tone</h2>
+    <ul class="list-disc pl-6 text-gray-700 dark:text-gray-300 space-y-2 mb-4">
+        <li><strong>Neutral:</strong> Informative and balanced.</li>
+        <li><strong>Breaking:</strong> Urgent and direct updates.</li>
+        <li><strong>Viral:</strong> Short, punchy, scroll-stopping captions.</li>
+        <li><strong>Emotional:</strong> Human-centered and feeling-driven.</li>
+        <li><strong>Professional:</strong> Structured and authoritative.</li>
+    </ul>
+
+    <!-- Step 3 -->
+    <h2 class="text-xl dark:text-gray-100 text-gray-800 font-semibold mt-6 mb-3">3. Understand the Modes</h2>
+    <ul class="list-disc pl-6 text-gray-700 dark:text-gray-300 space-y-2 mb-4">
+        <li><strong>Single:</strong> One high-impact caption.</li>
+        <li class="text-red-500"><strong>Captions:</strong> Three high-impact caption.</li>
+        <li class="text-red-500"><strong>Thread:</strong> Multi-tweet storytelling format.</li>
+        <li class="text-red-500"><strong>Reply:</strong> Designed to spark discussions.</li>
+        <li class="text-red-500"><strong>Engagement:</strong> Curiosity-driven content.</li>
+        <li class="text-red-500"><strong>Ultra Viral:</strong>Explosive captions designed to dominate X.</li>
+    </ul>
+
+    <!-- Step 4 -->
+    <h2 class="text-xl dark:text-gray-100 text-gray-800 font-semibold mt-6 mb-3">4. Write Like This</h2>
+    <p class="mb-2 text-gray-700 dark:text-gray-300"><strong>Weak:</strong> The government has announced a new reform.</p>
+    <p class="mb-2 text-gray-700 dark:text-gray-300"><strong>Better:</strong> A new reform just passed.</p>
+    <p class="mb-4 dark:text-green-400 text-green-600"><strong>Ultra Viral:</strong> Power just shifted.</p>
+
+    <!-- Premium Push -->
+    <div class="mt-8 p-6 bg-gray-100 dark:bg-white/10 rounded-xl">
+        <h3 class="text-lg dark:text-gray-100 text-gray-800 font-semibold mb-2">Want Maximum Engagement?</h3>
+        <p class="mb-4 text-gray-700 dark:text-gray-300">
+            Upgrade to Premium to unlock more captions, Reply optimised, Thread, Engagement hook, Ultra Viral Mode, and unlimited generations.
+        </p>
+        <a href="{{ url_for('public.pricing') }}" 
+           class="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-xl shadow-md hover:bg-yellow-600 inline-block hover:opacity-90 transition">
+            Upgrade to Premium
+        </a>
+    </div>
+
+</div>
+{% endblock %}
