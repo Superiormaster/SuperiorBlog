@@ -182,7 +182,7 @@ Content:
 \"\"\"{prompt_content}\"\"\"
 """
 
-    max_tokens = 250 if mode != "thread" else 500
+    max_tokens = 300 if mode != "thread" else 500
     try:
         ai_response = call_ai(prompt, max_tokens=max_tokens) or ""
         if isinstance(ai_response, str):
@@ -195,14 +195,21 @@ Content:
                   raise json.JSONDecodeError("No JSON found", ai_response, 0)
           except json.JSONDecodeError:
               log_safe("AI returned invalid JSON, using raw text fallback")
-              data = {"caption": ai_response, "replies": [], "thread": []}
+              data = {
+                "captions": [{"text": ai_response, "replies": []}], "thread": []
+              }
         elif isinstance(ai_response, dict):
-          data = ai_response
+            data = ai_response
+            if "captions" not in data or not isinstance(data["captions"], list):
+                data["captions"] = [{"text": ai_response.get("caption", ""), "replies": []}]
+            if "thread" not in data or not isinstance(data["thread"], list):
+                data["thread"] = []
         else:
-          data = {
-           "captions":[{"text": ai_response, "replies":[]}],
-           "thread":[]
-          }
+            data = {
+                "captions": [{"text": str(ai_response), "replies": []}],
+                "thread": []
+            }
+
     except json.JSONDecodeError:
         log_safe("AI returned invalid JSON, returning minimal fallback.")
         data = {
@@ -227,18 +234,26 @@ Content:
       replies = item.get("replies") or []
       if not isinstance(replies, list):
           replies = [str(replies)]
+      clean_replies = []
+      for r in replies:
+        if isinstance(r, str):
+          r = r.strip()
+          if r:
+            if len(r) > 200:
+              r = r[:200].rsplit(" ", 1)[0] + "..."
+            clean_replies.append(r)
 
       captions.append({
           "style": tone,
           "text": text,
-          "suggested_replies": replies if is_premium else [],
+          "suggested_replies": clean_replies if is_premium else [],
           "thread": None
       })
     
     if not raw_captions:
       captions = [{
           "style": tone,
-          "text": "⚠️ AI generation failed. Please try again.",
+          "text": "⚠️ AI generation failed. Please check your internet connection and try again.",
           "suggested_replies": [],
           "thread": None
       }]

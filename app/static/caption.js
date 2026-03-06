@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
         ${isPremium ? `
         <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
-          <div class="bg-green-500 h-2 rounded-full" style="width:${cap.confidence_score || 0}%"></div>
+          <div class="bg-green-500 h-2 rounded-full" style="width:70%"></div>
         </div>
         ` : ""}
   
@@ -128,9 +128,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // THREAD
     if (data.thread?.length) {
       const threadSec = createSection("Thread");
+      threadSec.className += " p-4 rounded-xl";
       data.thread.forEach((tweet) => {
         const tweetEl = document.createElement("div");
-        tweetEl.className = "p-3 bg-gray-900 rounded text-white cursor-pointer hover:bg-gray-700";
+        tweetEl.className = "p-3 bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-900 dark:text-white dark:hover:bg-gray-700 rounded cursor-pointer";
         tweetEl.innerText = tweet.text || tweet;
         tweetEl.addEventListener("click", () => navigator.clipboard.writeText(tweet.text || tweet));
         threadSec.appendChild(tweetEl);
@@ -141,9 +142,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // REPLIES
     if (data.replies?.length) {
       const repliesSec = createSection("Suggested Replies");
+      repliesSec.className += " p-4 rounded-xl";
       data.replies.forEach((reply) => {
         const el = document.createElement("div");
-        el.className = "text-white bg-gray-900 p-2 rounded cursor-pointer hover:bg-gray-700";
+        el.className = "bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-900 dark:text-white dark:hover:bg-gray-700 p-2 rounded cursor-pointer";
         el.innerText = reply;
         el.addEventListener("click", () => navigator.clipboard.writeText(reply));
         repliesSec.appendChild(el);
@@ -184,9 +186,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function createSection(title) {
     const sec = document.createElement("div");
-    sec.className = "space-y-4 mt-6";
+    sec.className = "space-y-4 text-black bg-gray-50 dark:bg-gray-800 space-y-4 rounded-xl mt-6";
     const header = document.createElement("h3");
-    header.className = "text-lg font-bold text-white mb-2";
+    header.className = "text-lg font-bold text-gray-900 dark:text-white mb-2";
     header.innerText = title;
     sec.appendChild(header);
     return sec;

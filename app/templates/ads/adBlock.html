@@ -160,7 +160,7 @@
 {% elif ad.location == 'sticky_bottom' %}
     <div id="sticky-ad-{{ ad.id }}"
          class="sticky-ad bottom fixed left-0 bottom-0 w-full z-50
-                bg-white dark:bg-gray-800 shadow-lg transition-transform duration-300 ease-in-out translate-y-full">
+                bg-white dark:bg-gray-800 shadow-lg transition-transform duration-300 ease-in-out translate-y-0">
       
         <!-- Pull Handle -->
         <div id="pull-tab-{{ ad.id }}"
@@ -214,7 +214,7 @@
                          loading="lazy"
                          decoding="async"
                          alt="{{ ad.title or 'Advertisement' }}"
-                         class="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-[1.02] rounded-lg">
+                         class="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-[1.02] rounded-lg">
                 </div>
                 {% else %}
                     <div class="p-6 text-center text-gray-800 dark:text-gray-200 font-semibold text-lg">

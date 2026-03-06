@@ -245,7 +245,7 @@ def send_draft_digest(id):
   for s in subscribers:
     html_content = render_template("emails/admin_draft.html",  subscriber=s)
     send_email(s.email, draft.subject, html_content)
-    log_email(s.email, "Admin Message", success)
+    log_email(s.email, "Admin Message", True)
 
   draft.is_sent = True
   if not safe_commit():
@@ -254,12 +254,40 @@ def send_draft_digest(id):
   flash('Digest sent successfully')
   return redirect(url_for('admin.dashboard'))
 
+@admin_bp.route("/send-daily-digest", methods=["POST"])
+@login_required
+@csrf.exempt
+def send_daily_digest():
+
+    subscribers = Subscriber.query.filter_by(
+        is_active=True,
+        receive_daily=True
+    ).all()
+
+    posts = Post.query.order_by(Post.created_at.desc()).limit(5).all()
+
+    for sub in subscribers:
+
+        send_email(
+            subject="📰 Daily News Digest – SuperiorNews",
+            recipients=[sub.email],
+            template="emails/daily_digest.html",
+            posts=posts
+        )
+
+        sub.last_email_sent = datetime.utcnow()
+
+    db.session.commit()
+
+    flash("Daily digest sent!", "success")
+    return redirect(url_for("admin.list_subscribers"))
+
 @admin_bp.route('/admin/email/send-digest', methods=['POST'])
 @csrf.exempt
 def send_digest():
     send_weekly_digest_to_all()
     flash("Weekly digest sent successfully")
-    return redirect(url_for('admin.dashboard'))
+    return redirect(url_for('admin.list_subscribers'))
 
 @admin_bp.route('/email-logs')
 @login_required
