@@ -261,23 +261,28 @@ def send_daily_digest():
 
     subscribers = Subscriber.query.filter_by(
         is_active=True,
-        receive_daily=True
+        receive_digest=True
     ).all()
 
     posts = Post.query.order_by(Post.created_at.desc()).limit(5).all()
 
     for sub in subscribers:
 
+        html_content = render_template(
+            "emails/daily_news.html",
+            posts=posts,
+            subscriber=sub,
+            now=datetime.utcnow()
+        )
+
         send_email(
-            subject="📰 Daily News Digest – SuperiorNews",
-            recipients=[sub.email],
-            template="emails/daily_digest.html",
-            posts=posts
+            sub.email, "📰 Daily News Digest – SuperiorNews",
+            html_content
         )
 
         sub.last_email_sent = datetime.utcnow()
 
-    db.session.commit()
+    safe_commit()
 
     flash("Daily digest sent!", "success")
     return redirect(url_for("admin.list_subscribers"))

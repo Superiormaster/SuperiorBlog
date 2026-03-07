@@ -172,6 +172,14 @@
         {{ post.title }}
       </h3>
       <p class="text-sm text-gray-500 dark:text-gray-400">Category: {{ post.category.name if post.category else 'None' }}</p>
+      <!--<p class="text-sm text-gray-500 dark:text-gray-400">
+        Labels: 
+        {% if post.labels %}
+          {{ post.labels | map(attribute='name') | join(', ') }}
+        {% else %}
+          None
+        {% endif %}
+      </p>-->
   
       <div class="flex justify-between text-sm mb-2">
         <span class="px-2 py-1 rounded text-xs mt-2
@@ -185,7 +193,7 @@
               bg-red-100 dark:bg-red-700 text-red-700 dark:text-red-100
             {% endif %}
         ">
-          Status: {{ post.status|capitalize }}
+          Statu: {{ post.status|capitalize }}
         </span>
 
         <span class="text-gray-500 dark:text-gray-400">
