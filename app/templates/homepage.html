@@ -46,7 +46,7 @@
           {{ cat.name }}
         </a>
       {% endfor %}
-     <!-- <a href="{{ url_for('caption.caption_page') }}">Generate Captions</a>-->
+     <a href="{{ url_for('caption.caption_page') }}" class="btn-primary btn-danger text-gray-900 dark:text-yellow-600">Generate Captions</a>
      {% if current_user.is_authenticated %}
         <a href="{{ url_for('public.user_dashboard') }}" data-redirect class="btn-primary btn-danger hidden md:flex text-gray-900 dark:text-yellow-600">Dashboard</a>
         <a href="{{ url_for('public.user_change_password') }}" data-redirect class="btn-primary text-gray-900 dark:text-yellow-600 hidden md:flex btn-danger hover:underline">Change Password</a>
@@ -483,6 +483,7 @@
       <a href="{{ url_for('public.contact', type='contact') }}" class="hover:text-white link-gold">Contact Us</a>
       <a href="{{ url_for('public.contact', type='feedback') }}" class="hover:text-white link-gold">Write a feedback</a>
       <a href="{{ url_for('public.contact', type='report') }}" class="hover:text-white link-gold">Report a problem</a>
+      <a href="{{ url_for('public.about') }}" class="hover:text-white link-gold">About Us</a>
       <a href="{{ url_for('public.privacy') }}" class="hover:text-white link-gold">Privacy Policy</a>
       <a href="{{ url_for('public.terms') }}" class="hover:text-white link-gold">Terms & Conditions</a>
     </div>

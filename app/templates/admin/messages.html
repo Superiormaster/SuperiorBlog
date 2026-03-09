@@ -21,7 +21,7 @@
             </p>
 
             <p class="text-sm text-gray-400 line-clamp-1">
-              {{ msg.message }}
+              {{ msg.message or msg.subject or "No message provided" }}
             </p>
           </div>
 

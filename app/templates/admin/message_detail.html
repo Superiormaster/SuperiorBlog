@@ -28,7 +28,7 @@
   </div>
 
   <div class="border border-gray-800 rounded-lg p-4 break-words whitespace-pre-wrap text-gray-200 mb-6">
-    {{ msg.message }}
+    {{ msg.message or msg.subject or "No message provided" }}
   </div>
 
   <div class="flex gap-3">

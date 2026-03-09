@@ -334,9 +334,7 @@ def email_logs():
 @login_required
 def admin_messages():
     messages = ContactMessage.query.order_by(ContactMessage.created_at.desc()).all()
-    reports = ContactMessage.query.filter_by(type="report")
-    unreplied = ContactMessage.query.filter_by(is_replied=False)
-    return render_template("admin/messages.html", unreplied=unreplied, reports=reports, messages=messages)
+    return render_template("admin/messages.html", messages=messages)
 
 @admin_bp.route("/messages/<int:id>/reply", methods=["POST"])
 @login_required
@@ -355,7 +353,7 @@ def reply_message(id):
         subject=f"Re: {msg.subject or 'Your message'}",
         html_content=reply_text
     )
-    log_email(msg.email, msg.subject, True)
+    log_email(msg.email, msg.subject, success)
 
     if success:
       msg.is_replied = True

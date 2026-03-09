@@ -1426,7 +1426,7 @@ def contact():
     if request.method == "POST":
         msg = ContactMessage(
             name=request.form.get("name", "Anonymous"),
-            email=request.form.get("email", "anonymous@superiornewsw.app"),
+            email=request.form.get("email", "anonymous@superiornews.app"),
             subject=request.form.get("subject", "Feedback"),
             message=request.form.get("message", ""),
             type=request.form.get("type", "feedback")  # contact | feedback | report
@@ -1449,26 +1449,25 @@ def contact():
 @public_bp.route("/contact_feedback", methods=["GET", "POST"])
 @csrf.exempt
 def contact_feedback():
-    content = request.form.get("message", "").strip()
-
-    if not content:
-        flash("Feedback cannot be empty.", "error")
-        return redirect(url_for("public.index"))
-
-    if len(content) < 10:
-        flash("Feedback must be at least 10 characters.", "error")
-        return redirect(url_for("public.index"))
-
-    if len(content) > 1000:
-        flash("Feedback is too long.", "error")
-        return redirect(url_for("public.index"))
-
     if request.method == "POST":
+        content = request.form.get("message", "").strip()
+
+        if not content:
+            flash("Feedback cannot be empty.", "error")
+            return redirect(url_for("public.index"))
+    
+        if len(content) < 10:
+            flash("Feedback must be at least 10 characters.", "error")
+            return redirect(url_for("public.index"))
+    
+        if len(content) > 1000:
+            flash("Feedback is too long.", "error")
+            return redirect(url_for("public.index"))
         msg = ContactMessage(
             name=request.form.get("name", "Anonymous"),
             email=request.form.get("email", "anonymous@superiornews.app"),
             subject=request.form.get("subject", "Feedback"),
-            message=request.form.get("message", ""),
+            message=content,
             type=request.form.get("type", "feedback")
         )
 
@@ -1484,6 +1483,12 @@ def contact_feedback():
 
     return render_template("contact.html")
 
+# ----- PRIVACY -----
+@public_bp.route("/about")
+@cache.cached(timeout=300)
+def about():
+    settings = AppSettings.query.first()
+    return render_template("about.html", settings=settings)
 # ----- PRIVACY -----
 @public_bp.route("/privacy")
 @cache.cached(timeout=300)
