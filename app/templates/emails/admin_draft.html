@@ -75,33 +75,13 @@
     </div>
 
     <!-- Email Heading -->
-    <h1>{{ subject or "Superior News Digest" }}</h1>
+    <h1 style="text-align:center">{{ subject or "Superior News Notification" }}</h1>
 
-    <!-- Optional custom intro -->
-    {% if intro %}
-      <p>{{ intro }}</p>
-    {% endif %}
-
-    <!-- News items -->
-    {% if news_items %}
-      {% for post in news_items %}
-        <div class="news-item">
-          {% if post.featured_image %}
-            <img src="{{ post.featured_image }}" alt="{{ post.title }}">
-          {% endif %}
-          <h3><a href="{{ post.url or 'https://www.superiornews.app/post/' + post.slug }}">{{ post.title }}</a></h3>
-          {% if post.excerpt %}
-            <p style="margin:0 0 15px 0; color:#CCCCCC; font-size:14px; line-height:1.5;">{{ post.excerpt }}</p>
-          {% endif %}
-        </div>
-      {% endfor %}
-    {% endif %}
-
-    <!-- Call to action button -->
-    {% if cta_url and cta_text %}
-      <p style="text-align:center;">
-        <a href="{{ cta_url }}" class="button">{{ cta_text }}</a>
-      </p>
+    <!-- Draft HTML -->
+    {% if draft_html %}
+    <div>
+    {{ draft_html | safe }}
+    </div>
     {% endif %}
 
     <!-- Footer -->

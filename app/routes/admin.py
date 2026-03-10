@@ -227,7 +227,7 @@ def create_draft():
 
   return render_template('admin/subscribers_draft.html')
 
-@admin_bp.route('/admin/draft/digest/<int:id>', methods=['POST'])
+@admin_bp.route('/draft/digest/<int:id>', methods=['POST'])
 @login_required 
 @csrf.exempt
 def send_draft_digest(id): 
@@ -235,7 +235,7 @@ def send_draft_digest(id):
 
   if draft.is_sent:
     flash('This digest was already sent')
-    return redirect(url_for('admin.dashboard'))
+    return redirect(url_for('admin.preview_draft', id=id))
 
   subscribers = Subscriber.query.filter_by(
     is_active=True,
@@ -243,7 +243,7 @@ def send_draft_digest(id):
   ).all()
 
   for s in subscribers:
-    html_content = render_template("emails/admin_draft.html",  subscriber=s)
+    html_content = render_template("emails/admin_draft.html",  subscriber=s, subject=draft.subject, draft_html=draft.html_content, now=datetime.now())
     send_email(s.email, draft.subject, html_content)
     log_email(s.email, "Admin Message", True)
 
@@ -252,7 +252,7 @@ def send_draft_digest(id):
     print("Failed to reject post")
 
   flash('Digest sent successfully')
-  return redirect(url_for('admin.dashboard'))
+  return redirect(url_for('admin.preview_draft', id=id))
 
 @admin_bp.route("/send-daily-digest", methods=["POST"])
 @login_required
