@@ -6,7 +6,7 @@
   {% if drafts %}
     {% for draft in drafts %}
       <div class="border p-4 rounded shadow-sm bg-white/5">
-        <h3 class="font-semibold text-lg">{{ draft.subject }}</h3>
+        <h3 class="font-semibold text-black dark:text-white text-lg">{{ draft.subject }}</h3>
         <a href="{{ url_for('admin.preview_draft', id=draft.id) }}"
            class="text-blue-600 hover:underline">Preview</a>
         <form method="post" action="{{ url_for('admin.send_draft_digest', id=draft.id) }}" class="mt-2">

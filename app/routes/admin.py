@@ -213,6 +213,7 @@ def create_draft():
   if request.method == 'POST': 
     subject = request.form.get('subject')
     content = request.form.get('html_content')
+    content = "<p>" + content.replace("\n\n", "</p><p>").replace("\n", "<br>") + "</p>"
 
     draft = DigestDraft(
         subject=subject,
