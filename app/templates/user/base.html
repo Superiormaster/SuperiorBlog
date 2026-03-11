@@ -190,7 +190,13 @@
           <li><a href="{{ url_for('public.contact', type='contact') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-envelope mr-2" aria-hidden="true"></i>Contact Us</a></li>
           <li><a href="{{ url_for('public.contact', type='feedback') }}" class="hover:text-white"><i class="fa-regular fa-message mr-2"></i>Write a feedback</a></li>
           <li><a href="{{ url_for('public.contact', type='report') }}" class="hover:text-white"><i class="fa fa-bug mr-2"></i>Report a problem</a></li>
-          <li><a href="{{ url_for('public.about') }}" class="hover:text-white link-gold"><i class="fa fa-users mr-2" aria-hidden="true"></i>About Us</a></li>
+          <li><a href="{{ url_for('public.about') }}" class="hover:text-white"><i class="fa fa-users mr-2" aria-hidden="true"></i>About Us</a></li>
+          <!--<li><a href="{{ url_for('caption.caption_page') }}" class="hover:text-white"><svg xmlns="http:                                                
+  <rect x="10" y="10" width="180" height="80" rx="10" fill="#FF69B4"/>
+  <polygon points="90,90 100,110 110,90" fill="          
+  <text x="100" y="55" font-size="40" fill="#000" text-anchor="middle">CC</text>
+</svg>
+Generate Captions</a></li>-->
           {% set settings = AppSettings.query.first() %}
           {% if settings %}
           <li><a href="{{ url_for('public.privacy') }}" data-redirect class="btn-primary btn-danger">

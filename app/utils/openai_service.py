@@ -52,10 +52,28 @@ Always base captions strictly on the text or custom prompt provided by the user.
 
     if platform == "facebook":
         platform_instruction = """
-Write for Facebook:
-- Slightly longer (up to 500 characters)
-- Conversational tone, encourage comments
-- No hashtags unless natural
+Write for Facebook.
+
+Caption Structure:
+1. Start with a strong HOOK emoji and headline.
+2. Second paragraph gives the key news, prediction, or story.
+3. Third paragraph asks a question to encourage comments.
+4. Optional fourth paragraph can add extra context or excitement.
+
+Rules:
+- Do NOT use Markdown (**, __, etc.)
+- Use plain text for emphasis with emojis or natural words
+- 2–4 short paragraphs
+- Conversational tone
+- Encourage discussion
+- Use 1–2 emojis naturally
+- No more than 1 hashtag
+- Maximum 450 characters
+- Make the caption feel like a viral sports/news Facebook page post.
+- The first line must be a powerful hook that stops scrolling.
+- Always end the caption with a question that encourages opinions.
+
+Output strictly as plain text with paragraph breaks. Do not merge everything into one paragraph.
 """
     else:
         platform_instruction = """
@@ -318,6 +336,7 @@ def generate_x_post_for_user(
               style=first_cap["style"],
               predicted_engagement=None,
               suggested_replies=first_cap.get("suggested_replies", []),
+              platform=platform,
               threads=thread_data,
               created_at=datetime.utcnow()
           )

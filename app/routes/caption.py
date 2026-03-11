@@ -165,20 +165,28 @@ def caption_guidelines():
     return render_template("tools/caption_guidelines.html")
 
 def use_token(user):
-    if user.is_premium:
+    if not user:
+        return False
+
+    if getattr(user, "is_premium", False):
         return True
 
-    if user.tokens > 0:
+    if getattr(user, "tokens", 0) > 0:
         user.tokens -= 1
         safe_commit()
         return True
     return False
 
 def check_user_tokens(user):
-    if user.is_premium:
+    if not user:
         return {"allowed": True}
-    if user.tokens > 0:
+
+    if getattr(user, "is_premium", False):
         return {"allowed": True}
+
+    if getattr(user, "tokens", 0) > 0:
+        return {"allowed": True}
+
     return {
         "allowed": False,
         "error": "tokens_exhausted",
@@ -188,12 +196,6 @@ def check_user_tokens(user):
 @caption_bp.route('/caption/generate', methods=['POST'])
 @csrf.exempt
 def generate_caption_route():
-    if not current_user.is_authenticated:
-        return jsonify({
-            "error": "auth_required",
-            "message": "You must be logged in."
-        }), 401
-
     try:
         # ---- Validate JSON ----
         if not request.is_json:
@@ -215,11 +217,14 @@ def generate_caption_route():
                 "error": f"Text exceeds {MAX_INPUT_CHARS} characters."
             }), 400
 
+        user = current_user if getattr(current_user, "is_authenticated", False) else None
+
         tone = data.get("tone")
         mode = data.get("mode", "single")
+        platform = data.get("platform", "x")
         premium_modes = ["thread", "engagement", "reply", "ultra_viral", "3_captions"]
 
-        if mode in premium_modes and not current_user.is_premium:
+        if mode in premium_modes and (not user or not getattr(user, "is_premium", False)):
             return jsonify({
                 "error": "premium_required",
                 "message": "Premium required for this mode.",
@@ -230,25 +235,24 @@ def generate_caption_route():
         custom_prompt = data.get("custom_prompt")
 
         # ---- Daily Limit Check ----
-        if not current_user.is_premium:
-          allowed, usage = can_generate(current_user)
-  
-          if not allowed:
-            return jsonify({
-                    "error": "daily_limit_reached",
-                    "message": "Daily limit reached. Upgrade to continue."
-                }), 403
+        allowed, usage = can_generate(user)
 
-        token_status = check_user_tokens(current_user)
-        if not token_status["allowed"]:
-            return jsonify(token_status), 403
+        if not allowed:
+            msg = "Daily limit reached. Log in to get more captions." if not user else "Daily limit reached. Upgrade to continue."
+            return jsonify({"error": "daily_limit_reached", "message": msg}), 403
+
+        if user and not getattr(user, "is_premium", False):
+          token_status = check_user_tokens(user)
+          if not token_status["allowed"]:
+              return jsonify(token_status), 403
 
         # ---- Generate X Post Package ----
         results = generate_x_post_for_user(
             text=text,
-            user=current_user,
+            user=user,
             tone=tone,
             mode=mode,
+            platform=platform,
             avoid_clickbait=avoid_clickbait, 
             custom_prompt=custom_prompt,
         )
@@ -259,20 +263,23 @@ def generate_caption_route():
                 "message": "Caption generation failed."
             }), 500
 
-        use_token(current_user)
+        if user and getattr(user, "is_authenticated", False) and not getattr(user, "is_premium", False):
+          use_token(user)
 
         # ---- Update Usage for Free Users ----
-        if not current_user.is_premium and usage:
+        if user and not getattr(user, "is_premium", False) and usage:
             usage.count += 1
             safe_commit()
 
         warning_msg = None
-        if not current_user.is_premium and current_user.tokens <= 3:
-            warning_msg = f"⚠️ Only {current_user.tokens} tokens remaining."
+        if user and not getattr(user, "is_premium", False):
+            remaining = LIMITS["free"] - usage.count if usage else None
+            if remaining is not None and remaining <= 3:
+              warning_msg = f"⚠️ Only {user.tokens} tokens remaining."
 
         return jsonify({
             **results,
-            "tokens_remaining": current_user.tokens,
+            "tokens_remaining": getattr(user, "tokens", None),
             "warning": warning_msg
         })
 

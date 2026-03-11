@@ -47,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
           tone: document.getElementById("xTone").value,
           mode: document.getElementById("xMode").value,
           avoid_clickbait: document.getElementById("xAvoidClickbait").checked,
+          platform: document.getElementById("xPlatform").value,
         })
       });
     

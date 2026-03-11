@@ -143,7 +143,7 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
 
   <div class="mb-5">
     {% if not current_user.is_authenticated %}
-    <a class="text-blue-500 dark:text-yellow-600 underline" href="{{ url_for('public.user_login', next=url_for('caption.caption_page')) }}">Login to use</a>
+    <a class="text-blue-500 dark:text-yellow-600 underline" href="{{ url_for('public.user_login', next=url_for('caption.caption_page')) }}">Login Here!</a>
     {% endif %}
   </div>
   <div class="text-right my-4">
@@ -209,7 +209,7 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
       
       <select id="xPlatform" class="bg-gray-400 rounded p-2 text-black dark:text-white dark:bg-gray-700">
         <option value="x">X(Twitter)</option>
-        <!--<option value="facebook">Facebook</option>-->
+        <option value="facebook">Facebook</option>
       </select>
 
         <label class="flex items-center gap-2 text-black dark:text-white text-sm">
@@ -219,7 +219,7 @@ Generate engaging social media captions instantly using SuperiorNews AI caption 
 
         <button id="xGenerateBtn"
           class="dark:bg-blue-600 bg-blue-500 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl transition">
-          Generate X Content
+          Generate Social Caption
         </button>
       </div>
 

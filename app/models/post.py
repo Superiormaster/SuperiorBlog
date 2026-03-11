@@ -88,6 +88,7 @@ class XPost(db.Model):
     original_text = db.Column(db.Text)
     text = db.Column(db.String(280), nullable=False)
     captions = db.Column(db.JSON)
+    platform = db.Column(db.JSON)
     confidence_score = db.Column(db.Integer)
     predicted_engagement = db.Column(JSON)
     threads = db.Column(db.JSON)
