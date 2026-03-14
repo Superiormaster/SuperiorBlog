@@ -1349,12 +1349,13 @@ def tag(slug):
 def category(slug):
     form = SubscribeForm()
     category = Category.query.filter_by(slug=slug).first_or_404()
+    page = request.args.get("page", 1, type=int)
 
     posts = (
         category.posts
         .filter_by(is_published=True)
         .order_by(Post.created_at.desc())
-        .all()
+        .paginate(page=page, per_page=10, error_out=False)
     )
 
     comment_count = func.count(Comment.id)
