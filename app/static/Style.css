@@ -139,12 +139,11 @@ header.navbar * {
   animation: scroll 30s linear infinite;
 }
 
-.native-ad-wrapper {
-    max-height: 250px; /* adjust to your desired height */
+.media_slot {
+    min-height: 120px;
+    max-height: 300px;
     overflow: hidden;
     position: relative;
-    margin: 0 auto;
-    padding: 5px;
 }
 
 textarea:not(.comment-textarea) {

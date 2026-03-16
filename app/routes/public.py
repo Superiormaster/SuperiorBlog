@@ -653,7 +653,6 @@ def save_draft():
         is_new = True
 
     # --- Save content and basic info ---
-    content_html = inject_inpost_ads(content_html)
     post.content = content_html
     post.title = title
     post.featured_image = featured_image
@@ -1106,7 +1105,7 @@ def post_detail(slug):
     form = SubscribeForm()
     post = Post.query.filter_by(slug=slug, is_published=True).first_or_404()
     # Convert to HTML
-    content_html = post.content
+    content_html = inject_inpost_ads(post.content)
   
     # ---------------------------
     # VIEW COUNT (SAFE)

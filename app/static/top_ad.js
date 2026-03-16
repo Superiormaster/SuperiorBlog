@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
 
     // Sticky bottom ads
-    const bottomAds = document.querySelectorAll(".sticky-ad.bottom");
+    const bottomAds = document.querySelectorAll(".floating_media.bottom");
     bottomAds.forEach(ad => {
         const tab = ad.querySelector(".pull-tab");
         if (!tab) return;
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Sticky top ads
-    const topAds = document.querySelectorAll(".sticky-ad.top");
+    const topAds = document.querySelectorAll(".floating_media.top");
     topAds.forEach(ad => {
         const tab = ad.querySelector(".pull-tab");
         if (!tab) return;

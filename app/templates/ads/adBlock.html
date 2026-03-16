@@ -1,134 +1,13 @@
-<!--{% set ads = get_active_ads(location) %} {# always a list now #}
-
-{% for ad in ads %}
-{% if ad.location in ['home_top', 'post_top'] %}
-    <div id="sticky-ad-{{ ad.id }}"
-         class="sticky-ad top fixed left-0 w-full top-0
-         bg-white dark:bg-gray-800 shadow-lg transition-transform ease-in-out duration-300 -translate-y-full">
-    
-        {% if ad.html_code %}
-        <div class="w-full">{% raw %}{{ ad.html_code | safe }}{% endraw %}</div>
-          {% elif ad.image_url %}
-          <a href="{{ url_for('ads.ad_click', ad_id=ad.id) }}">
-            <img src="{{ ad.image_url }}" alt="{{ ad.title or 'Advertisement' }}" class="w-full h-auto object-contain rounded-lg">
-          </a>
-        {% else %}
-        <!-- Ad Content --><!--
-        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-t-2xl
-                    shadow-2xl
-                    overflow-hidden">
-            <a href="{{ url_for('ads.ad_click', ad_id=ad.id) }}" class="block group">
-            {% if ad.image_url %}
-                <img src="{{ ad.image_url }}" class="w-full max-h-64 object-cover rounded-lg">
-            {% else %}
-                <div class="p-6 text-center font-semibold">
-                    {{ ad.title or 'Advertisement' }}
-                </div>
-            {% endif %}
-            </a>
-        </div>
-    
-        <!-- Pull Handle --><!---
-        <div id="pull-tab-{{ ad.id }}"
-             class="pull-tab w-16 h-6 mx-auto bg-gray-400 rounded-t-xl flex items-center justify-center cursor-pointer">
-            ▲
-        </div>
-        {% endif %}
-    
-    </div>
-    {% elif ad.location == 'sticky_bottom' %}
-      <div id="sticky-ad-{{ ad.id }}"
-           class="sticky-ad bottom fixed left-0 bottom-0 w-full z-50
-                  transition-transform duration-300 ease-in-out"
-           style="transform: translateY(calc(100% - 40px));">
-      
-          <!-- Pull Handle --><!--
-          <div id="pull-tab-{{ ad.id }}"
-               class="w-20 h-8 mx-auto
-                      bg-gray-300 dark:bg-gray-700
-                      rounded-t-2xl
-                      flex items-center justify-center
-                      shadow-md cursor-pointer text-sm font-bold">
-              ▲
-          </div>
-      
-          <!-- Ad Container --><!--
-          <div class="bg-white dark:bg-gray-800
-                      rounded-t-2xl
-                      shadow-2xl
-                      overflow-hidden">
-      
-              <a href="{{ url_for('ads.ad_click', ad_id=ad.id) }}" class="block group">
-              {% if ad.image_url %}
-                  <img src="{{ ad.image_url }}"
-                       class="w-full max-h-72 object-contain">
-              {% else %}
-                  <div class="py-6 text-center font-semibold">
-                      {{ ad.title or 'Advertisement' }}
-                  </div>
-              {% endif %}
-              </a>
-      
-          </div>
-      </div>
-    {% else %}
-        {# NORMAL / POST / SIDEBAR AD #}
-        <div class="
-            {% if ad.location in ['post_mid', 'post_bottom'] %}
-                w-full max-w-6xl mx-auto my-6
-            {% elif ad.location == 'sidebar' %}
-                w-72 fixed right-0 top-24
-            {% endif %}
-            rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
-            shadow-sm hover:shadow-md transition duration-300
-        ">
-            {% if ad.type == "adsense" and ad.html_code %}
-                <div class="text-[10px] tracking-widest uppercase text-gray-400 dark:text-gray-500 text-center pt-2">
-                    Advertisement
-                </div>
-                <div class="px-2 sm:px-4 py-4 text-center">
-                    <div class="adsense-container w-full overflow-hidden">
-                        {{ ad.html_code | safe }}
-                    </div>
-                </div>
-            {% else %}
-                <a href="{{ url_for('ads.ad_click', ad_id=ad.id) }}" class="block group">
-                    {% if ad.image_url %}
-                        <img src="{{ ad.image_url }}"
-                             loading="lazy"
-                             decoding="async"
-                             alt="{{ ad.title or 'Advertisement' }}"
-                             class="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.02]">
-                    {% else %}
-                        <div class="p-6 text-center text-gray-800 dark:text-gray-200 font-semibold text-lg">
-                            {{ ad.title or 'Try Our AI Caption Generator!' }}
-                        </div>
-                    {% endif %}
-                </a>
-            {% endif %}
-
-            <script>
-            window.addEventListener("load", function() {
-                fetch("{{ url_for('ads.track_impression', ad_id=ad.id) }}", {
-                    method: "POST",
-                    keepalive: true
-                });
-            });
-            </script>
-        </div>
-    {% endif %}
-{% endfor %}-->
-
 {% set ads = get_active_ads(location) %} {# always a list now #}
 
 {% for ad in ads %}
 {% if ad.location in ['home_top', 'post_top'] %}
     <div id="sticky-ad-{{ ad.id }}"
-         class="sticky-ad top fixed left-0 w-full top-0
+         class="floating_media top fixed left-0 w-full top-0
          bg-white dark:bg-gray-800 shadow-lg transition-transform ease-in-out duration-300 -translate-y-full z-50">
     
         {% if ad.html_code %}
-            <div class="w-full px-4 py-2">{% raw %}{{ ad.html_code | safe }}{% endraw %}</div>
+            <div class="w-full px-4 py-2">{{ ad.html_code | safe }}</div>
         {% elif ad.image_url %}
             <a href="{{ url_for('admin.ad_click', ad_id=ad.id) }}">
                 <img src="{{ ad.image_url }}" alt="{{ ad.title or 'Advertisement' }}" class="w-full max-h-48 object-contain rounded-lg mx-auto">
@@ -159,7 +38,7 @@
     </div>
 {% elif ad.location == 'sticky_bottom' %}
     <div id="sticky-ad-{{ ad.id }}"
-         class="sticky-ad bottom fixed left-0 bottom-0 w-full z-50
+         class="floating_media bottom fixed left-0 bottom-0 w-full z-50
                 bg-white dark:bg-gray-800 shadow-lg transition-transform duration-300 ease-in-out translate-y-0">
       
         <!-- Pull Handle -->
@@ -170,9 +49,9 @@
         </div>
       
         <!-- Ad Container -->
-        <div class="bg-white dark:bg-gray-800 rounded-t-2xl h-24 shadow-2xl overflow-hidden p-2">
+        <div class="bg-white dark:bg-gray-800 rounded-t-2xl shadow-2xl overflow-hidden p-2">
             {% if ad.html_code %}
-                <div class="w-full native-ad-wrapper">{{ ad.html_code | safe }}</div>
+                <div class="w-full media_slot">{{ ad.html_code | safe }}</div>
             {% elif ad.image_url %}
                 <a href="{{ url_for('admin.ad_click', ad_id=ad.id) }}">
                   <div class="text-center text-gray-800 dark:text-gray-200 font-semibold text-lg">
@@ -186,11 +65,42 @@
             {% endif %}
         </div>
     </div>
+{% elif ad.location == 'post_mid' %}
+    <div class="w-full max-w-6xl mx-auto
+        rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
+        shadow-sm hover:shadow-md transition duration-300
+    ">
+        {% if ad.type == "adsense" and ad.html_code %}
+            <div class="text-[10px] tracking-widest uppercase text-gray-400 dark:text-gray-500 text-center">
+                Advertisement
+            </div>
+            <div class="px-2 text-center">
+                <div class="media_slot w-full overflow-hidden">
+                    {{ ad.html_code | safe }}
+                </div>
+            </div>
+        {% else %}
+            <a href="{{ url_for('admin.ad_click', ad_id=ad.id) }}" class="block group">
+              <div class="p-6 text-center text-gray-800 dark:text-gray-200 font-semibold text-lg">
+                {% if ad.image_url %}
+                    <img src="{{ ad.image_url }}"
+                         loading="lazy"
+                         decoding="async"
+                         alt="{{ ad.title or 'Advertisement' }}"
+                         class="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-[1.02] rounded-lg">
+                </div>
+                {% else %}
+                    <div class="p-6 text-center text-gray-800 dark:text-gray-200 font-semibold text-lg">
+                        {{ ad.title or 'Try Our AI Caption Generator!' }}
+                    </div>
+                {% endif %}
+            </a>
+      {% endif %}
 {% else %}
     {# NORMAL / POST / SIDEBAR AD #}
     <div class="
-        {% if ad.location in ['post_mid', 'post_bottom'] %}
-            w-full max-w-6xl mx-auto my-6
+        {% if ad.location in ['post_bottom', 'home_mid'] %}
+            w-full max-w-6xl mx-auto
         {% elif ad.location == 'sidebar' %}
             w-72 fixed right-0 top-24
         {% endif %}
@@ -201,8 +111,8 @@
             <div class="text-[10px] tracking-widest uppercase text-gray-400 dark:text-gray-500 text-center pt-2">
                 Advertisement
             </div>
-            <div class="px-2 sm:px-4 py-4 text-center">
-                <div class="native-ad-wrapper w-full overflow-hidden">
+            <div class="px-2 text-center">
+                <div class="media_slot w-full overflow-hidden">
                     {{ ad.html_code | safe }}
                 </div>
             </div>
