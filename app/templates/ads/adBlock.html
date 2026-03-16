@@ -172,7 +172,7 @@
         <!-- Ad Container -->
         <div class="bg-white dark:bg-gray-800 rounded-t-2xl h-24 shadow-2xl overflow-hidden p-2">
             {% if ad.html_code %}
-                <div class="w-full">{% raw %}{{ ad.html_code | safe }}{% endraw %}</div>
+                <div class="w-full native-ad-wrapper">{{ ad.html_code | safe }}</div>
             {% elif ad.image_url %}
                 <a href="{{ url_for('admin.ad_click', ad_id=ad.id) }}">
                   <div class="text-center text-gray-800 dark:text-gray-200 font-semibold text-lg">
@@ -202,7 +202,7 @@
                 Advertisement
             </div>
             <div class="px-2 sm:px-4 py-4 text-center">
-                <div class="adsense-container w-full overflow-hidden">
+                <div class="native-ad-wrapper w-full overflow-hidden">
                     {{ ad.html_code | safe }}
                 </div>
             </div>
