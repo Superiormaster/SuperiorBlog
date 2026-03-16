@@ -1,20 +1,28 @@
+import random
 from bs4 import BeautifulSoup
 from flask import render_template
 from app.models import Ad
 
 def inject_inpost_ads(content):
-  ad = Ad.query.filter_by(location="post_mid", active=True).first()
-  if not ad:
-      return content
+    ads = Ad.query.filter_by(location="post_mid", active=True).all()
+    # Uncomment after AdSense approval if you want network ads
+    # ads = [ad for ad in ads if ad.type != "adsterra"]
 
-  soup = BeautifulSoup(content, "html.parser")
+    if not ads:
+        return content
 
-  blocks = [b for b in soup.find_all(["p", "div"]) if b.get_text(strip=True)]
+    soup = BeautifulSoup(content, "html.parser")
+    blocks = [b for b in soup.find_all(["p", "div"]) if b.get_text(strip=True)]
 
-  # Only inject if there are 2 or more blocks
-  if len(blocks) > 2:
-      ad_html = render_template("ads/adBlock.html", location="post_mid")
-      ad_soup = BeautifulSoup(ad_html, "html.parser")
-      blocks[1].insert_after(ad_soup)  # insert after 2nd block
+    if len(blocks) < 3:
+        return content  # not enough blocks to insert an ad
 
-  return str(soup)
+    # Pick one ad and one position
+    ad = random.choice(ads)
+    pos = min(3, len(blocks) - 1)  # 3rd paragraph or last if fewer
+
+    ad_html = render_template("ads/adBlock.html", location="post_mid", ad=ad)
+    ad_soup = BeautifulSoup(ad_html, "html.parser")
+    blocks[pos].insert_after(ad_soup)
+
+    return str(soup)
