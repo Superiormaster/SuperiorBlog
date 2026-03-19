@@ -7,6 +7,7 @@ from app.extensions import db, csrf
 from app.models import XPost, Post
 from app.utils.limits import can_generate
 from app.utils.db_helpers import safe_commit
+from app.utils.limits import LIMITS
 from sqlalchemy import or_
 from bs4 import BeautifulSoup
 from app.forms import SubscribeForm
