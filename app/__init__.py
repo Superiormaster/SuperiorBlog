@@ -5,7 +5,6 @@ from app.routes.public import public_bp
 from app.routes.admin import admin_bp
 from app.routes.caption import caption_bp
 from app.routes.billing import billing_bp
-from app.routes.comment import comments_bp
 from app.routes.ads import ads_bp
 from uuid import uuid4
 from app.extensions import db, login_manager, cache, csrf, mail
@@ -45,7 +44,6 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(caption_bp)
     app.register_blueprint(billing_bp)
-    app.register_blueprint(comments_bp)
     app.register_blueprint(ads_bp)
 
     @login_manager.user_loader
