@@ -1483,12 +1483,17 @@ def contact_feedback():
 
     return render_template("contact.html")
 
-# ----- PRIVACY -----
+# ----- ABOUT -----
 @public_bp.route("/about")
 @cache.cached(timeout=300)
 def about():
     settings = AppSettings.query.first()
     return render_template("about.html", settings=settings)
+
+@public_bp.route("/disclaimer")
+def disclaimer():
+    return render_template("user/disclaimer.html")
+
 # ----- PRIVACY -----
 @public_bp.route("/privacy")
 @cache.cached(timeout=300)
