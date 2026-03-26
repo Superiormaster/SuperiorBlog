@@ -95,6 +95,7 @@ function handleGoogleOneTap(response) {
             "Content-Type": "application/json",
             "X-CSRFToken": "{{ csrf_token() }}"
         },
+        credentials: "include",
         body: JSON.stringify({
             credential: response.credential
         })

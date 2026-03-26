@@ -11,11 +11,22 @@ load_dotenv(ENV_PATH)
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY")
 
-    # Cookie works across HTTPS & all pages
-    SESSION_COOKIE_DOMAIN = ".superiornews.app"
-    SESSION_COOKIE_SECURE = True
+    """
+    ENV = os.environ.get("FLASK_ENV", "development")
+
+    if ENV == "production":
+        SESSION_COOKIE_DOMAIN = ".superiornews.app"  # include www subdomain
+        SESSION_COOKIE_SECURE = True                # HTTPS required
+        SESSION_COOKIE_SAMESITE = "None"            # Needed for cross-site cookies
+        WTF_CSRF_SSL_STRICT = True
+    else:  # localhost / staging
+        SESSION_COOKIE_DOMAIN = None
+        SESSION_COOKIE_SECURE = False
+        SESSION_COOKIE_SAMESITE = "Lax"
+        """
+
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = "None"
+    WTF_CSRF_TIME_LIMIT = None
 
     PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
     PAYSTACK_MONTHLY_PLAN = os.getenv("PAYSTACK_MONTHLY_PLAN")

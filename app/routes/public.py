@@ -40,6 +40,11 @@ def track_login(user):
     user.last_login = datetime.now(UTC)
     safe_commit()
 
+@public_bp.route("/test_session")
+def test_session():
+    session['test'] = 'ok'
+    return f"Session test: {session.get('test')}"
+
 @public_bp.route('/register', methods=['GET', 'POST'])
 def user_register():
     if current_user.is_authenticated:

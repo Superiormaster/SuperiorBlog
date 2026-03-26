@@ -77,9 +77,11 @@ def create_app():
         }
 
     @app.before_request
-    def redirect_root_to_www():
-        if request.host == "superiornews.app":
-            return redirect("https://www.superiornews.app" + request.full_path, code=301)
+    def redirect_to_www():
+        host = request.host.split(":")[0]  # ignore port
+        if host == "superiornews.app":
+            url = request.url.replace("superiornews.app", "www.superiornews.app", 1)
+            return redirect(url, code=301)
 
     @app.context_processor
     def inject_year():
