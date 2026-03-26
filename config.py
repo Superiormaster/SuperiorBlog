@@ -10,6 +10,13 @@ load_dotenv(ENV_PATH)
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY")
+
+    # Cookie works across HTTPS & all pages
+    SESSION_COOKIE_DOMAIN = ".superiornews.app"
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "None"
+
     PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
     PAYSTACK_MONTHLY_PLAN = os.getenv("PAYSTACK_MONTHLY_PLAN")
     PAYSTACK_YEARLY_PLAN = os.getenv("PAYSTACK_YEARLY_PLAN")
