@@ -1490,7 +1490,6 @@ def contact_feedback():
 
 # ----- ABOUT -----
 @public_bp.route("/about")
-@cache.cached(timeout=300)
 def about():
     settings = AppSettings.query.first()
     return render_template("about.html", settings=settings)
@@ -1501,13 +1500,11 @@ def disclaimer():
 
 # ----- PRIVACY -----
 @public_bp.route("/privacy")
-@cache.cached(timeout=300)
 def privacy():
     settings = AppSettings.query.first()
     return render_template("privacy.html", settings=settings)
 
 @public_bp.route("/terms")
-@cache.cached(timeout=300)
 def terms():
     settings = AppSettings.query.first()
     return render_template("terms.html", settings=settings)
@@ -1521,6 +1518,7 @@ def safe_date(dt):
 
 # Sitemap for Google News
 @public_bp.route("/sitemap.xml")
+@cache.cached(timeout=3600)
 def sitemap():
     pages = []
 
