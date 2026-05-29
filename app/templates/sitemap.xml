@@ -1,10 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+
     {% for page in pages %}
     <url>
         <loc>{{ page.loc }}</loc>
-        <lastmod>{{ page.lastmod.strftime('%Y-%m-%d') }}</lastmod>
+
+        <lastmod>{{ page.lastmod.strftime('%Y-%m-%d') if page.lastmod else '' }}</lastmod>
+
+        <news:news>
+            <news:publication>
+                <news:name>Superior News</news:name>
+                <news:language>en</news:language>
+            </news:publication>
+
+            <news:publication_date>
+                {{ page.lastmod.strftime('%Y-%m-%d') if page.lastmod else '' }}
+            </news:publication_date>
+
+            <news:title>
+                {{ page.title }}
+            </news:title>
+        </news:news>
+
     </url>
     {% endfor %}
+
 </urlset>

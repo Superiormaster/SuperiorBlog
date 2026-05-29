@@ -1512,27 +1512,47 @@ def terms():
     settings = AppSettings.query.first()
     return render_template("terms.html", settings=settings)
 
+def safe_date(dt):
+    if not dt:
+        return datetime.utcnow()
+    if isinstance(dt, str):
+        return datetime.fromisoformat(dt)
+    return dt
+
 # Sitemap for Google News
 @public_bp.route("/sitemap.xml")
-@cache.cached(timeout=300)
 def sitemap():
     pages = []
-    ten_days_ago = datetime.datetime.now() - datetime.timedelta(days=10)
 
-    # Homepage & categories
-    pages.append({"loc": url_for("public.index", _external=True), "lastmod": datetime.datetime.now()})
+    # Homepage
+    pages.append({
+        "loc": url_for("public.index", _external=True),
+        "lastmod": datetime.utcnow()
+    })
+
+    # Categories
     for category in Category.query.all():
-        pages.append({"loc": url_for("public.category", slug=category.slug, _external=True),
-                      "lastmod": datetime.datetime.now()})
+        pages.append({
+            "loc": url_for("public.category", slug=category.slug, _external=True),
+            "lastmod": datetime.utcnow()
+        })
 
     # Posts
-    posts = Post.query.filter(Post.is_published==True, Post.created_at >= ten_days_ago).all()
+    posts = Post.query.filter(
+        Post.is_published == True,
+    ).order_by(Post.created_at.desc()).all()
+
+    pages = []
+
     for post in posts:
-        pages.append({"loc": url_for("public.post_detail", slug=post.slug, _external=True),
-                      "lastmod": post.updated_at})
+        pages.append({
+            "loc": url_for("public.post_detail", slug=post.slug, _external=True),
+            "lastmod": safe_date(post.updated_at or post.created_at),
+            "title": post.title
+        })
 
-
-    sitemap_xml = render_template("sitemap.xml", pages=pages)
-    response = make_response(sitemap_xml)
-    response.headers["Content-Type"] = "application/xml"
-    return response
+    return make_response(
+        render_template("sitemap.xml", pages=pages),
+        200,
+        {"Content-Type": "application/xml"}
+    )
