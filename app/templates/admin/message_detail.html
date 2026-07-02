@@ -1,7 +1,7 @@
 {% extends 'user/base.html' %} 
 {% block content %}
 
-<div class="max-w-3xl mx-auto bg-gray-900 rounded-xl mt-10 p-6">
+<div class="max-w-3xl mx-auto text-gray-700 dark:text-gray-200 mt-10 p-6">
 
   <div class="flex justify-between items-center mb-4">
     <h1 class="text-xl font-semibold">
@@ -21,25 +21,25 @@
     </span>
   </div>
 
-  <div class="text-sm text-gray-400 mb-4">
-    <p class="mb-5"><span class="bg-gray-700 p-2 rounded">From:</span> {{ msg.name or "Anonymous" }}</p>
-    <p class="mb-5"><span class="bg-gray-700 p-2 rounded">Email:</span> {{ msg.email }}</p>
-    <p class="mb-5"><span class="bg-gray-700 p-2 rounded">Date:</span> {{ msg.created_at.strftime("%d %b %Y") }}</p>
+  <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+    <p class="mb-5"><span class="bg-gray-200 dark:bg-gray-700 p-2 rounded">From:</span> {{ msg.name or "Anonymous" }}</p>
+    <p class="mb-5"><span class="bg-gray-200 dark:bg-gray-700 p-2 rounded">Email:</span> {{ msg.email }}</p>
+    <p class="mb-5"><span class="bg-gray-200 dark:bg-gray-700 p-2 rounded">Date:</span> {{ msg.created_at.strftime("%d %b %Y") }}</p>
   </div>
 
-  <div class="border border-gray-800 rounded-lg p-4 break-words whitespace-pre-wrap text-gray-200 mb-6">
+  <div class="border border-gray-800 rounded-lg p-4 break-words whitespace-pre-wrap text-gray-700 dark:text-gray-200 mb-6">
     {{ msg.message or msg.subject or "No message provided" }}
   </div>
 
   <div class="flex gap-3">
     <button
       onclick="openReplyModal()"
-      class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm">
+      class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded text-sm">
       Reply
     </button>
 
     <a href="{{ url_for('admin.admin_messages') }}"
-       class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm">
+       class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm">
       Back
     </a>
   </div>
@@ -48,37 +48,37 @@
 <div id="replyModal"
      class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
 
-  <div class="bg-gray-900 rounded-xl p-6 w-full max-w-lg">
+  <div class="bg-gray-200 dark:bg-gray-900 rounded-xl text-gray-700 dark:text-gray-200 p-6 w-full max-w-lg">
     <h2 class="text-lg font-semibold mb-4">Reply to {{ msg.email }}</h2>
 
     <form method="POST"
       action="{{ url_for('admin.reply_message', id=msg.id) }}">
 
       <div class="mb-3">
-        <label class="text-sm text-gray-400">Subject</label>
+        <label class="text-sm text-gray-500 dark:text-gray-400">Subject</label>
         <input type="text"
                value="Re: {{ msg.subject }}"
                readonly
-               class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm">
+               class="w-full bg-gray-300 dark:bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm">
       </div>
 
       <div class="mb-4">
-        <label class="text-sm text-gray-400">Message</label>
+        <label class="text-sm text-gray-500 dark:text-gray-400">Message</label>
         <textarea name="reply"
                   rows="5"
                   required
-                  class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"></textarea>
+                  class="w-full bg-gray-300 dark:bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"></textarea>
       </div>
 
       <div class="flex justify-end gap-2">
         <button type="button"
                 onclick="closeReplyModal()"
-                class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm">
+                class="bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 px-4 py-2 rounded text-sm">
           Cancel
         </button>
 
         <button type="submit"
-                class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm">
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
           Send Reply
         </button>
       </div>
