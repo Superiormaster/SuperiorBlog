@@ -6,6 +6,7 @@ from flask_login import (
     login_user, logout_user,
     login_required, current_user
 )
+from markupsafe import escape, Markup
 from sqlalchemy import or_, func, cast, Integer
 from app.utils.db_helpers import safe_commit
 from app.utils.cloudinary_helper import upload_image_file, allowed_file
@@ -349,10 +350,23 @@ def reply_message(id):
         flash("Reply message cannot be empty.", "danger")
         return redirect(url_for("admin.admin_messages"))
 
+    html = Markup("<br>").join(
+      escape(reply_text).splitlines()
+    )
+
+    html = f"""
+    <div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.7;color:#333;">
+      {html}
+    </div>
+    """
+  
+    text = reply_text
+
     success = send_email(
         to=msg.email,
         subject=f"Re: {msg.subject or 'Your message'}",
-        html_content=reply_text
+        html_content=html,
+        text_content=text
     )
     log_email(msg.email, msg.subject, success)
 

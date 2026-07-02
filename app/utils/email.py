@@ -1,7 +1,7 @@
 from flask import current_app
 import socket, requests, os
 
-def send_email(to, subject, html_content, cc=None, bcc=None):
+def send_email(to, subject, html_content, text_content=None, cc=None, bcc=None):
     """
     Send email using Brevo API (formerly Sendinblue)
     
@@ -41,6 +41,9 @@ def send_email(to, subject, html_content, cc=None, bcc=None):
         "subject": subject,
         "htmlContent": html_content
     }
+  
+    if text_content:
+      data["textContent"] = text_content
 
     if cc:
         data["cc"] = normalize(cc)
