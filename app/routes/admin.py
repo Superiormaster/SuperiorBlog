@@ -168,12 +168,24 @@ def reject_post(id):
     next_page = request.referrer or url_for("admin.dashboard")
     return redirect(next_page)
 
-@admin_bp.route('/admin/subscribers')
+@admin_bp.route("/admin/subscribers")
 @login_required
 def list_subscribers():
-    subscribers = Subscriber.query.all()
-    subs = Subscriber.query.order_by(Subscriber.last_email_sent.desc()).all()
-    return render_template("admin/subscribers.html", subscribers=subscribers, subs=subs)
+    page = request.args.get("page", 1, type=int)
+    per_page = 25
+
+    pagination = (
+        Subscriber.query
+        .order_by(Subscriber.created_at.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+
+    return render_template(
+        "admin/subscribers.html",
+        subscribers=pagination.items,
+        pagination=pagination,
+        total_subscribers=Subscriber.query.count(),
+    )
 
 @admin_bp.route('/admin/subscriber/<int:id>/toggle-digest', methods=['POST'])
 @csrf.exempt
