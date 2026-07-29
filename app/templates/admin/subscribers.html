@@ -13,6 +13,18 @@
                 {{ total_subscribers }}
             </span>
         </p>
+        <p class="text-gray-400 mt-1">
+            Unsubscribed:
+            <span class="font-bold text-blue-400">
+                {{ unsubscribed }}
+            </span>
+        </p>
+        <p class="text-gray-400 mt-1">
+            Active:
+            <span class="font-bold text-blue-400">
+                {{ active_subscribers }}
+            </span>
+        </p>
     </div>
 
     <div class="flex gap-3 mt-4 md:mt-0 my-6 flex gap-3 justify-end">
@@ -97,7 +109,7 @@
                   </svg>
               </summary>
   
-              <div class="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-20">
+              <div class="absolute right-0 mt-2 w-[120px] bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-20">
   
                   <form method="post"
                         action="{{ url_for('admin.resend_welcome', id=s.id) }}">
@@ -126,6 +138,12 @@
                       </button>
   
                   </form>
+
+                  <a
+                    href="{{ url_for('admin.create_draft', subscriber_id=s.id) }}"
+                    class="block w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    Send Message
+                  </a>
   
               </div>
   
@@ -172,6 +190,11 @@
             <form method="post" action="{{ url_for('admin.resend_welcome', id=s.id) }}">
               <button type="submit" class="w-full sm:w-auto px-3 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium transition">Resend Welcome</button>
             </form>
+            <a
+              href="{{ url_for('admin.create_draft', subscriber_id=s.id) }}"
+              class="block w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700">
+              Send Message
+            </a>
             <form method="post" action="{{ url_for('admin.toggle_digest', id=s.id) }}">
               <button type="submit" class="w-full sm:w-auto px-3 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm font-medium transition">Toggle Digest</button>
             </form>

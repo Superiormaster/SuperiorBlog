@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+
+{% block title %}
+Batch {{ batch_number }} - {{ campaign.name }}
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+
+        <div>
+
+            <div class="text-sm text-gray-400 mb-2">
+                <a href="{{ url_for('admin.list_campaigns') }}"
+                   class="hover:text-blue-400">
+                    Campaigns
+                </a>
+
+                /
+
+                <a href="{{ url_for('admin.campaign_details', id=campaign.id) }}"
+                   class="hover:text-blue-400">
+                    {{ campaign.name }}
+                </a>
+
+                /
+
+                Batch {{ batch_number }}
+
+            </div>
+
+            <h1 class="text-3xl text-gray-700 dark:text-gray-100 font-bold">
+                Batch {{ batch_number }}
+            </h1>
+
+            <p class="text-gray-400 mt-2">
+                Campaign: {{ campaign.name }}
+            </p>
+
+        </div>
+
+        <div>
+
+            <a href="{{ url_for('admin.campaign_details', id=campaign.id) }}"
+               class="inline-flex items-center px-5 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition">
+
+                ← Back to Campaign
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- Statistics -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+
+        <div class="dark:bg-gray-700 bg-gray-100 rounded-xl p-5">
+
+            <p class="text-gray-400 text-sm">
+                Recipients
+            </p>
+
+            <h2 class="text-3xl text-gray-600 dark:text-white font-bold mt-2">
+                {{ recipients|length }}
+            </h2>
+
+        </div>
+
+
+        <div class="dark:bg-gray-700 bg-gray-100 rounded-xl p-5">
+
+            <p class="text-gray-400 text-sm">
+                Sent
+            </p>
+
+            <h2 class="text-3xl font-bold text-green-400 mt-2">
+
+                {{ recipients
+                   |selectattr("status","equalto","sent")
+                   |list
+                   |length }}
+
+            </h2>
+
+        </div>
+
+
+        <div class="dark:bg-gray-700 bg-gray-100 rounded-xl p-5">
+
+            <p class="text-gray-400 text-sm">
+                Failed
+            </p>
+
+            <h2 class="text-3xl font-bold text-red-400 mt-2">
+
+                {{ recipients
+                   |selectattr("status","equalto","failed")
+                   |list
+                   |length }}
+
+            </h2>
+
+        </div>
+
+
+        <div class="dark:bg-gray-700 bg-gray-100 rounded-xl p-5">
+
+            <p class="text-gray-400 text-sm">
+                Pending
+            </p>
+
+            <h2 class="text-3xl font-bold text-yellow-400 mt-2">
+
+                {{ recipients
+                   |selectattr("status","equalto","pending")
+                   |list
+                   |length }}
+
+            </h2>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- Batch Status -->
+    <div class="dark:bg-gray-700 bg-gray-100 rounded-xl p-6 mb-8">
+
+        <div class="flex justify-between items-center">
+
+            <div>
+
+                <h2 class="text-xl text-gray-700 dark:text-gray-200 font-bold">
+                    Batch Information
+                </h2>
+
+                <p class="text-gray-400 mt-2">
+
+                    Batch Number:
+                    <strong>{{ batch_number }}</strong>
+
+                </p>
+
+                <p class="text-gray-400">
+
+                    Campaign Status:
+                    <strong>{{ campaign.status|capitalize }}</strong>
+
+                </p>
+
+            </div>
+
+            {% set sent =
+                recipients
+                |selectattr("status","equalto","sent")
+                |list
+                |length
+            %}
+
+            {% if sent == recipients|length %}
+
+                <span class="px-4 py-2 rounded-full bg-green-600">
+
+                    Completed
+
+                </span>
+
+            {% elif sent > 0 %}
+
+                <span class="px-4 py-2 rounded-full bg-yellow-600">
+
+                    In Progress
+
+                </span>
+
+            {% else %}
+
+                <span class="px-4 py-2 rounded-full bg-gray-600">
+
+                    Pending
+
+                </span>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+
+    <!-- Recipient Table -->
+
+    <div class="dark:bg-gray-700 bg-gray-100 rounded-xl overflow-hidden">
+
+        <div class="px-6 py-4 border-b border-white/10">
+
+            <h2 class="text-xl text-gray-700 dark:text-white font-bold">
+
+                Recipients
+
+            </h2>
+
+        </div>
+
+        <div class="overflow-x-auto text-gray-600 dark:text-gray-200">
+
+            <table class="w-full">
+
+                <thead class="bg-white/10">
+
+                    <tr>
+
+                        <th class="text-left px-5 py-4">
+                            #
+                        </th>
+
+                        <th class="text-left px-5 py-4">
+                            Email
+                        </th>
+
+                        <th class="text-left px-5 py-4">
+                            Status
+                        </th>
+
+                        <th class="text-left px-5 py-4">
+                            Sent At
+                        </th>
+
+                        <th class="text-left px-5 py-4">
+                            Error
+                        </th>
+
+                        <th class="text-center px-5 py-4">
+                            Action
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for recipient in recipients %}
+
+                <tr class="border-b border-white/10 hover:bg-white/5">
+
+                    <td class="px-5 py-4">
+
+                        {{ loop.index }}
+
+                    </td>
+
+                    <td class="px-5 py-4">
+
+                        {{ recipient.email }}
+
+                    </td>
+                                        <td class="px-5 py-4">
+
+                        {% if recipient.status == "sent" %}
+
+                            <span class="px-3 py-1 rounded-full bg-green-600 text-sm">
+                                Sent
+                            </span>
+
+                        {% elif recipient.status == "failed" %}
+
+                            <span class="px-3 py-1 rounded-full bg-red-600 text-sm">
+                                Failed
+                            </span>
+
+                        {% else %}
+
+                            <span class="px-3 py-1 rounded-full bg-yellow-600 text-sm">
+                                Pending
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td class="px-5 py-4 text-gray-300">
+
+                        {% if recipient.sent_at %}
+                            {{ recipient.sent_at.strftime("%d %b %Y %I:%M %p") }}
+                        {% else %}
+                            —
+                        {% endif %}
+
+                    </td>
+
+                    <td class="px-5 py-4">
+
+                        {% if recipient.error %}
+
+                            <div class="max-w-xs break-words text-red-400 text-sm">
+                                {{ recipient.error }}
+                            </div>
+
+                        {% else %}
+
+                            <span class="text-gray-500">
+                                —
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td class="px-5 py-4 text-center">
+
+                        {% if recipient.status == "failed" %}
+
+                        <form
+                            method="POST"
+                            action="{{ url_for('admin.retry_failed_route', id=campaign.id) }}"
+                        >
+
+                            <button
+                                class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition">
+
+                                Retry
+
+                            </button>
+
+                        </form>
+
+                        {% elif recipient.status == "sent" %}
+
+                        <span class="text-green-400">
+
+                            ✓ Delivered
+
+                        </span>
+
+                        {% else %}
+
+                        <span class="text-gray-500">
+
+                            Waiting
+
+                        </span>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+
+    {% if not recipients %}
+
+    <div class="bg-white/5 rounded-xl p-16 mt-8 text-center">
+
+        <div class="text-7xl mb-5">
+            📭
+        </div>
+
+        <h2 class="text-2xl font-bold mb-3">
+
+            No recipients found
+
+        </h2>
+
+        <p class="text-gray-400">
+
+            This batch does not contain any recipients.
+
+        </p>
+
+    </div>
+
+    {% endif %}
+
+
+
+    <!-- Batch Navigation -->
+
+    <div class="flex justify-between items-center mt-10">
+
+        {% if batch_number > 1 %}
+
+        <a
+            href="{{ url_for('admin.campaign_batch', id=campaign.id, number=batch_number-1) }}"
+            class="px-5 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition">
+
+            ← Previous Batch
+
+        </a>
+
+        {% else %}
+
+        <div></div>
+
+        {% endif %}
+
+
+        {% set total_batches =
+            ((campaign.total_recipients + campaign.batch_size - 1)
+            // campaign.batch_size)
+        %}
+
+        {% if batch_number < total_batches %}
+
+        <a
+            href="{{ url_for('admin.campaign_batch', id=campaign.id, number=batch_number+1) }}"
+            class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition">
+
+            Next Batch →
+
+        </a>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}

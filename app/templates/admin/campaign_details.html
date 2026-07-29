@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+
+{% block title %}Campaign Details{% endblock %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-4 py-6">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+        <div class="mt-5">
+            <h1 class="text-3xl font-bold dark:text-gray-200 text-gray-800">
+                {{ campaign.name }}
+            </h1>
+
+            <p class="text-gray-500 mt-1">
+                Created
+                {{ campaign.created_at.strftime("%d %b %Y %I:%M %p") }}
+            </p>
+        </div>
+
+        <div>
+
+            {% if campaign.status == "pending" %}
+            <span class="px-3 py-2 rounded-full bg-yellow-100 text-yellow-700 text-sm font-semibold">
+                Pending
+            </span>
+
+            {% elif campaign.status == "sending" %}
+            <span class="px-3 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+                Sending
+            </span>
+
+            {% elif campaign.status == "paused" %}
+            <span class="px-3 py-2 rounded-full bg-orange-100 text-orange-700 text-sm font-semibold">
+                Paused
+            </span>
+
+            {% else %}
+            <span class="px-3 py-2 rounded-full bg-green-100 text-green-700 text-sm font-semibold">
+                Completed
+            </span>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <!-- Summary -->
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-8">
+
+        <div class="dark:bg-gray-600 dark:text-gray-300 text-gray-500 bg-gray-100 rounded-xl shadow p-5">
+
+            <div class="dark:text-gray-200 text-gray-500 text-sm">
+                Campaign Type
+            </div>
+
+            <div class="mt-2 text-xl font-bold capitalize">
+                {{ campaign.campaign_type }}
+            </div>
+
+        </div>
+
+        <div class="dark:bg-gray-600 dark:text-gray-300 text-gray-500 bg-gray-100 rounded-xl shadow p-5">
+
+            <div class="dark:text-gray-200 text-gray-500 text-sm">
+                Subject
+            </div>
+
+            <div class="mt-2 font-semibold">
+                {{ campaign.subject }}
+            </div>
+
+        </div>
+
+        <div class="dark:bg-gray-600 dark:text-gray-300 text-gray-500 bg-gray-100 rounded-xl shadow p-5">
+
+            <div class="dark:text-gray-200 text-gray-500 text-sm">
+                Batch Size
+            </div>
+
+            <div class="mt-2 text-2xl font-bold">
+                {{ campaign.batch_size }}
+            </div>
+
+        </div>
+
+        <div class="dark:bg-gray-600 dark:text-gray-300 text-gray-500 bg-gray-100 rounded-xl shadow p-5">
+
+            <div class="dark:text-gray-200 text-gray-500 text-sm">
+                Current Batch
+            </div>
+
+            <div class="mt-2 text-2xl font-bold">
+                {{ campaign.current_batch }}
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Statistics -->
+
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-6">
+
+        <div class="dark:bg-gray-600 dark:text-gray-300 text-gray-500 bg-gray-100 shadow rounded-xl p-5">
+
+            <div class="dark:text-gray-200 text-gray-500 text-sm">
+                Recipients
+            </div>
+
+            <div class="text-3xl font-bold mt-2">
+                {{ campaign.total_recipients }}
+            </div>
+
+        </div>
+
+        <div class="dark:bg-gray-600 dark:text-gray-300 text-gray-500 bg-gray-100 shadow rounded-xl p-5">
+
+            <div class="dark:text-gray-200 text-gray-500 text-sm">
+                Sent
+            </div>
+
+            <div class="text-3xl font-bold text-green-600 mt-2">
+                {{ campaign.sent_count }}
+            </div>
+
+        </div>
+
+        <div class="dark:bg-gray-600 dark:text-gray-300 text-gray-500 bg-gray-100 shadow rounded-xl p-5">
+
+            <div class="dark:text-gray-200 text-gray-500 text-sm">
+                Failed
+            </div>
+
+            <div class="text-3xl font-bold text-red-600 mt-2">
+                {{ campaign.failed_count }}
+            </div>
+
+        </div>
+
+        <div class="dark:bg-gray-600 dark:text-gray-300 text-gray-500 bg-gray-100 shadow rounded-xl p-5">
+
+            <div class="dark:text-gray-200 text-gray-500 text-sm">
+                Remaining
+            </div>
+
+            <div class="text-3xl font-bold text-blue-600 mt-2">
+                {{ campaign.total_recipients - campaign.sent_count }}
+            </div>
+
+        </div>
+
+        <div class="dark:bg-gray-600 dark:text-gray-300 text-gray-500 bg-gray-100 shadow rounded-xl p-5">
+
+            <div class="dark:text-gray-200 text-gray-500 text-sm">
+                Completion
+            </div>
+
+            <div class="text-3xl font-bold">
+
+                {% if campaign.total_recipients %}
+
+                    {{ ((campaign.sent_count /
+                    campaign.total_recipients)
+                    *100)|round(1) }}%
+
+                {% else %}
+
+                    0%
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Progress -->
+
+    <div class="dark:bg-gray-600 dark:text-gray-300 text-gray-500 bg-gray-100 rounded-xl shadow mt-8 p-6">
+
+        <div class="flex justify-between mb-3">
+
+            <div class="font-semibold">
+                Campaign Progress
+            </div>
+
+            <div>
+
+                {{ campaign.sent_count }}
+
+                /
+
+                {{ campaign.total_recipients }}
+
+            </div>
+
+        </div>
+
+        <div class="w-full bg-gray-200 rounded-full h-4">
+
+            <div
+
+                class="bg-green-500 h-4 rounded-full"
+
+                style="width:
+
+                {% if campaign.total_recipients %}
+
+                {{ (campaign.sent_count /
+                campaign.total_recipients)
+                *100 }}
+
+                {% else %}
+
+                0
+
+                {% endif %}%">
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Actions -->
+
+    <div class="bg-gray-100 dark:bg-gray-600 dark:text-gray-300 text-gray-500 rounded-xl shadow mt-8 p-6">
+
+        <h2 class="text-xl font-bold mb-5">
+            Campaign Actions
+        </h2>
+
+        <div class="flex flex-wrap gap-3">
+
+            {% if campaign.status != "completed" %}
+
+            <form
+                method="POST"
+                action="{{ url_for('admin.send_next_batch_route', id=campaign.id) }}"
+            >
+
+                <button
+                    class="px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+
+                    Send Next Batch
+
+                </button>
+
+            </form>
+
+            {% endif %}
+
+            {% if campaign.status == "sending" %}
+
+            <form
+                method="POST"
+                action="{{ url_for('admin.pause_campaign_route', id=campaign.id) }}"
+            >
+
+                <button
+                    class="px-5 py-3 rounded-lg bg-yellow-500 text-white">
+
+                    Pause Campaign
+
+                </button>
+
+            </form>
+
+            {% endif %}
+
+            {% if campaign.status == "paused" %}
+
+            <form
+                method="POST"
+                action="{{ url_for('admin.resume_campaign_route', id=campaign.id) }}"
+            >
+
+                <button
+                    class="px-5 py-3 rounded-lg bg-green-600 text-white">
+
+                    Resume Campaign
+
+                </button>
+
+            </form>
+
+            {% endif %}
+
+            {% if campaign.failed_count > 0 %}
+
+            <form
+                method="POST"
+                action="{{ url_for('admin.retry_failed_route', id=campaign.id) }}"
+            >
+
+                <button
+                    class="px-5 py-3 rounded-lg bg-red-600 text-white">
+
+                    Retry Failed
+
+                </button>
+
+            </form>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+  
+        <!-- ========================= -->
+    <!-- Batch List -->
+    <!-- ========================= -->
+
+    <div class="bg-gray-100 dark:bg-gray-600 dark:text-gray-300 text-gray-500 rounded-xl shadow mt-8 p-6">
+
+        <div class="flex items-center justify-between mb-5">
+
+            <h2 class="text-xl font-bold">
+                Campaign Batches
+            </h2>
+
+            <div class="text-sm dark:text-gray-200 text-gray-500">
+                Batch Size:
+                {{ campaign.batch_size }}
+            </div>
+
+        </div>
+
+        <div class="overflow-x-auto">
+
+            <table class="min-w-full border-collapse">
+
+                <thead>
+
+                    <tr class="border-b dark:bg-gray-600 bg-gray-50">
+
+                        <th class="text-left p-3">
+                            Batch
+                        </th>
+
+                        <th class="text-left p-3">
+                            Recipients
+                        </th>
+
+                        <th class="text-left p-3">
+                            Sent
+                        </th>
+
+                        <th class="text-left p-3">
+                            Failed
+                        </th>
+
+                        <th class="text-left p-3">
+                            Status
+                        </th>
+
+                        <th class="text-right p-3">
+                            Action
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for batch in batches %}
+
+                    <tr class="border-b">
+
+                        <td class="p-3 font-semibold">
+                            {{ batch.number }}
+                        </td>
+
+                        <td class="p-3">
+                            {{ batch.recipient_count }}
+                        </td>
+
+                        <td class="p-3 text-green-600 font-semibold">
+                            {{ batch.sent }}
+                        </td>
+
+                        <td class="p-3 text-red-600 font-semibold">
+                            {{ batch.failed }}
+                        </td>
+
+                        <td class="p-3">
+
+                            {% if batch.status == "completed" %}
+
+                            <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs">
+                                Completed
+                            </span>
+
+                            {% elif batch.status == "pending" %}
+
+                            <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs">
+                                Pending
+                            </span>
+
+                            {% elif batch.status == "locked" %}
+
+                            <span class="px-3 py-1 rounded-full bg-gray-200 text-gray-600 text-xs">
+                                Locked
+                            </span>
+
+                            {% else %}
+
+                            <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs">
+                                Failed
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td class="p-3 text-right">
+
+                            {% if batch.status == "completed" %}
+
+                            <a
+                                href="{{ url_for('admin.campaign_batch',
+                                id=campaign.id,
+                                number=batch.number) }}"
+                                class="inline-block px-4 py-2 rounded-lg bg-blue-600 text-white">
+
+                                View
+
+                            </a>
+
+                            {% elif batch.status == "pending" %}
+
+                            <form
+                                method="POST"
+                                action="{{ url_for('admin.send_next_batch_route',
+                                id=campaign.id) }}"
+                                class="inline">
+
+                                <button
+                                    class="px-4 py-2 rounded-lg bg-green-600 text-white">
+
+                                    Send
+
+                                </button>
+
+                            </form>
+
+                            {% else %}
+
+                            -
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- Failed Emails -->
+    <!-- ========================= -->
+
+    {% if failed_recipients %}
+
+    <div class="bg-gray-100 dark:bg-gray-600 dark:text-gray-300 text-gray-500 rounded-xl shadow mt-8 p-6">
+
+        <div class="flex justify-between items-center mb-5">
+
+            <h2 class="text-xl font-bold">
+
+                Failed Emails
+
+            </h2>
+
+            <form
+                method="POST"
+                action="{{ url_for('admin.retry_failed_route',
+                id=campaign.id) }}">
+
+                <button
+                    class="px-5 py-2 rounded-lg bg-red-600 text-white">
+
+                    Retry All Failed
+
+                </button>
+
+            </form>
+
+        </div>
+
+        <div class="space-y-4">
+
+        {% for item in failed_recipients %}
+
+            <div
+                class="border rounded-xl p-4 flex justify-between items-start">
+
+                <div>
+
+                    <div class="font-semibold">
+
+                        {{ item.email }}
+
+                    </div>
+
+                    <div
+                        class="text-sm text-red-600 mt-2">
+
+                        {{ item.error or "Unknown error" }}
+
+                    </div>
+
+                </div>
+
+                <form
+                    method="POST"
+                    action="{{ url_for('admin.retry_failed_route',
+                    id=campaign.id) }}">
+
+                    <button
+                        class="px-4 py-2 rounded-lg bg-blue-600 text-white">
+
+                        Retry
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        {% endfor %}
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+
+    <!-- ========================= -->
+    <!-- Timeline -->
+    <!-- ========================= -->
+
+    <div class="bg-gray-100 dark:bg-gray-600 dark:text-gray-300 text-gray-500 rounded-xl shadow mt-8 p-6">
+
+        <h2 class="text-xl font-bold mb-6">
+
+            Campaign Timeline
+
+        </h2>
+
+        <div class="space-y-6">
+
+        {% for event in timeline %}
+
+            <div class="flex">
+
+                <div class="w-40 dark:text-gray-200 text-gray-500">
+
+                    {{ event.time }}
+
+                </div>
+
+                <div>
+
+                    <div class="font-semibold">
+
+                        {{ event.title }}
+
+                    </div>
+
+                    {% if event.description %}
+
+                    <div class="text-sm dark:text-gray-200 text-gray-500 mt-1">
+
+                        {{ event.description }}
+
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

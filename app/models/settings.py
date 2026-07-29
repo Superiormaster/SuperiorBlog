@@ -82,3 +82,57 @@ class Payment(db.Model):
     subscription_code = db.Column(db.String(120))
     customer_code = db.Column(db.String(120))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class EmailCampaign(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    name = db.Column(db.String(255))   # Daily Digest July 28
+    subject = db.Column(db.String(255))
+    html_content = db.Column(db.Text)
+
+    campaign_type = db.Column(db.String(20))
+    # daily
+    # weekly
+    # draft
+    # welcome
+    # breaking
+
+    status = db.Column(db.String(20), default="pending")
+    # pending
+    # sending
+    # paused
+    # completed
+
+    batch_size = db.Column(db.Integer, default=100)
+    current_batch = db.Column(db.Integer, default=1)
+
+    total_recipients = db.Column(db.Integer, default=0)
+    sent_count = db.Column(db.Integer, default=0)
+    failed_count = db.Column(db.Integer, default=0)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class CampaignRecipient(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    campaign_id = db.Column(
+        db.Integer,
+        db.ForeignKey("email_campaign.id")
+    )
+
+    subscriber_id = db.Column(
+        db.Integer,
+        db.ForeignKey("subscriber.id")
+    )
+  
+    email = db.Column(db.String(255), nullable=False)
+
+    batch_number = db.Column(db.Integer)
+
+    status = db.Column(db.String(20), default="pending")
+  
+    attempts = db.Column(db.Integer, default=0)
+
+    sent_at = db.Column(db.DateTime)
+
+    error = db.Column(db.Text)

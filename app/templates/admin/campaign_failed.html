@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}
+Failed Emails - {{ campaign.name }}
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+
+        <div>
+
+            <div class="text-sm text-gray-400 mb-2">
+
+                <a href="{{ url_for('admin.list_campaigns') }}"
+                   class="hover:text-blue-400">
+
+                    Campaigns
+
+                </a>
+
+                /
+
+                <a href="{{ url_for('admin.campaign_details', id=campaign.id) }}"
+                   class="hover:text-blue-400">
+
+                    {{ campaign.name }}
+
+                </a>
+
+                /
+
+                Failed Emails
+
+            </div>
+
+            <h1 class="text-3xl font-bold">
+
+                Failed Emails
+
+            </h1>
+
+            <p class="text-gray-400 mt-2">
+
+                Campaign:
+                <strong>{{ campaign.name }}</strong>
+
+            </p>
+
+        </div>
+
+        <div class="flex gap-3 flex-wrap">
+
+            {% if failed_recipients %}
+
+            <form method="POST"
+                  action="{{ url_for('admin.retry_failed_route', id=campaign.id) }}">
+
+                <button
+                    class="px-5 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition">
+
+                    Retry All Failed
+
+                </button>
+
+            </form>
+
+            {% endif %}
+
+            <a href="{{ url_for('admin.campaign_details', id=campaign.id) }}"
+               class="px-5 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition">
+
+                ← Back
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- Summary -->
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+
+        <div class="bg-white/5 rounded-xl p-5">
+
+            <p class="text-gray-400 text-sm">
+
+                Total Failed
+
+            </p>
+
+            <h2 class="text-4xl font-bold text-red-400 mt-2">
+
+                {{ failed_recipients|length }}
+
+            </h2>
+
+        </div>
+
+        <div class="bg-white/5 rounded-xl p-5">
+
+            <p class="text-gray-400 text-sm">
+
+                Campaign Status
+
+            </p>
+
+            <h2 class="text-2xl font-bold mt-2">
+
+                {{ campaign.status|capitalize }}
+
+            </h2>
+
+        </div>
+
+        <div class="bg-white/5 rounded-xl p-5">
+
+            <p class="text-gray-400 text-sm">
+
+                Current Batch
+
+            </p>
+
+            <h2 class="text-3xl font-bold mt-2">
+
+                {{ campaign.current_batch }}
+
+            </h2>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- Failed Table -->
+
+    <div class="bg-white/5 rounded-xl overflow-hidden">
+
+        <div class="px-6 py-4 border-b border-white/10">
+
+            <h2 class="text-xl font-bold">
+
+                Failed Deliveries
+
+            </h2>
+
+        </div>
+
+        <div class="overflow-x-auto">
+
+            <table class="w-full">
+
+                <thead class="bg-white/10">
+
+                    <tr>
+
+                        <th class="px-5 py-4 text-left">
+
+                            #
+
+                        </th>
+
+                        <th class="px-5 py-4 text-left">
+
+                            Email
+
+                        </th>
+
+                        <th class="px-5 py-4 text-left">
+
+                            Batch
+
+                        </th>
+
+                        <th class="px-5 py-4 text-left">
+
+                            Error
+
+                        </th>
+
+                        <th class="px-5 py-4 text-left">
+
+                            Last Attempt
+
+                        </th>
+
+                        <th class="px-5 py-4 text-center">
+
+                            Action
+
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for recipient in failed_recipients %}
+
+                <tr class="border-b border-white/10 hover:bg-white/5">
+
+                    <td class="px-5 py-4">
+
+                        {{ loop.index }}
+
+                    </td>
+
+                    <td class="px-5 py-4">
+
+                        {{ recipient.subscriber.email }}
+
+                    </td>
+
+                    <td class="px-5 py-4">
+
+                        Batch {{ recipient.batch_number }}
+
+                    </td>
+                                        <td class="px-5 py-4">
+
+                        {% if recipient.error %}
+
+                        <div class="max-w-sm break-words text-red-400 text-sm">
+
+                            {{ recipient.error }}
+
+                        </div>
+
+                        {% else %}
+
+                        <span class="text-gray-500">
+
+                            Unknown Error
+
+                        </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td class="px-5 py-4">
+
+                        {% if recipient.sent_at %}
+
+                            {{ recipient.sent_at.strftime("%d %b %Y %I:%M %p") }}
+
+                        {% else %}
+
+                            —
+
+                        {% endif %}
+
+                    </td>
+
+                    <td class="px-5 py-4 text-center">
+
+                        <form method="POST"
+                              action="{{ url_for('admin.retry_failed_route', id=campaign.id) }}">
+
+                            <button
+                                class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition">
+
+                                Retry
+
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    {% if not failed_recipients %}
+
+    <div class="bg-white/5 rounded-xl p-16 mt-8 text-center">
+
+        <div class="text-7xl mb-5">
+
+            ✅
+
+        </div>
+
+        <h2 class="text-2xl font-bold mb-3">
+
+            No Failed Emails
+
+        </h2>
+
+        <p class="text-gray-400 mb-8">
+
+            Every email in this campaign has been delivered successfully.
+
+        </p>
+
+        <a href="{{ url_for('admin.campaign_details', id=campaign.id) }}"
+           class="inline-flex px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 transition">
+
+            Back to Campaign
+
+        </a>
+
+    </div>
+
+    {% endif %}
+
+
+    <!-- Footer Statistics -->
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-5 mt-10">
+
+        <div class="bg-white/5 rounded-xl p-5">
+
+            <p class="text-gray-400 text-sm">
+
+                Total Recipients
+
+            </p>
+
+            <h3 class="text-2xl font-bold mt-2">
+
+                {{ campaign.total_recipients }}
+
+            </h3>
+
+        </div>
+
+        <div class="bg-white/5 rounded-xl p-5">
+
+            <p class="text-gray-400 text-sm">
+
+                Successful
+
+            </p>
+
+            <h3 class="text-2xl font-bold text-green-400 mt-2">
+
+                {{ campaign.sent_count }}
+
+            </h3>
+
+        </div>
+
+        <div class="bg-white/5 rounded-xl p-5">
+
+            <p class="text-gray-400 text-sm">
+
+                Failed
+
+            </p>
+
+            <h3 class="text-2xl font-bold text-red-400 mt-2">
+
+                {{ campaign.failed_count }}
+
+            </h3>
+
+        </div>
+
+        <div class="bg-white/5 rounded-xl p-5">
+
+            <p class="text-gray-400 text-sm">
+
+                Completion
+
+            </p>
+
+            <h3 class="text-2xl font-bold mt-2">
+
+                {% if campaign.total_recipients %}
+
+                    {{ ((campaign.sent_count / campaign.total_recipients) * 100)|round(1) }}%
+
+                {% else %}
+
+                    0%
+
+                {% endif %}
+
+            </h3>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

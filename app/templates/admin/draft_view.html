@@ -12,7 +12,7 @@
   </div>
 
   <!-- Send Draft Form -->
-  <form method="post" action="{{ url_for('admin.send_draft_digest', id=draft.id) }}">
+  <form method="post" action="{{ url_for('admin.create_draft_campaign_route', id=draft.id) }}">
     <button type="submit"
             class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
       Send Digest

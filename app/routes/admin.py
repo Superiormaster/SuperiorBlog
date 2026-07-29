@@ -11,10 +11,10 @@ from sqlalchemy import or_, func, cast, Integer
 from app.utils.db_helpers import safe_commit
 from app.utils.cloudinary_helper import upload_image_file, allowed_file
 from app.utils.email import send_email
-from app.models import Post, AppSettings, User, ContactMessage, Repost, Subscriber, DigestDraft, Ad, XPost, BreakingNews, Tag, Comment, PageView
+from app.models import Post, AppSettings, User, ContactMessage, Repost, Subscriber, DigestDraft, Ad, XPost, BreakingNews, Tag, Comment, PageView, EmailCampaign, CampaignRecipient
 from app.extensions import db, csrf
 from werkzeug.security import check_password_hash, generate_password_hash
-from app.utils.admin_email import send_latest_breaking_news, send_weekly_digest_to_all, send_welcome_email, log_email
+from app.utils.admin_email import *
 from app.utils.analytics import analytics_block, get_range, percentage_growth, safe_list, active_users_by_day, active_users, track_login
 from werkzeug.utils import secure_filename
 from slugify import slugify
@@ -180,11 +180,17 @@ def list_subscribers():
         .paginate(page=page, per_page=per_page, error_out=False)
     )
 
+    total_subscribers=Subscriber.query.count()
+    active_subscribers = Subscriber.query.filter_by(is_active=True).count()
+    unsubscribed = Subscriber.query.filter_by(is_active=False).count()
+
     return render_template(
         "admin/subscribers.html",
         subscribers=pagination.items,
         pagination=pagination,
-        total_subscribers=Subscriber.query.count(),
+        total_subscribers=total_subscribers,
+        active_subscribers=active_subscribers,
+        unsubscribed=unsubscribed,
     )
 
 @admin_bp.route('/admin/subscriber/<int:id>/toggle-digest', methods=['POST'])
@@ -222,7 +228,15 @@ def preview_draft(id):
 @admin_bp.route('/admin/draft/create', methods=['GET', 'POST'])
 @login_required
 @csrf.exempt
-def create_draft(): 
+def create_draft():
+
+  subscriber = None
+
+  subscriber_id = request.args.get("subscriber_id", type=int)
+
+  if subscriber_id:
+    subscriber = Subscriber.query.get_or_404(subscriber_id)
+
   if request.method == 'POST': 
     subject = request.form.get('subject')
     content = request.form.get('html_content')
@@ -239,74 +253,326 @@ def create_draft():
     flash('Draft saved')
     return redirect(url_for('admin.preview_draft', id=draft.id))
 
-  return render_template('admin/subscribers_draft.html')
+  return render_template('admin/subscribers_draft.html', subscriber=subscriber)
 
-@admin_bp.route('/draft/digest/<int:id>', methods=['POST'])
-@login_required 
+@admin_bp.route("/admin/draft/<int:id>/create-campaign", methods=["POST"])
+@login_required
 @csrf.exempt
-def send_draft_digest(id): 
-  draft = DigestDraft.query.get_or_404(id)
+def create_draft_campaign_route(id):
 
-  if draft.is_sent:
-    flash('This digest was already sent')
-    return redirect(url_for('admin.preview_draft', id=id))
+    campaign = create_draft_campaign(id)
 
-  subscribers = Subscriber.query.filter_by(
-    is_active=True,
-    receive_digest=True
-  ).all()
+    if campaign is None:
+        flash("Unable to create campaign.", "danger")
+        return redirect(url_for("admin.list_drafts"))
 
-  for s in subscribers:
-    html_content = render_template("emails/admin_draft.html",  subscriber=s, subject=draft.subject, draft_html=draft.html_content, now=datetime.now())
-    send_email(s.email, draft.subject, html_content)
-    log_email(s.email, "Admin Message", True)
+    flash("Campaign created successfully.", "success")
 
-  draft.is_sent = True
-  if not safe_commit():
-    print("Failed to reject post")
+    return redirect(
+        url_for(
+            "admin.campaign_details",
+            id=campaign.id
+        )
+    )
 
-  flash('Digest sent successfully')
-  return redirect(url_for('admin.preview_draft', id=id))
+@admin_bp.route("/admin/campaign/<int:id>/pause", methods=["POST"])
+@login_required
+@csrf.exempt
+def pause_campaign_route(id):
+
+    campaign = pause_campaign(id)
+
+    if campaign is None:
+        flash("Unable to pause campaign.", "danger")
+    else:
+        flash("Campaign paused.", "success")
+
+    return redirect(
+        url_for(
+            "admin.campaign_details",
+            id=id
+        )
+    )
+
+@admin_bp.route("/admin/campaign/<int:id>/resume", methods=["POST"])
+@login_required
+@csrf.exempt
+def resume_campaign_route(id):
+
+    campaign = resume_campaign(id)
+
+    if campaign is None:
+        flash("Unable to resume campaign.", "danger")
+    else:
+        flash("Campaign resumed.", "success")
+
+    return redirect(
+        url_for(
+            "admin.campaign_details",
+            id=id
+        )
+    )
+
+@admin_bp.route(
+    "/admin/campaign/<int:id>/retry-failed",
+    methods=["POST"]
+)
+@login_required
+@csrf.exempt
+def retry_failed_route(id):
+
+    success = retry_failed_batch(id)
+
+    if success:
+        flash("Failed emails retried successfully.", "success")
+    else:
+        flash("Unable to retry campaign.", "danger")
+
+    return redirect(
+        url_for(
+            "admin.campaign_details",
+            id=id
+        )
+    )
+
+@admin_bp.route("/send-breaking-digest", methods=["POST"])
+@login_required
+@csrf.exempt
+def send_breaking_digest():
+
+    campaign = create_breaking_campaign();
+
+    if campaign is None:
+        flash("Breaking News digest failed", "danger")
+        return redirect(url_for("admin.list_campaigns"))
+    
+    flash("Breaking News digest created", "success")
+    return redirect(
+        url_for("admin.campaign_details", id=campaign.id)
+    )
 
 @admin_bp.route("/send-daily-digest", methods=["POST"])
 @login_required
 @csrf.exempt
 def send_daily_digest():
 
-    subscribers = Subscriber.query.filter_by(
-        is_active=True,
-        receive_digest=True
-    ).all()
+    campaign = create_daily_campaign();
 
-    posts = Post.query.order_by(Post.created_at.desc()).limit(5).all()
-
-    for sub in subscribers:
-
-        html_content = render_template(
-            "emails/daily_news.html",
-            posts=posts,
-            subscriber=sub,
-            now=datetime.utcnow()
-        )
-
-        send_email(
-            sub.email, "📰 Daily News Digest – SuperiorNews",
-            html_content
-        )
-
-        sub.last_email_sent = datetime.utcnow()
-
-    safe_commit()
-
-    flash("Daily digest sent!", "success")
-    return redirect(url_for("admin.list_subscribers"))
+    if campaign is None:
+        flash("Daily digest failed", "danger")
+        return redirect(url_for("admin.list_campaigns"))
+    
+    flash("Daily digest created", "success")
+    return redirect(
+        url_for("admin.campaign_details", id=campaign.id)
+    )
 
 @admin_bp.route('/admin/email/send-digest', methods=['POST'])
 @csrf.exempt
 def send_digest():
-    send_weekly_digest_to_all()
-    flash("Weekly digest sent successfully")
-    return redirect(url_for('admin.list_subscribers'))
+    campaign = create_weekly_campaign()
+
+    if campaign is None:
+        flash("Weekly digest failed", "danger")
+        return redirect(url_for("admin.list_campaigns"))
+  
+    flash("Weekly digest created", "success")
+    return redirect(
+        url_for("admin.campaign_details", id=campaign.id)
+    )
+  
+# ==========================================
+# CAMPAIGNS
+# ==========================================
+
+@admin_bp.route("/admin/campaigns")
+@login_required
+def list_campaigns():
+
+    campaigns = (
+        EmailCampaign.query
+        .order_by(EmailCampaign.created_at.desc())
+        .all()
+    )
+
+    return render_template(
+        "admin/campaigns.html",
+        campaigns=campaigns
+    )
+
+@admin_bp.route("/admin/campaign/<int:id>")
+@login_required
+def campaign_details(id):
+
+    campaign = EmailCampaign.query.get_or_404(id)
+
+    # All batches
+    batches = (
+        db.session.query(CampaignRecipient.batch_number)
+        .filter_by(campaign_id=id)
+        .distinct()
+        .order_by(CampaignRecipient.batch_number.asc())
+        .all()
+    )
+
+    batch_list = []
+
+    for batch in batches:
+
+        number = batch.batch_number
+
+        recipients = (
+            CampaignRecipient.query
+            .filter_by(
+                campaign_id=id,
+                batch_number=number
+            )
+            .all()
+        )
+
+        total = len(recipients)
+        sent = sum(r.status == "sent" for r in recipients)
+        failed = sum(r.status == "failed" for r in recipients)
+
+        if total == 0:
+            status = "pending"
+        elif sent + failed == total:
+            status = "completed"
+        elif sent or failed:
+            status = "sending"
+        else:
+            status = "pending"
+
+        batch_list.append({
+            "number": number,
+            "total": total,
+            "sent": sent,
+            "failed": failed,
+            "status": status
+        })
+
+    failed_recipients = (
+        CampaignRecipient.query
+        .filter_by(
+            campaign_id=id,
+            status="failed"
+        )
+        .order_by(CampaignRecipient.batch_number)
+        .all()
+    )
+
+    timeline = []
+
+    timeline.append({
+        "time": campaign.created_at,
+        "title": "Campaign Created"
+    })
+
+    for batch in batch_list:
+
+        if batch["status"] in ("completed", "sending"):
+
+            first = (
+                CampaignRecipient.query
+                .filter_by(
+                    campaign_id=id,
+                    batch_number=batch["number"]
+                )
+                .filter(
+                    CampaignRecipient.sent_at.isnot(None)
+                )
+                .order_by(CampaignRecipient.sent_at.asc())
+                .first()
+            )
+
+            if first:
+                timeline.append({
+                    "time": first.sent_at,
+                    "title": f"Batch {batch['number']} Sent"
+                })
+
+    timeline.sort(
+        key=lambda item: item["time"] or campaign.created_at
+    )
+
+    return render_template(
+        "admin/campaign_details.html",
+        campaign=campaign,
+        batches=batch_list,
+        failed_recipients=failed_recipients,
+        timeline=timeline,
+    )
+
+@admin_bp.route(
+    "/admin/campaign/<int:id>/send-next-batch",
+    methods=["POST"]
+)
+@login_required
+@csrf.exempt
+def send_next_batch_route(id):
+
+    success = send_next_batch(id)
+
+    if success:
+        flash("Batch sent successfully.", "success")
+    else:
+        flash("Unable to send batch.", "danger")
+
+    return redirect(
+        url_for(
+            "admin.campaign_details",
+            id=id
+        )
+    )
+
+
+@admin_bp.route(
+    "/admin/campaign/<int:id>/batch/<int:number>"
+)
+@login_required
+def campaign_batch(id, number):
+
+    campaign = EmailCampaign.query.get_or_404(id)
+
+    recipients = (
+        CampaignRecipient.query
+        .filter_by(
+            campaign_id=id,
+            batch_number=number
+        )
+        .all()
+    )
+
+    return render_template(
+        "admin/campaign_batch.html",
+        campaign=campaign,
+        batch_number=number,
+        recipients=recipients
+    )
+
+
+@admin_bp.route(
+    "/admin/campaign/<int:id>/failed"
+)
+@login_required
+def campaign_failed(id):
+
+    campaign = EmailCampaign.query.get_or_404(id)
+
+    failed = (
+        CampaignRecipient.query
+        .filter_by(
+            campaign_id=id,
+            status="failed"
+        )
+        .all()
+    )
+
+    return render_template(
+        "admin/campaign_failed.html",
+        campaign=campaign,
+        failed=failed
+    )
 
 @admin_bp.route('/email-logs')
 @login_required

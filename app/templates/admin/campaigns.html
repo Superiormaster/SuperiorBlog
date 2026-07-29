@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block title %}Email Campaigns{% endblock %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-4 py-6">
+
+    <!-- Header -->
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+        <div>
+
+            <h1 class="text-3xl font-bold text-gray-800">
+
+                Email Campaigns
+
+            </h1>
+
+            <p class="text-gray-500 mt-2">
+
+                Manage email campaigns, batches and delivery progress.
+
+            </p>
+
+        </div>
+
+        <div>
+
+            <a
+                href="{{ url_for('admin.list_drafts') }}"
+                class="inline-flex items-center px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+
+                Drafts
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- Summary Cards -->
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mt-8">
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <div class="text-gray-500 text-sm">
+
+                Total Campaigns
+
+            </div>
+
+            <div class="text-3xl font-bold mt-2">
+
+                {{ campaigns|length }}
+
+            </div>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <div class="text-gray-500 text-sm">
+
+                Sending
+
+            </div>
+
+            <div class="text-3xl font-bold text-blue-600 mt-2">
+
+                {{ campaigns
+                |selectattr("status","equalto","sending")
+                |list
+                |length }}
+
+            </div>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <div class="text-gray-500 text-sm">
+
+                Paused
+
+            </div>
+
+            <div class="text-3xl font-bold text-yellow-600 mt-2">
+
+                {{ campaigns
+                |selectattr("status","equalto","paused")
+                |list
+                |length }}
+
+            </div>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <div class="text-gray-500 text-sm">
+
+                Completed
+
+            </div>
+
+            <div class="text-3xl font-bold text-green-600 mt-2">
+
+                {{ campaigns
+                |selectattr("status","equalto","completed")
+                |list
+                |length }}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Campaign Table -->
+
+    <div class="bg-white rounded-xl shadow mt-8 overflow-hidden">
+
+        <div class="px-6 py-5 border-b">
+
+            <h2 class="text-xl font-bold">
+
+                Campaign List
+
+            </h2>
+
+        </div>
+
+        <div class="overflow-x-auto">
+
+            <table class="min-w-full">
+
+                <thead class="bg-gray-50">
+
+                    <tr>
+
+                        <th class="text-left px-5 py-4">
+
+                            Campaign
+
+                        </th>
+
+                        <th class="text-left px-5 py-4">
+
+                            Type
+
+                        </th>
+
+                        <th class="text-left px-5 py-4">
+
+                            Status
+
+                        </th>
+
+                        <th class="text-left px-5 py-4">
+
+                            Progress
+
+                        </th>
+
+                        <th class="text-left px-5 py-4">
+
+                            Created
+
+                        </th>
+
+                        <th class="text-right px-5 py-4">
+
+                            Actions
+
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for campaign in campaigns %}
+
+                    <tr class="border-b hover:bg-gray-50">
+
+                        <td class="px-5 py-5">
+
+                            <div class="font-semibold">
+
+                                {{ campaign.name }}
+
+                            </div>
+
+                            <div class="text-sm text-gray-500 mt-1">
+
+                                {{ campaign.subject }}
+
+                            </div>
+
+                        </td>
+
+                        <td class="px-5 py-5">
+
+                            <span class="capitalize">
+
+                                {{ campaign.campaign_type }}
+
+                            </span>
+
+                        </td>
+
+                        <td class="px-5 py-5">
+
+                            {% if campaign.status=="sending" %}
+
+                            <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs">
+
+                                Sending
+
+                            </span>
+
+                            {% elif campaign.status=="paused" %}
+
+                            <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs">
+
+                                Paused
+
+                            </span>
+
+                            {% elif campaign.status=="completed" %}
+
+                            <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs">
+
+                                Completed
+
+                            </span>
+
+                            {% else %}
+
+                            <span class="px-3 py-1 rounded-full bg-gray-200 text-gray-700 text-xs">
+
+                                Pending
+
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td class="px-5 py-5">
+
+                            {% if campaign.total_recipients %}
+
+                            {% set percent=((campaign.sent_count/campaign.total_recipients)*100)|round(0) %}
+
+                            {% else %}
+
+                            {% set percent=0 %}
+
+                            {% endif %}
+
+                            <div class="w-48">
+
+                                <div class="w-full h-3 rounded-full bg-gray-200">
+
+                                    <div
+                                        class="h-3 rounded-full bg-green-500"
+                                        style="width:{{ percent }}%">
+
+                                    </div>
+
+                                </div>
+
+                                <div class="text-sm text-gray-500 mt-2">
+
+                                    {{ campaign.sent_count }}
+
+                                    /
+
+                                    {{ campaign.total_recipients }}
+
+                                    ({{ percent }}%)
+
+                                </div>
+
+                            </div>
+
+                        </td>
+
+                        <td class="px-5 py-5 text-sm text-gray-500">
+
+                            {{ campaign.created_at.strftime("%d %b %Y") }}
+
+                        </td>
+
+                        <td class="px-5 py-5 text-right">
+                                  </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if campaigns.pages > 1 %}
+<div class="mt-8 flex justify-center">
+    <div class="flex items-center gap-2">
+
+        {% if campaigns.has_prev %}
+        <a href="{{ url_for('admin.list_campaigns', page=campaigns.prev_num) }}"
+           class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition">
+            Previous
+        </a>
+        {% endif %}
+
+        {% for page_num in campaigns.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+
+            {% if page_num %}
+
+                {% if page_num == campaigns.page %}
+                    <span class="px-4 py-2 rounded-lg bg-blue-600 text-white">
+                        {{ page_num }}
+                    </span>
+                {% else %}
+                    <a href="{{ url_for('admin.list_campaigns', page=page_num) }}"
+                       class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition">
+                        {{ page_num }}
+                    </a>
+                {% endif %}
+
+            {% else %}
+
+                <span class="px-2">...</span>
+
+            {% endif %}
+
+        {% endfor %}
+
+        {% if campaigns.has_next %}
+        <a href="{{ url_for('admin.list_campaigns', page=campaigns.next_num) }}"
+           class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition">
+            Next
+        </a>
+        {% endif %}
+
+    </div>
+</div>
+{% endif %}
+
+
+<!-- Empty State -->
+{% if campaigns.total == 0 %}
+<div class="mt-16 text-center">
+
+    <div class="text-7xl mb-4">
+        📧
+    </div>
+
+    <h3 class="text-2xl font-bold mb-3">
+        No Campaigns Yet
+    </h3>
+
+    <p class="text-gray-400 mb-8">
+        Create your first email campaign from Daily Digest,
+        Weekly Digest, Breaking News or Drafts.
+    </p>
+
+    <a href="{{ url_for('admin.list_drafts') }}"
+       class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 transition">
+
+        Create Campaign
+
+    </a>
+
+</div>
+{% endif %}
+
+</div>
+
+{% endblock %}
