@@ -230,30 +230,90 @@ def preview_draft(id):
 @csrf.exempt
 def create_draft():
 
-  subscriber = None
+    subscriber = None
 
-  subscriber_id = request.args.get("subscriber_id", type=int)
+    subscriber_id = request.args.get("subscriber_id", type=int)
 
-  if subscriber_id:
-    subscriber = Subscriber.query.get_or_404(subscriber_id)
+    if subscriber_id:
+        subscriber = Subscriber.query.get_or_404(subscriber_id)
 
-  if request.method == 'POST': 
-    subject = request.form.get('subject')
-    content = request.form.get('html_content')
-    content = "<p>" + content.replace("\n\n", "</p><p>").replace("\n", "<br>") + "</p>"
+    if request.method == "POST":
 
-    draft = DigestDraft(
-        subject=subject,
-        html_content=content
+        subject = request.form.get("subject")
+        content = request.form.get("html_content")
+
+        # Convert plain text to HTML
+        content = (
+            "<p>"
+            + content.replace("\n\n", "</p><p>").replace("\n", "<br>")
+            + "</p>"
+        )
+
+        # -----------------------------
+        # Upload Image
+        # -----------------------------
+        image_file = request.files.get("image")
+        image_url = request.form.get("image_url")
+
+        if image_file and image_file.filename != "":
+
+            if allowed_file(image_file.filename):
+
+                uploaded_url = upload_image_file(
+                  image_file,
+                  folder="SuperiorNews/emails"
+                )
+
+                if uploaded_url:
+                    image_url = uploaded_url
+
+            else:
+                flash("Invalid image type.", "danger")
+                return redirect(request.url)
+
+        # -----------------------------
+        # Insert image into email
+        # -----------------------------
+        if image_url:
+            content = f"""
+            {content}
+            <div style="text-align:center;margin-bottom:20px;">
+                <img
+                  src="{image_url}"
+                  style="
+                      display:block;
+                      width:100%;
+                      max-width:560px;
+                      height:auto;
+                      border-radius:8px;
+                  ">
+            </div>
+            """
+
+        draft = DigestDraft(
+            subject=subject,
+            html_content=content
+        )
+
+        db.session.add(draft)
+
+        if not safe_commit():
+            flash("Failed to save draft", "danger")
+            return redirect(request.url)
+
+        flash("Draft saved", "success")
+
+        return redirect(
+            url_for(
+                "admin.preview_draft",
+                id=draft.id
+            )
+        )
+
+    return render_template(
+        "admin/subscribers_draft.html",
+        subscriber=subscriber
     )
-    db.session.add(draft)
-    if not safe_commit():
-        print("Failed to save draft")
-
-    flash('Draft saved')
-    return redirect(url_for('admin.preview_draft', id=draft.id))
-
-  return render_template('admin/subscribers_draft.html', subscriber=subscriber)
 
 @admin_bp.route("/admin/draft/<int:id>/create-campaign", methods=["POST"])
 @login_required
@@ -1050,7 +1110,7 @@ def upload_to_cloudinary(file, width,
     Upload a Flask FileStorage object to Cloudinary and return the secure URL.
     """
     try:
-        return upload_image_file(file, folder="SuperiorNews/ads", max_height=200, crop_for_ads=True, width=width, height=height)
+        return upload_image_file(file, folder="SuperiorNews/ads", crop_for_ads=True, width=width, height=200)
     except Exception as e:
         current_app.logger.error(f"Cloudinary upload failed: {e}")
         return None

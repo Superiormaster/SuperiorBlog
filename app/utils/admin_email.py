@@ -217,10 +217,18 @@ def create_draft_campaign(draft_id):
     if not draft:
         return None
 
-    campaign = create_campaign(
-        name=f"Draft - {draft.subject}",
+    html_content = render_template(
+        "emails/admin_draft.html",
         subject=draft.subject,
-        html_content=draft.html_content,
+        draft_html=draft.html_content,
+        subscriber=None,
+        now=datetime.utcnow(),
+    )
+
+    campaign = create_campaign(
+        name=f"{draft.subject}",
+        subject=draft.subject,
+        html_content=html_content,
         campaign_type="draft",
     )
 

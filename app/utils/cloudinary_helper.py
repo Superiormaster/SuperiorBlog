@@ -28,27 +28,20 @@ def upload_image_file(file, folder="SuperiorNews", width=None, height=None, crop
         return None
 
     try:
-        # If we need proportional resize locally
-        if max_height:
-            image = Image.open(file)
-            orig_width, orig_height = image.size
-            if orig_height > max_height:
-                new_width = int((max_height / orig_height) * orig_width)
-                image = image.resize((new_width, max_height), Image.Resampling.LANCZOS)
-
-                buf = io.BytesIO()
-                image.save(buf, format="JPEG", quality=85)
-                buf.seek(0)
-                file_to_upload = buf
-            else:
-                file_to_upload = file
-        else:
-            file_to_upload = file
+        file_to_upload = file
 
         # If we want Cloudinary to crop for ads
         transformations = []
+
         if crop_for_ads and width and height:
-            transformations.append({"width": width, "height": height, "crop": "fill"})
+            transformations = [{
+                "width": width,
+                "height": height,
+                "crop": "fill",
+                "gravity": "auto",
+                "quality": "auto:best",
+                "fetch_format": "auto"
+            }]
 
         result = cloudinary.uploader.upload(
             file_to_upload,
