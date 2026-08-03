@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<div class="max-w-7xl mx-auto px-4 py-6">
+<div class="max-w-7xl mx-auto py-10 px-4">
 
     <!-- Header -->
 
@@ -12,7 +12,7 @@
 
         <div>
 
-            <h1 class="text-3xl font-bold text-gray-800">
+            <h1 class="text-3xl font-bold dark:text-gray-300 text-gray-800">
 
                 Email Campaigns
 
@@ -43,27 +43,27 @@
 
     <!-- Summary Cards -->
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mt-8">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-8">
 
-        <div class="bg-white rounded-xl shadow p-5">
+        <div class="bg-gray-200 dark:bg-gray-600 rounded-xl shadow p-5">
 
-            <div class="text-gray-500 text-sm">
+            <div class="dark:text-gray-300 text-gray-500 text-sm">
 
                 Total Campaigns
 
             </div>
 
-            <div class="text-3xl font-bold mt-2">
+            <div class="text-3xl font-bold text-gray-600 dark:text-gray-300 mt-2">
 
-                {{ campaigns|length }}
+                {{ campaigns.total }}
 
             </div>
 
         </div>
 
-        <div class="bg-white rounded-xl shadow p-5">
+        <div class="bg-gray-200 dark:bg-gray-600 rounded-xl shadow p-5">
 
-            <div class="text-gray-500 text-sm">
+            <div class="dark:text-gray-300 text-gray-500 text-sm">
 
                 Sending
 
@@ -71,7 +71,7 @@
 
             <div class="text-3xl font-bold text-blue-600 mt-2">
 
-                {{ campaigns
+                {{ campaigns.items
                 |selectattr("status","equalto","sending")
                 |list
                 |length }}
@@ -80,9 +80,9 @@
 
         </div>
 
-        <div class="bg-white rounded-xl shadow p-5">
+        <div class="bg-gray-200 dark:bg-gray-600 rounded-xl shadow p-5">
 
-            <div class="text-gray-500 text-sm">
+            <div class="dark:text-gray-300 text-gray-500 text-sm">
 
                 Paused
 
@@ -90,7 +90,7 @@
 
             <div class="text-3xl font-bold text-yellow-600 mt-2">
 
-                {{ campaigns
+                {{ campaigns.items
                 |selectattr("status","equalto","paused")
                 |list
                 |length }}
@@ -99,9 +99,9 @@
 
         </div>
 
-        <div class="bg-white rounded-xl shadow p-5">
+        <div class="bg-gray-200 dark:bg-gray-600 rounded-xl shadow p-5">
 
-            <div class="text-gray-500 text-sm">
+            <div class="dark:text-gray-300 text-gray-500 text-sm">
 
                 Completed
 
@@ -109,7 +109,7 @@
 
             <div class="text-3xl font-bold text-green-600 mt-2">
 
-                {{ campaigns
+                {{ campaigns.items
                 |selectattr("status","equalto","completed")
                 |list
                 |length }}
@@ -123,11 +123,11 @@
 
     <!-- Campaign Table -->
 
-    <div class="bg-white rounded-xl shadow mt-8 overflow-hidden">
+    <div class="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl shadow mt-8 overflow-hidden">
 
         <div class="px-6 py-5 border-b">
 
-            <h2 class="text-xl font-bold">
+            <h2 class="text-xl dark:text-gray-200 text-gray-700 font-bold">
 
                 Campaign List
 
@@ -139,7 +139,7 @@
 
             <table class="min-w-full">
 
-                <thead class="bg-gray-50">
+                <thead class="bg-gray-50 dark:bg-gray-500 text-gray-600 dark:text-gray-700">
 
                     <tr>
 
@@ -185,9 +185,9 @@
 
                 <tbody>
 
-                {% for campaign in campaigns %}
+                {% for campaign in campaigns.items %}
 
-                    <tr class="border-b hover:bg-gray-50">
+                    <tr class="border-b">
 
                         <td class="px-5 py-5">
 
@@ -197,7 +197,7 @@
 
                             </div>
 
-                            <div class="text-sm text-gray-500 mt-1">
+                            <div class="text-sm dark:text-gray-400 text-gray-500 mt-1">
 
                                 {{ campaign.subject }}
 
@@ -243,7 +243,7 @@
 
                             {% else %}
 
-                            <span class="px-3 py-1 rounded-full bg-gray-200 text-gray-700 text-xs">
+                            <span class="px-3 py-1 rounded-full bg-gray-400 dark:bg-gray-500 text-gray-700 dark:text-gray-200 text-xs">
 
                                 Pending
 
@@ -277,7 +277,7 @@
 
                                 </div>
 
-                                <div class="text-sm text-gray-500 mt-2">
+                                <div class="text-sm dark:text-gray-300 text-gray-500 mt-2">
 
                                     {{ campaign.sent_count }}
 
@@ -293,14 +293,38 @@
 
                         </td>
 
-                        <td class="px-5 py-5 text-sm text-gray-500">
+                        <td class="px-5 py-5 text-sm dark:text-gray-300 text-gray-500">
 
                             {{ campaign.created_at.strftime("%d %b %Y") }}
 
                         </td>
 
-                        <td class="px-5 py-5 text-right">
-                                  </tbody>
+                        <td class="px-5 py-5 space-y-2 flex items-center flex-col text-right space-x-2">
+
+                            <a href="{{ url_for('admin.campaign_details', id=campaign.id) }}"
+                               class="px-3 py-2 bg-blue-600 text-white rounded-lg">
+                                View
+                            </a>
+                        
+                            <a href="{{ url_for('admin.campaign_batch',
+                                                id=campaign.id,
+                                                number=1) }}"
+                               class="px-3 py-2 bg-green-600 text-white rounded-lg">
+                                Batches
+                            </a>
+                        
+                            <a href="{{ url_for('admin.campaign_failed',
+                                                id=campaign.id) }}"
+                               class="px-3 py-2 bg-red-600 text-white rounded-lg">
+                                Failed
+                            </a>
+                        
+                        </td>
+          
+          </tr>
+          
+          {% endfor %}
+      </tbody>
     </table>
 </div>
 
@@ -311,7 +335,7 @@
 
         {% if campaigns.has_prev %}
         <a href="{{ url_for('admin.list_campaigns', page=campaigns.prev_num) }}"
-           class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition">
+           class="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 transition">
             Previous
         </a>
         {% endif %}
@@ -326,7 +350,7 @@
                     </span>
                 {% else %}
                     <a href="{{ url_for('admin.list_campaigns', page=page_num) }}"
-                       class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition">
+                       class="px-4 py-2 rounded-lg bg-gray-800 text-gray-200 hover:bg-gray-700 transition">
                         {{ page_num }}
                     </a>
                 {% endif %}
@@ -341,7 +365,7 @@
 
         {% if campaigns.has_next %}
         <a href="{{ url_for('admin.list_campaigns', page=campaigns.next_num) }}"
-           class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition">
+           class="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 transition">
             Next
         </a>
         {% endif %}

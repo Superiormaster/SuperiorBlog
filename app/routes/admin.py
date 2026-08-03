@@ -292,7 +292,9 @@ def create_draft():
 
         draft = DigestDraft(
             subject=subject,
-            html_content=content
+            html_content=content,
+            audience=request.form.get("platform"),
+            subscriber_id=subscriber.id if subscriber else None,
         )
 
         db.session.add(draft)
@@ -310,9 +312,15 @@ def create_draft():
             )
         )
 
+    selected_platform = "superior_news"
+
+    if subscriber:
+      selected_platform = "single_email"
+
     return render_template(
         "admin/subscribers_draft.html",
-        subscriber=subscriber
+        subscriber=subscriber,
+        selected_platform=selected_platform
     )
 
 @admin_bp.route("/admin/draft/<int:id>/create-campaign", methods=["POST"])
@@ -444,21 +452,26 @@ def send_digest():
 # ==========================================
 # CAMPAIGNS
 # ==========================================
-
 @admin_bp.route("/admin/campaigns")
 @login_required
 def list_campaigns():
 
+    page = request.args.get("page", 1, type=int)
+
     campaigns = (
         EmailCampaign.query
         .order_by(EmailCampaign.created_at.desc())
-        .all()
+        .paginate(
+            page=page,
+            per_page=10,
+            error_out=False,
+        )
     )
 
     return render_template(
         "admin/campaigns.html",
-        campaigns=campaigns
-    )
+        campaigns=campaigns,
+      )
 
 @admin_bp.route("/admin/campaign/<int:id>")
 @login_required

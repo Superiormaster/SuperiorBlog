@@ -2,11 +2,48 @@
 {% block content %}
 
 <div class="max-w-4xl mx-auto p-4 mt-10 space-y-6">
-  <h2 class="text-2xl font-bold text-gray-500">All Drafts</h2>
+  <div class="flex pr-3 justify-between items-center">
+    <h2 class="text-2xl font-bold text-gray-500">All Drafts</h2>
+    <a href="{{ url_for('admin.create_draft') }}" class="block px-4 py-2 rounded"><i class="fa fa-plus text-gray-500" aria-hidden="true"></i></a> 
+  </div>
+  
   {% if drafts %}
     {% for draft in drafts %}
       <div class="border p-4 rounded shadow-sm bg-white/5">
-        <h3 class="font-semibold text-black dark:text-white text-lg">{{ draft.subject }}</h3>
+        <div class="flex items-start gap-3">
+
+          <div class="flex-1 overflow-hidden">
+              <h3 class="font-semibold text-black dark:text-white text-lg whitespace-nowrap overflow-hidden text-ellipsis">
+                  {{ draft.subject }}
+              </h3>
+      
+              {% if draft.audience == "single_email" and draft.subscriber %}
+              <p class="text-sm text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis">
+                  {{ draft.subscriber.email }}
+              </p>
+              {% endif %}
+          </div>
+      
+          <div class="flex-shrink-0">
+              {% if draft.audience == "superior_news" %}
+              <span class="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs">
+                  Superior News
+              </span>
+      
+              {% elif draft.audience == "tribe" %}
+              <span class="px-2 py-1 rounded-full bg-purple-100 text-purple-700 text-xs">
+                  Tribe
+              </span>
+      
+              {% else %}
+              <span class="px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs">
+                  Single Email
+              </span>
+              {% endif %}
+          </div>
+      
+        </div>
+  
         <a href="{{ url_for('admin.preview_draft', id=draft.id) }}"
            class="text-blue-600 hover:underline">Preview</a>
         <form method="post" action="{{ url_for('admin.create_draft_campaign_route', id=draft.id) }}" class="mt-2">

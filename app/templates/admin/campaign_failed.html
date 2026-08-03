@@ -37,7 +37,7 @@ Failed Emails - {{ campaign.name }}
 
             </div>
 
-            <h1 class="text-3xl font-bold">
+            <h1 class="text-3xl text-gray-700 dark:text-gray-200 font-bold">
 
                 Failed Emails
 
@@ -85,9 +85,9 @@ Failed Emails - {{ campaign.name }}
 
     <!-- Summary -->
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
 
-        <div class="bg-white/5 rounded-xl p-5">
+        <div class="dark:bg-gray-700 bg-gray-200 rounded-xl p-5">
 
             <p class="text-gray-400 text-sm">
 
@@ -103,7 +103,7 @@ Failed Emails - {{ campaign.name }}
 
         </div>
 
-        <div class="bg-white/5 rounded-xl p-5">
+        <div class="dark:bg-gray-700 bg-gray-200 rounded-xl p-5">
 
             <p class="text-gray-400 text-sm">
 
@@ -111,7 +111,7 @@ Failed Emails - {{ campaign.name }}
 
             </p>
 
-            <h2 class="text-2xl font-bold mt-2">
+            <h2 class="text-2xl text-gray-700 dark:text-gray-200 font-bold mt-2">
 
                 {{ campaign.status|capitalize }}
 
@@ -119,7 +119,7 @@ Failed Emails - {{ campaign.name }}
 
         </div>
 
-        <div class="bg-white/5 rounded-xl p-5">
+        <div class="dark:bg-gray-700 bg-gray-200 rounded-xl p-5">
 
             <p class="text-gray-400 text-sm">
 
@@ -141,11 +141,11 @@ Failed Emails - {{ campaign.name }}
 
     <!-- Failed Table -->
 
-    <div class="bg-white/5 rounded-xl overflow-hidden">
+    <div class="dark:bg-gray-800 bg-gray-200 rounded-xl overflow-hidden">
 
         <div class="px-6 py-4 border-b border-white/10">
 
-            <h2 class="text-xl font-bold">
+            <h2 class="text-xl text-gray-700 dark:text-gray-300 font-bold">
 
                 Failed Deliveries
 
@@ -157,7 +157,7 @@ Failed Emails - {{ campaign.name }}
 
             <table class="w-full">
 
-                <thead class="bg-white/10">
+                <thead class="bg-white/10 text-gray-700 dark:text-gray-300">
 
                     <tr>
 
@@ -291,7 +291,7 @@ Failed Emails - {{ campaign.name }}
 
     {% if not failed_recipients %}
 
-    <div class="bg-white/5 rounded-xl p-16 mt-8 text-center">
+    <div class="dark:bg-gray-800 bg-gray-200 rounded-xl p-16 mt-8 text-center">
 
         <div class="text-7xl mb-5">
 
@@ -299,7 +299,7 @@ Failed Emails - {{ campaign.name }}
 
         </div>
 
-        <h2 class="text-2xl font-bold mb-3">
+        <h2 class="text-2xl text-gray-700 dark:text-white font-bold mb-3">
 
             No Failed Emails
 
@@ -325,9 +325,9 @@ Failed Emails - {{ campaign.name }}
 
     <!-- Footer Statistics -->
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-5 mt-10">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-10">
 
-        <div class="bg-white/5 rounded-xl p-5">
+        <div class="dark:bg-gray-800 bg-gray-200 rounded-xl p-5">
 
             <p class="text-gray-400 text-sm">
 
@@ -335,7 +335,7 @@ Failed Emails - {{ campaign.name }}
 
             </p>
 
-            <h3 class="text-2xl font-bold mt-2">
+            <h3 class="text-2xl text-gray-700 dark:text-gray-300 font-bold mt-2">
 
                 {{ campaign.total_recipients }}
 
@@ -343,7 +343,7 @@ Failed Emails - {{ campaign.name }}
 
         </div>
 
-        <div class="bg-white/5 rounded-xl p-5">
+        <div class="dark:bg-gray-800 bg-gray-200 rounded-xl p-5">
 
             <p class="text-gray-400 text-sm">
 
@@ -359,7 +359,7 @@ Failed Emails - {{ campaign.name }}
 
         </div>
 
-        <div class="bg-white/5 rounded-xl p-5">
+        <div class="dark:bg-gray-800 bg-gray-200 rounded-xl p-5">
 
             <p class="text-gray-400 text-sm">
 
@@ -375,7 +375,7 @@ Failed Emails - {{ campaign.name }}
 
         </div>
 
-        <div class="bg-white/5 rounded-xl p-5">
+        <div class="dark:bg-gray-800 bg-gray-200 rounded-xl p-5">
 
             <p class="text-gray-400 text-sm">
 
@@ -383,7 +383,7 @@ Failed Emails - {{ campaign.name }}
 
             </p>
 
-            <h3 class="text-2xl font-bold mt-2">
+            <h3 class="text-2xl text-gray-600 dark:text-gray-200 font-bold mt-2">
 
                 {% if campaign.total_recipients %}
 

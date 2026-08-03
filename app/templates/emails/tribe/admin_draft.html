@@ -1,0 +1,17 @@
+{% extends "emails/tribe/base.html" %}
+
+{% block title %}
+{{ subject or "Superior News" }}
+{% endblock %}
+
+{% block heading %}
+{{ subject or "Superior News" }}
+{% endblock %}
+
+{% block content %}
+
+{% if draft_html %}
+{{ draft_html|safe }}
+{% endif %}
+
+{% endblock %}

@@ -76,22 +76,74 @@ def send_email(to, subject, html_content, text_content=None, cc=None, bcc=None):
           timeout=(10, 30),
         )
         if response.status_code in (200, 201):
-            return True
-        current_app.logger.error(f"Brevo email failed: {response.status_code} {response.text}")
-        return False
+            return {
+                "success": True,
+                "temporary": False,
+                "error": None,
+            }
+        
+        if response.status_code == 400:
+            return {
+                "success": False,
+                "temporary": False,
+                "error": "Invalid recipient",
+            }
+        
+        if response.status_code == 401:
+            return {
+                "success": False,
+                "temporary": False,
+                "error": "Unauthorized",
+            }
+        
+        if response.status_code == 429:
+            return {
+                "success": False,
+                "temporary": True,
+                "error": "Rate limited",
+            }
+        
+        if response.status_code >= 500:
+            return {
+                "success": False,
+                "temporary": True,
+                "error": "Brevo server error",
+            }
+        
+        return {
+            "success": False,
+            "temporary": False,
+            "error": response.text,
+        }
   
     except requests.exceptions.Timeout:
         current_app.logger.exception("Brevo timeout")
-        return False
+        return {
+          "success": False,
+          "temporary": True,
+          "error": "Connection timeout",
+        }
   
     except requests.exceptions.ConnectionError:
         current_app.logger.exception("Brevo connection error")
-        return False
+        return {
+          "success": False,
+          "temporary": True,
+          "error": "Network unavailable",
+        }
   
     except requests.exceptions.SSLError:
         current_app.logger.exception("Brevo SSL error")
-        return False
+        return {
+            "success": False,
+            "temporary": True,
+            "error": "Brevo SSL error",
+        }
   
     except Exception:
         current_app.logger.exception("Brevo email exception")
-        return False
+        return {
+            "success": False,
+            "temporary": True,
+            "error": "Brevo email exception",
+        }

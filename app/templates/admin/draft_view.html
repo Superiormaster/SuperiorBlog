@@ -4,11 +4,45 @@
 <div class="max-w-4xl mx-auto mt-10 p-4 space-y-6">
 
   <!-- Draft Subject -->
-  <h2 class="text-2xl mb-3 font-bold text-gray-400">Preview: {{ draft.subject }}</h2>
-
+  <h2 class="text-2xl mb-3 font-bold text-gray-400">
+      Preview: {{ draft.subject }}
+  </h2>
+  
+  <!-- Draft Info -->
+  <div class="rounded-lg border border-gray-300 dark:border-gray-700 bg-white/5 p-4 space-y-2">
+  
+      <p class="text-sm">
+          <span class="font-semibold text-gray-500">Audience:</span>
+  
+          {% if draft.audience == "superior_news" %}
+              <span class="text-green-600 dark:text-green-400">
+                  Superior News Newsletter
+              </span>
+  
+          {% elif draft.audience == "tribe" %}
+              <span class="text-purple-600 dark:text-purple-400">
+                  Tribe Newsletter
+              </span>
+  
+          {% else %}
+              <span class="text-blue-600 dark:text-blue-400">
+                  Single Email
+              </span>
+          {% endif %}
+      </p>
+  
+      {% if draft.audience == "single_email" and draft.subscriber %}
+      <p class="text-sm break-all">
+          <span class="font-semibold text-gray-500">Recipient:</span>
+          {{ draft.subscriber.email }}
+      </p>
+      {% endif %}
+  
+  </div>
+  
   <!-- Draft Content Preview -->
   <div class="border border-gray-300 rounded-lg p-6 text-black dark:text-white bg-white/5 shadow-sm">
-    {{ draft.html_content | safe }}
+      {{ draft.html_content | safe }}
   </div>
 
   <!-- Send Draft Form -->

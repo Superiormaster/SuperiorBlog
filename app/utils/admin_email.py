@@ -55,17 +55,16 @@ def create_campaign(
         return None
 
     campaign = EmailCampaign(
-        name=name,
-        subject=subject,
-        html_content=html_content,
-        campaign_type=campaign_type,
-        status="pending",
-        batch_size=batch_size,
-        current_batch=1,
-        total_recipients=len(subscribers),
-        sent_count=0,
-        failed_count=0,
-        created_at=datetime.utcnow(),
+      name=name,
+      subject=subject,
+      html_content=html_content,
+      campaign_type=campaign_type,
+      status="pending",
+      batch_size=batch_size,
+      total_recipients=len(subscribers),
+      sent_count=0,
+      failed_count=0,
+      created_at=datetime.utcnow(),
     )
 
     db.session.add(campaign)
@@ -208,30 +207,71 @@ def create_breaking_campaign():
 def create_draft_campaign(draft_id):
     """
     Create an email campaign from a saved draft.
-
-    No emails are sent here.
     """
 
-    draft = DigestDraft.query.get(draft_id)
+    draft = DigestDraft.query.get_or_404(draft_id)
 
-    if not draft:
+    # -------------------
+    # Single email
+    # -------------------
+    if draft.audience == "single_email":
+    
+        subscriber = Subscriber.query.get(draft.subscriber_id)
+    
+        if not subscriber:
+            return None
+    
+        html = render_template(
+            "emails/admin_draft.html",
+            subject=draft.subject,
+            draft_html=draft.html_content,
+            subscriber=subscriber,
+            now=datetime.utcnow(),
+        )
+    
+        result = send_email(
+            to=subscriber.email,
+            subject=draft.subject,
+            html_content=html,
+        )
+    
+        log_email(
+            recipient=subscriber.email,
+            subject=draft.subject,
+            success=result["success"],
+            subscriber=subscriber,
+        )
+    
+        if result["success"]:
+            draft.is_sent = True
+            safe_commit()
+    
         return None
 
-    html_content = render_template(
-        "emails/admin_draft.html",
-        subject=draft.subject,
-        draft_html=draft.html_content,
-        subscriber=None,
-        now=datetime.utcnow(),
+    # Select template
+    if draft.audience == "tribe":
+      template = "emails/tribe/admin_draft.html"
+    else:
+      template = "emails/admin_draft.html"
+    
+    html = render_template(
+      template,
+      subject=draft.subject,
+      draft_html=draft.html_content,
+      subscriber=None,
+      now=datetime.utcnow(),
     )
-
+    
     campaign = create_campaign(
-        name=f"{draft.subject}",
-        subject=draft.subject,
-        html_content=html_content,
-        campaign_type="draft",
+      name=draft.subject,
+      subject=draft.subject,
+      html_content=html,
+      campaign_type="draft",
     )
-
+    
+    draft.is_sent = True
+    safe_commit()
+    
     return campaign
 
 def send_next_batch(campaign_id):
@@ -256,10 +296,10 @@ def send_next_batch(campaign_id):
         CampaignRecipient.query
         .filter_by(
             campaign_id=campaign.id,
-            batch_number=campaign.current_batch,
             status="pending",
         )
         .order_by(CampaignRecipient.id.asc())
+        .limit(campaign.batch_size)
         .all()
     )
 
@@ -276,11 +316,6 @@ def send_next_batch(campaign_id):
             safe_commit()
             return True
 
-        campaign.current_batch += 1
-        safe_commit()
-
-        return send_next_batch(campaign.id)
-
     for recipient in recipients:
 
         subscriber = Subscriber.query.get(
@@ -293,52 +328,75 @@ def send_next_batch(campaign_id):
             campaign.failed_count += 1
             continue
 
+        recipient.status = "sending"
+        recipient.sending_started_at = datetime.utcnow()
+        recipient.attempts += 1
+        recipient.last_attempt_at = datetime.utcnow()
+        
+        if not safe_commit():
+            continue
+
         html = campaign.html_content
 
-        success = send_email(
+        result = send_email(
             to=subscriber.email,
             subject=campaign.subject,
             html_content=html,
         )
         time.sleep(0.2)
 
-        if success:
+        if not result["success"] and result["temporary"]:
+
+            recipient.status = "paused"
+            recipient.error = result["error"]
+        
+            campaign.status = "paused"
+            campaign.paused_at = datetime.utcnow()
+        
+            safe_commit()
+        
+            return False
+  
+        if result["success"]:
 
             recipient.status = "sent"
             recipient.sent_at = datetime.utcnow()
-
+            recipient.error = None
+        
             campaign.sent_count += 1
-
+            campaign.completed_count += 1
+        
         else:
-
+        
             recipient.status = "failed"
-            recipient.error = "Email send failed"
-
+            recipient.error = result["error"]
+        
             campaign.failed_count += 1
-
+            campaign.completed_count += 1
+        
         log_email(
             recipient=subscriber.email,
             subject=campaign.subject,
-            success=success,
+            success=result["success"],
             subscriber=subscriber,
         )
-
-    # Is there another batch?
-
+        
+        safe_commit()
+  
     pending = CampaignRecipient.query.filter_by(
         campaign_id=campaign.id,
         status="pending",
     ).count()
-
-    if pending == 0:
-
+    
+    paused = CampaignRecipient.query.filter_by(
+        campaign_id=campaign.id,
+        status="paused",
+    ).count()
+    
+    if pending == 0 and paused == 0:
         campaign.status = "completed"
-
-    else:
-
-        campaign.current_batch += 1
-
-    safe_commit()
+        campaign.completed_at = datetime.utcnow()
+        safe_commit()
 
     return True
 
@@ -370,6 +428,17 @@ def resume_campaign(campaign_id):
     campaign = EmailCampaign.query.get(campaign_id)
 
     if campaign is None:
+      return None
+  
+    CampaignRecipient.query.filter_by(
+        campaign_id=campaign.id,
+        status="paused",
+    ).update(
+        {"status": "pending"},
+        synchronize_session=False,
+    )
+
+    if campaign is None:
         return None
 
     if campaign.status == "completed":
@@ -377,6 +446,7 @@ def resume_campaign(campaign_id):
 
     # Resume from where it stopped
     campaign.status = "pending"
+    campaign.paused_at = None
 
     if not safe_commit():
         return None
@@ -415,15 +485,33 @@ def retry_failed_batch(campaign_id):
         if not subscriber:
             continue
 
+        recipient.status = "sending"
+        recipient.sending_started_at = datetime.utcnow()
+        
+        recipient.attempts += 1
+        recipient.last_attempt_at = datetime.utcnow()
+    
+        safe_commit()
+    
         html = campaign.html_content
 
-        success = send_email(
+        result = send_email(
             to=subscriber.email,
             subject=campaign.subject,
             html_content=html,
         )
 
-        if success:
+        if not result["success"] and result["temporary"]:
+          recipient.status = "paused"
+          recipient.error = result["error"]
+      
+          campaign.status = "paused"
+          campaign.paused_at = datetime.utcnow()
+      
+          safe_commit()
+          return False
+
+        if result["success"]:
 
             recipient.status = "sent"
             recipient.sent_at = datetime.utcnow()
@@ -436,14 +524,17 @@ def retry_failed_batch(campaign_id):
 
         else:
 
-            recipient.error = "Retry failed"
+            recipient.status = "failed"
+            recipient.error = result["error"]
 
         log_email(
             recipient=subscriber.email,
             subject=campaign.subject,
-            success=success,
+            success=result["success"],
             subscriber=subscriber,
         )
+  
+        safe_commit()
 
     # Mark completed if nothing is left pending or failed
     pending = CampaignRecipient.query.filter_by(
@@ -457,7 +548,8 @@ def retry_failed_batch(campaign_id):
     ).count()
 
     if pending == 0 and failed == 0:
-        campaign.status = "completed"
+      campaign.status = "completed"
+      campaign.completed_at = datetime.utcnow()
 
     safe_commit()
 

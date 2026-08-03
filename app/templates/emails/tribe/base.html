@@ -1,0 +1,114 @@
+<!-- templates/emails/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Tribe{% endblock %}</title>
+</head>
+
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#1F2937;">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td align="center">
+
+<table width="600" cellpadding="0" cellspacing="0" border="0"
+style="background:#1F2937;border-radius:8px;padding:12px;">
+
+    <!-- Logo -->
+    <tr>
+        <td align="center" style="padding-bottom:20px;">
+            <img
+                src="https://www.tribe-app.app/tribe2.png"
+                width="120"
+                alt="Tribe App"
+                style="display:block;border:0;margin:0 auto;">
+        </td>
+    </tr>
+
+    <!-- Heading -->
+    <tr>
+        <td>
+            <h2 style="
+                color:#ffffff;
+                text-align:center;
+                margin-top:0;
+                margin-bottom:10px;">
+                {% block heading %}
+                    Tribe
+                {% endblock %}
+            </h2>
+        </td>
+    </tr>
+
+    <!-- Email Content -->
+    <tr>
+        <td style="
+            color:#CCCCCC;
+            font-size:15px;
+            line-height:1.7;
+        ">
+            {% block content %}{% endblock %}
+        </td>
+    </tr>
+
+    <!-- CTA -->
+    <tr>
+        <td align="center" style="padding-top:30px;">
+
+            {% block cta %}
+            <a
+                href="https://www.tribe-app.app"
+                style="
+                    background:#1a73e8;
+                    color:#ffffff;
+                    padding:12px 24px;
+                    border-radius:6px;
+                    text-decoration:none;
+                    display:inline-block;
+                    font-weight:bold;">
+                Visit Tribe
+            </a>
+            {% endblock %}
+
+        </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+        <td
+            align="center"
+            style="
+                padding-top:30px;
+                font-size:12px;
+                color:#888888;
+            ">
+
+            {% if subscriber %}
+            <p>
+                <a
+                    href="{{ url_for('public.unsubscribe',
+                                     token=subscriber.unsubscribe_token,
+                                     _external=True) }}"
+                    style="color:#FACC15;text-decoration:none;">
+                    Unsubscribe
+                </a>
+            </p>
+            {% endif %}
+
+            <p>© {{ now.year }} Tribe.</p>
+
+            <p>Tribe Team</p>
+
+        </td>
+    </tr>
+
+</table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>

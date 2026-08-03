@@ -8,6 +8,36 @@
     
     <div>
       <label class="block text-sm font-medium text-gray-400 mb-1">
+          Platform
+      </label>
+  
+      <select
+          name="platform"
+          id="platform"
+          class="w-full rounded-lg border px-4 py-2 dark:bg-gray-800 text-black dark:text-white">
+  
+          <option value="superior_news"
+              {{ "selected" if selected_platform == "superior_news" else "" }}>
+              Superior News Newsletter
+          </option>
+          
+          <option value="tribe"
+              {{ "selected" if selected_platform == "tribe" else "" }}>
+              Tribe Newsletter
+          </option>
+          
+          {% if subscriber %}
+          <option value="single_email"
+              {{ "selected" if selected_platform == "single_email" else "" }}>
+              Selected Subscriber ({{ subscriber.email }})
+          </option>
+          {% endif %}
+  
+      </select>
+    </div>
+  
+    <div>
+      <label class="block text-sm font-medium text-gray-400 mb-1">
           Recipient
       </label>
   
