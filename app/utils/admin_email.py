@@ -32,7 +32,7 @@ def create_campaign(
     subject,
     html_content,
     campaign_type,
-    batch_size=100,
+    batch_size=20,
 ):
     """
     Creates an email campaign and queues every active subscriber
@@ -343,7 +343,6 @@ def send_next_batch(campaign_id):
             subject=campaign.subject,
             html_content=html,
         )
-        time.sleep(0.2)
 
         if not result["success"] and result["temporary"]:
 
