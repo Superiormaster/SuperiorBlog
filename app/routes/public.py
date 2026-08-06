@@ -16,7 +16,7 @@ from app.moderation.grammar import grammar_score
 from app.moderation.duplicate import hash_content
 from app.utils.helper import process_tags, get_related_posts, publish_scheduled_posts
 from app.utils.cloudinary_helper import upload_image_file
-from app.utils.adInjector import inject_inpost_ads
+from app.utils.adInjector import inject_inpost_content
 from app.utils.email import send_email
 from app.utils.admin_email import send_welcome_email
 from app.utils.decorators import generate_unique_slug
@@ -1109,8 +1109,6 @@ def post_detail(slug):
     two_days_ago = datetime.utcnow() - timedelta(days=2)
     form = SubscribeForm()
     post = Post.query.filter_by(slug=slug, is_published=True).first_or_404()
-    # Convert to HTML
-    content_html = inject_inpost_ads(post.content)
   
     # ---------------------------
     # VIEW COUNT (SAFE)
@@ -1169,12 +1167,18 @@ def post_detail(slug):
         .limit(5)
         .all()
     )
-  
+    
     # Dynamic title
     if related_posts and related_posts[0].views >= 1000:
         section_title = "Trending in This Category"
     else:
         section_title = "Related Stories"
+    
+    content_html = inject_inpost_content(
+        post.content,
+        related_posts=related_posts,
+        section_title=section_title,
+    )
 
     if not safe_commit():
         print("Failed to view post")
