@@ -1071,20 +1071,20 @@ def index():
     categories = Category.query.order_by(Category.name).all()
 
     for category in categories:
-        posts = (
-            Post.query.filter(
-                Post.category_id == category.id,
-                Post.is_published == True,
-                Post.status == "published",
-                Post.created_at >= one_day_ago,
-            )
-            .order_by(Post.created_at.desc())
-            .limit(3)
-            .all()
-        )
-    
-        if posts:
-            today_categories[category] = posts
+      category_posts = (
+          Post.query.filter(
+              Post.category_id == category.id,
+              Post.is_published == True,
+              Post.status == "published",
+              Post.created_at >= one_day_ago,
+          )
+          .order_by(Post.created_at.desc())
+          .limit(3)
+          .all()
+      )
+      
+      if category_posts:
+          today_categories[category] = category_posts
 
     breaking_posts = (
         Post.query
