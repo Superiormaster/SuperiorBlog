@@ -1053,7 +1053,7 @@ def index():
     if popular_ids:
         posts_query = posts_query.filter(~Post.id.in_(popular_ids))
     
-    posts = posts_query.order_by(Post.created_at.desc()).limit(10).all()
+    posts = posts_query.order_by(Post.created_at.desc()).limit(50).all()
 
     posts = [p for p in posts if p is not None]
 
