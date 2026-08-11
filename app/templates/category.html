@@ -266,7 +266,7 @@
     <div class="flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">Categories</h4>
       {% for cat in nav_categories %}
-        <a data-redirect href="{{ url_for('public.category', slug=cat.slug) }}" class="capitalize btn-primary link-gold btn-danger">
+        <a href="{{ url_for('public.category', slug=cat.slug) }}" class="capitalize btn-primary link-gold btn-danger">
           {{ cat.name }}
         </a>
       {% endfor %}

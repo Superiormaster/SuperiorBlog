@@ -1,4 +1,5 @@
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, current_app, flash, make_response
+from collections import OrderedDict
 from app.models import Post, Comment, Like, Subscriber, ContactMessage, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit, FootballCache, PageView, Ad
 import os, traceback, re, base64, requests, secrets, uuid
 from requests.exceptions import ConnectionError
@@ -1065,6 +1066,26 @@ def index():
         .subquery()
     )
 
+    today_categories = OrderedDict()
+
+    categories = Category.query.order_by(Category.name).all()
+
+    for category in categories:
+        posts = (
+            Post.query.filter(
+                Post.category_id == category.id,
+                Post.is_published == True,
+                Post.status == "published",
+                Post.created_at >= one_day_ago,
+            )
+            .order_by(Post.created_at.desc())
+            .limit(3)
+            .all()
+        )
+    
+        if posts:
+            today_categories[category] = posts
+
     breaking_posts = (
         Post.query
         .join(Post.labels)
@@ -1102,7 +1123,7 @@ def index():
         .all()
     )
 
-    return render_template("homepage.html", posts=posts, popular_posts=popular_posts, popular_tags=popular_tags, latest_posts=latest_posts, breaking_posts=breaking_posts, Post=Post, live_matches=live_matches, league_table=league_table, form=form)
+    return render_template("homepage.html", posts=posts, popular_posts=popular_posts, popular_tags=popular_tags, latest_posts=latest_posts, category_sections=today_categories, breaking_posts=breaking_posts, Post=Post, live_matches=live_matches, league_table=league_table, form=form)
 
 @public_bp.route("/post/<slug>", endpoint='post_detail')
 def post_detail(slug):
@@ -1176,8 +1197,6 @@ def post_detail(slug):
     
     content_html = inject_inpost_content(
         post.content,
-        related_posts=related_posts,
-        section_title=section_title,
     )
 
     if not safe_commit():

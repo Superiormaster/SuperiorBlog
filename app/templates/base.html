@@ -118,13 +118,13 @@
       <div class="drawer__body bg-gray-300 dark:bg-gray-900">
         <div class="section-title">Navigation</div>
         <ul class="nav-list text-gray-800 dark:text-yellow-600" id="drawerNav">
-          <li><a href="{{ url_for('public.index') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-home mr-2" aria-hidden="true"></i>Home</a></li>
+          <li><a href="{{ url_for('public.index') }}" class="btn-primary btn-danger"><i class="fa fa-home mr-2" aria-hidden="true"></i>Home</a></li>
         {% if current_user.is_authenticated %}
-        <li><a href="{{ url_for('admin.dashboard') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-dashboard mr-2"></i> Admin Dashboard</a></li>
-        <li><a href="{{ url_for('admin.change_password') }}" data-redirect class="btn-primary btn-danger hover:underline"><i class="fa fa-eraser mr-2" aria-hidden="true"></i>Change Password</a></li>
-        <li><a href="{{ url_for('admin.logout') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-out mr-2" aria-hidden="true"></i>Logout</a></li>
+        <li><a href="{{ url_for('admin.dashboard') }}" class="btn-primary btn-danger"><i class="fa fa-dashboard mr-2"></i> Admin Dashboard</a></li>
+        <li><a href="{{ url_for('admin.change_password') }}" class="btn-primary btn-danger hover:underline"><i class="fa fa-eraser mr-2" aria-hidden="true"></i>Change Password</a></li>
+        <li><a href="{{ url_for('admin.logout') }}" class="btn-primary btn-danger"><i class="fa fa-sign-out mr-2" aria-hidden="true"></i>Logout</a></li>
         {% else %}
-          <li><a href="{{ url_for('admin.login') }}" data-redirect class="btn-primary btn-danger"><i class="fa fa-sign-in mr-2"></i> Login</a></li>
+          <li><a href="{{ url_for('admin.login') }}" class="btn-primary btn-danger"><i class="fa fa-sign-in mr-2"></i> Login</a></li>
         {% endif %}
         </ul>
       </div>

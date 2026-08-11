@@ -3,17 +3,16 @@ from bs4 import BeautifulSoup
 from flask import render_template
 from app.models import Ad
 
-def inject_inpost_content(content, related_posts=None, section_title="Related Stories"):
+
+def inject_inpost_content(content):
     ads = Ad.query.filter_by(location="post_mid", active=True).all()
-    # Uncomment after AdSense approval if you want network ads
-    # ads = [ad for ad in ads if ad.type != "adsterra"]
 
     if not ads:
         return content
 
     soup = BeautifulSoup(content, "html.parser")
 
-    # Find readable blocks
+    # Find readable content blocks
     blocks = [
         block
         for block in soup.find_all(["p", "div"])
@@ -28,49 +27,31 @@ def inject_inpost_content(content, related_posts=None, section_title="Related St
     # -------------------------
     # First Ad (25%)
     # -------------------------
-    if ads:
-        ad = random.choice(ads)
-        ad_html = render_template(
-            "ads/adBlock.html",
-            location="post_mid",
-            ad=ad,
-        )
+    first_ad = random.choice(ads)
+    first_ad_html = render_template(
+        "ads/adBlock.html",
+        location="post_mid",
+        ad=first_ad,
+    )
 
-        ad_soup = BeautifulSoup(ad_html, "html.parser")
-
-        ad_position = max(2, total // 4)
-        blocks[ad_position].insert_after(ad_soup)
-
-    # -------------------------
-    # Related Posts (50%)
-    # -------------------------
-    if related_posts:
-        related_html = render_template(
-            "partials/inline_related_posts.html",
-            related_posts=related_posts,
-            section_title=section_title,
-        )
-
-        related_soup = BeautifulSoup(related_html, "html.parser")
-
-        middle_position = total // 2
-        blocks[middle_position].insert_after(related_soup)
+    blocks[max(2, total // 4)].insert_after(
+        BeautifulSoup(first_ad_html, "html.parser")
+    )
 
     # -------------------------
     # Second Ad (75%)
     # -------------------------
-    if ads and total >= 8:
-        ad = random.choice(ads)
+    if total >= 8:
+        second_ad = random.choice(ads)
 
-        ad_html = render_template(
+        second_ad_html = render_template(
             "ads/adBlock.html",
             location="post_mid",
-            ad=ad,
+            ad=second_ad,
         )
 
-        ad_soup = BeautifulSoup(ad_html, "html.parser")
-
-        second_position = (total * 3) // 4
-        blocks[second_position].insert_after(ad_soup)
+        blocks[(total * 3) // 4].insert_after(
+            BeautifulSoup(second_ad_html, "html.parser")
+        )
 
     return str(soup)

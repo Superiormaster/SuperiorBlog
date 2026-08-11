@@ -1138,12 +1138,14 @@ def ad_form(ad_id=None):
 
     if request.method == "POST":
 
-        ad_width_value = request.form.get("ad_width")
+        ad_location = request.form["location"]
 
-        if ad_width_value:
-            ad_width = int(ad_width_value)
+        ad_width_value = request.form.get("ad_width")
+        
+        if ad_location == "full_page":
+            ad_width = None
         else:
-            ad_width = 600
+            ad_width = int(ad_width_value) if ad_width_value else 600
 
         # Upload image if provided
         image_file = request.files.get("image")
@@ -1151,7 +1153,18 @@ def ad_form(ad_id=None):
 
         if image_file and image_file.filename != "":
           if allowed_file(image_file.filename):
-              uploaded_url = upload_to_cloudinary(image_file, width=ad_width_value)
+      
+              if ad_location == "full_page":
+                  uploaded_url = upload_image_file(
+                    image_file,
+                    folder="SuperiorNews/media"
+                  )
+              else:
+                  uploaded_url = upload_to_cloudinary(
+                      image_file,
+                      width=ad_width
+                  )
+      
               if uploaded_url:
                   image_url = uploaded_url
           else:

@@ -51,6 +51,7 @@ python-slugify==8.0.4
 sqlparse==0.5.4
 authlib
 gunicorn==23.0.0
+psycopg
 psycopg[binary]
 psycopg2-binary>=2.9
 google-auth 
