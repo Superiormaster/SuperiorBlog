@@ -84,7 +84,7 @@
       <li class="mb-4 border-b pb-3">
 
         <!-- Comment content -->
-        <p class="font-semibold text-lg">{{ comment.user.username }}</p>
+        <p class="font-semibold text-gray-700 dark:text-gray-300 text-lg">{{ comment.user.username }}</p>
         <p class="text-gray-400 text-sm mt-1">{{ comment.content }}</p>
         <p class="text-xs text-gray-500 mt-1">{{ comment.created_at.strftime('%b %d, %Y %H:%M') }}</p>
 
@@ -125,7 +125,7 @@
         <ul id="replies-{{ comment.id }}" class="ml-6 mt-3 hidden">
           {% for reply in comment.replies %}
           <li class="border-l-2 border-gray-600 pl-3 mb-2">
-            <p class="font-semibold text-sm">{{ reply.user.username }}</p>
+            <p class="font-semibold text-gray-700 dark:text-gray-300 text-sm">{{ reply.user.username }}</p>
             <p class="text-gray-400 text-sm">{{ reply.content }}</p>
             <p class="text-xs text-gray-500">{{ reply.created_at.strftime('%b %d, %Y %H:%M') }}</p>
           </li>
@@ -321,7 +321,7 @@
 <footer class="drawer_footer bg-gray-800 text-gray-300 px-4 pt-10">
 
   <!-- Newsletter -->
-  <div class="p-6 rounded-xl bg-gradient-to-r from-gray-700/20 to-neutral-500/20 border border-yellow-500/20">
+  <div class="p-6 mt-4 rounded-xl bg-gradient-to-r from-gray-700/20 to-neutral-500/20 border border-yellow-500/20">
     <h3 class="font-semibold mb-3 text-center">Stay ahead. Get the top stories every morning</h3>
     <input type="hidden" name="csrf_token" value="...">
     <form action="{{ url_for('public.subscribe') }}" method="post" class="flex flex-col md:flex-row gap-3">
@@ -332,15 +332,8 @@
     </form>
   </div>
 
-  <!-- SEO Intro -->
-  <section class="seo-intro bg-gray-900 text-gray-300 rounded-xl my-5 px-3 py-4 text-center max-w-6xl mx-auto">
-    <p class="text-sm sm:text-base md:text-lg leading-relaxed">
-    <span class="font-semibold text-white">Superior News</span> is a powerful news and blogging platform designed for creators and bloggers. Publish your ideas, share your stories, and generate engaging social media captions instantly. Join thousands of users who leverage Superior News to grow their online presence and reach a wider audience.
-    </p>
-  </section>
-
   <!-- Footer Links -->
-  <div class="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 text-left mb-8">
+  <div class="max-w-5xl mt-2 mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 text-left mb-8">
     <!-- General Links -->
     <div class="flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">General</h4>

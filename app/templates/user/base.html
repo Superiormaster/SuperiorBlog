@@ -13,7 +13,20 @@
     <meta property="og:title" content="{{ post.title }}">
     <meta property="og:description"
           content="{{ post.meta_description if post.meta_description else post.content[:150] }}">
-    <meta property="og:image" content="https://www.superiornews.app/static/New.png">
+  
+    {% if post.featured_image %}
+      <meta property="og:image" content="{{ post.featured_image }}">
+      <meta name="twitter:image" content="{{ post.featured_image }}">
+      {% else %}
+      <meta property="og:image" content="https://www.superiornews.app/static/New.png">
+      <meta name="twitter:image" content="https://www.superiornews.app/static/New.png">
+    {% endif %}
+  
+    <meta property="og:url" content="{{ request.url }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ post.title }}">
+    <meta name="twitter:description"
+      content="{{ post.meta_description if post.meta_description else post.content[:150] }}">
     <meta property="og:type" content="article">
 
   {% elif category %}
@@ -28,14 +41,14 @@
 
   {% else %}
     <!-- Default / Homepage SEO -->
-    <title>SuperiorNews – News Blog & Caption Platform</title>
+    <title>Superior News – Latest Nigerian & World News</title>
 
     <meta name="description"
-          content="SuperiorNews is a content platform that helps creators, digital publishers and bloggers publish their ideas. It also generates social media captions for users.">
+      content="Superior News brings you the latest Nigerian and world news, politics, sports, business, technology, entertainment and other important stories.">
 
-    <meta property="og:title" content="SuperiorNews – News Blog & Caption Platform">
+    <meta property="og:title" content="Superior News – Latest Nigerian & World News">
     <meta property="og:description"
-          content="Create blogs, generate captions, and publish content.">
+          content="Get the latest Nigerian and world news, politics, sports, business, technology, entertainment and more from Superior News.">
     <meta property="og:type" content="website">
   {% endif %}
 
@@ -128,7 +141,7 @@
         <div class="" aria-hidden="true"><img src="{{ url_for('static', filename='Img/New.png') }}" alt="Superior logo" class="h-12">
         </div>
         <div class="text-center">
-        <h2 class="drawer__subtitle">News Blog & Caption Platform</h2>
+        <h2 class="drawer__subtitle">Latest Nigerian & World News</h2>
         </div>
     </div>
 

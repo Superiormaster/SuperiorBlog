@@ -152,11 +152,23 @@
 
         <article class="flex gap-3">
 
-            {% if post.featured_image %}
-            <img
-                src="{{ post.featured_image }}"
-                class="w-28 h-20 rounded object-cover">
-            {% endif %}
+            <div class="w-32 md:w-52 flex-shrink-0">
+              {% if post.featured_image %}
+                <img
+                  src="{{ post.featured_image }}"
+                  loading="lazy"
+                  decoding="async"
+                  class="w-full h-24 md:h-36 object-cover rounded-md"
+                  alt="{{ post.title }}"
+                >
+              {% else %}
+                <div class="w-full h-24 md:h-36 rounded-md 
+                            bg-neutral-800 flex items-center 
+                            justify-center text-gray-400 text-sm">
+                  S News
+                </div>
+              {% endif %}
+            </div>
 
             <div>
 
@@ -510,15 +522,8 @@
     </form>
   </div>
 
-  <!-- SEO Intro -->
-  <section class="seo-intro bg-gray-900 text-gray-300 rounded-xl my-5 px-3 py-4 text-center max-w-6xl mx-auto">
-    <p class="text-sm sm:text-base md:text-lg leading-relaxed">
-    <span class="font-semibold text-white">Superior News</span> is a powerful news and blogging platform designed for creators and bloggers. Publish your ideas, share your stories, and generate engaging social media captions instantly. Join thousands of users who leverage Superior News to grow their online presence and reach a wider audience.
-    </p>
-  </section>
-
   <!-- Footer Links -->
-  <div class="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 text-left mb-8">
+  <div class="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 text-left mt-2 mb-8">
     <!-- General Links -->
     <div class="flex flex-col space-y-2">
       <h4 class="font-semibold mb-2 text-white">General</h4>
