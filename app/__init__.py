@@ -1,4 +1,4 @@
-from flask import Flask, request, url_for, redirect, session, flash, has_request_context
+from flask import Flask, request, url_for, redirect, session, flash, has_request_context, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
 from app.routes.public import public_bp
@@ -45,6 +45,14 @@ def create_app():
     app.register_blueprint(caption_bp)
     app.register_blueprint(billing_bp)
     app.register_blueprint(ads_bp)
+
+    @app.route("/monetag-sw.js")
+    def monetag_sw():
+        return send_from_directory(
+            app.static_folder,
+            "monetag-sw.js",
+            mimetype="application/javascript"
+        )
 
     @login_manager.user_loader
     def load_user(user_id):
