@@ -46,11 +46,11 @@ def create_app():
     app.register_blueprint(billing_bp)
     app.register_blueprint(ads_bp)
 
-    @app.route("/monetag-sw.js")
+    @app.route("/sw.js")
     def monetag_sw():
         return send_from_directory(
             app.static_folder,
-            "monetag-sw.js",
+            "sw.js",
             mimetype="application/javascript"
         )
 
