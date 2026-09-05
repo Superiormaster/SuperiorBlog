@@ -66,26 +66,63 @@
         </div>
     </div>
 {% elif ad.location == 'post_mid' %}
-  <div class="w-full max-w-6xl mx-auto rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition duration-300 not-prose">
-    {% if ad.type == 'adsense' and ad.html_code %}
-        <div class="text-xs tracking-widest uppercase text-gray-400 dark:text-gray-500 text-center py-1">Advertisement</div>
-        <div class="media_slot w-full overflow-hidden px-2 text-center">
+  <div class="ad-block not-prose w-full max-w-none mx-0 h-14
+              rounded-2xl
+              bg-white dark:bg-gray-800
+              border border-gray-200 dark:border-gray-700
+              shadow-sm
+              transition duration-300">
+
+    {% if ad.type in ['adsense', 'monetag'] and ad.html_code %}
+
+        <div class="text-xs pt-2 tracking-widest uppercase
+                    text-gray-400 dark:text-gray-500
+                    text-center py-1">
+            Advertisement
+        </div>
+
+        <div class="media_slot w-full overflow-visible px-2 text-center">
             {{ ad.html_code | safe }}
         </div>
+
     {% else %}
-        <a href="{{ url_for('ads.ad_click', ad_id=ad.id) }}" class="block group">
-            <div class="text-xs tracking-widest uppercase text-gray-400 dark:text-gray-500 text-center">Advertisement</div>
+
+        <a href="{{ url_for('ads.ad_click', ad_id=ad.id) }}"
+           class="block group">
+
+            <div class="text-xs tracking-widest uppercase pt-2
+                        text-gray-400 dark:text-gray-500
+                        text-center">
+                Advertisement
+            </div>
+
             <div class="media_slot w-full text-center">
+
                 {% if ad.image_url %}
-                    <img src="{{ ad.image_url }}" loading="lazy" decoding="async" alt="{{ ad.title or 'Advertisement' }}" class="w-full object-cover rounded-lg transition-transform duration-300 group-hover:scale-[1.02]">
+
+                    <img src="{{ ad.image_url }}"
+                         loading="lazy"
+                         decoding="async"
+                         alt="{{ ad.title or 'Advertisement' }}"
+                         class="w-full object-cover rounded-lg
+                                transition-transform duration-300
+                                group-hover:scale-[1.02]">
+
                 {% else %}
-                    <div class="py-2 text-gray-800 dark:text-gray-200 font-semibold text-lg">
-                        {{ ad.title or 'Try Our AI Caption Generator!' }}
+
+                    <div class="py-2 text-gray-800
+                                dark:text-gray-200
+                                font-semibold text-lg">
+                        {{ ad.title or 'Advertisement' }}
                     </div>
+
                 {% endif %}
+
             </div>
         </a>
+
     {% endif %}
+
   </div>
 {% elif ad.location == "full_page" %}
 

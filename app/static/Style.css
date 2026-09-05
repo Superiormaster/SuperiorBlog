@@ -181,10 +181,104 @@ header.navbar * {
 }
 
 .media_slot {
-    min-height: 120px;
-    max-height: 300px;
-    overflow: hidden;
     position: relative;
+    width: 100%;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+    line-height: normal;
+    font-size: initial;
+}
+
+.media_slot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    object-fit: contain;
+    margin: 0;
+    padding: 0;
+}
+
+.media_slot p,
+.media_slot h1,
+.media_slot h2,
+.media_slot h3,
+.media_slot h4,
+.media_slot h5,
+.media_slot h6,
+.media_slot div {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Keep injected advertisements independent from Tailwind Typography */
+.prose .ad-block {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 1rem 0 !important;
+    padding: 0 !important;
+    line-height: normal !important;
+    font-size: initial !important;
+    white-space: normal !important;
+    overflow: visible !important;
+}
+
+.prose .ad-block .media_slot {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    white-space: normal !important;
+}
+
+.prose .ad-block img {
+    margin: 0 !important;
+    max-width: 100% !important;
+}
+
+.prose .ad-block p,
+.prose .ad-block div,
+.prose .ad-block a,
+.prose .ad-block h1,
+.prose .ad-block h2,
+.prose .ad-block h3,
+.prose .ad-block h4,
+.prose .ad-block h5,
+.prose .ad-block h6 {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.ad-block {
+    width: 100%;
+    max-width: 100%;
+    margin: 1rem 0;
+    padding: 0;
+    line-height: normal;
+    font-size: initial;
+}
+
+.ad-block p {
+    margin: 0;
+}
+
+.ad-block img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.ad-block .media_slot {
+    min-height: 0 !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
 }
 
 textarea:not(.comment-textarea) {
