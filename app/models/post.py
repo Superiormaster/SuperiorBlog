@@ -26,6 +26,10 @@ class Post(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey("category.id"), nullable=True)
 
     shares = db.Column(db.Integer, default=0)
+    tribe_url = db.Column(db.String(500), nullable=True)
+    tribe_title = db.Column(db.String(150), nullable=True)
+    tribe_description = db.Column(db.String(500), nullable=True)
+    tribe_button_text = db.Column(db.String(100), nullable=True)
     impressions = db.Column(db.Integer, default=0)
     related_impressions = db.Column(db.Integer, default=0)
     related_clicks = db.Column(db.Integer, default=0)

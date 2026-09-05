@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField, SelectField, BooleanField, FileField, SelectMultipleField, DateTimeField, MultipleFileField, HiddenField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, Regexp, ValidationError
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, Regexp, ValidationError, URL, Length
 from flask_wtf.file import FileAllowed, FileField
 
 def validate_full_name(form, field):
@@ -15,6 +15,38 @@ class LoginForm(FlaskForm):
 
 class PostForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired(message="Title is required")])
+    tribe_url = StringField(
+        "Tribe Conversation URL",
+        validators=[
+            Optional(),
+            URL(),
+            Length(max=500)
+        ]
+    )
+
+    tribe_title = StringField(
+        "Tribe Conversation Title",
+        validators=[
+            Optional(),
+            Length(max=150)
+        ]
+    )
+
+    tribe_description = StringField(
+        "Tribe Conversation Description",
+        validators=[
+            Optional(),
+            Length(max=500)
+        ]
+    )
+
+    tribe_button_text = StringField(
+        "Tribe Button Text",
+        validators=[
+            Optional(),
+            Length(max=100)
+        ]
+    )
     category = SelectField("Category", choices=[], coerce=int, validators=[DataRequired()])
     labels = SelectMultipleField("Labels", choices=[], coerce=int)
     scheduled_at = DateTimeField(

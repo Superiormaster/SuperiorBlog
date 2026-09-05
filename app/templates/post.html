@@ -8,6 +8,10 @@
 {% set location = "sticky_bottom" %}
 {% include "ads/adBlock.html" %}
 
+{% set tribe_title = post.tribe_title %}
+{% set tribe_description = post.tribe_description %}
+{% set tribe_button = post.tribe_button_text %}
+
 <div class="flex-col mt-16 pt-8 flex">
 <article class="shadow-md rounded p-4">
   {% if post.featured_image and post.featured_image not in post.content %}
@@ -19,10 +23,7 @@
   <p class="text-sm text-gray-400 mb-8">
     By <b>{{ post.author.username }}</b>
   </p>
-  <a href="{{ url_for('caption.generate_thread_from_post', post_id=post.id) }}"
-   class="text-blue-500 hover:underline">
-   Generate Social Caption
-  </a>
+
   <div class="prose post-content max-w-3xl w-full mx-auto dark:prose-invert px-1 break-words">
     {{ content_html | safe }}
   </div>
@@ -158,6 +159,125 @@
 
   </section>
 </div>
+
+<div class="mt-6 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+  
+    <!-- Tribe -->
+    {% if post.tribe_url %}
+
+      {% if not tribe_title %}
+        {% if post.category and post.category.name|lower == "sports" %}
+          {% set tribe_title = "Let's talk football" %}
+        {% elif post.category and post.category.name|lower == "politics" %}
+          {% set tribe_title = "What's your take?" %}
+        {% elif post.category and post.category.name|lower == "entertainment" %}
+          {% set tribe_title = "What do you think?" %}
+        {% else %}
+          {% set tribe_title = "Continue the conversation" %}
+        {% endif %}
+      {% endif %}
+    
+      {% if not tribe_description %}
+        {% if post.category and post.category.name|lower == "sports" %}
+          {% set tribe_description =
+            "See what other fans are saying about this story on Tribe."
+          %}
+        {% elif post.category and post.category.name|lower == "politics" %}
+          {% set tribe_description =
+            "Join the conversation and share your perspective with other readers on Tribe."
+          %}
+        {% elif post.category and post.category.name|lower == "entertainment" %}
+          {% set tribe_description =
+            "Join the conversation and see what other readers think on Tribe."
+          %}
+        {% else %}
+          {% set tribe_description =
+            "See what other readers are saying about this story and share your own view on Tribe."
+          %}
+        {% endif %}
+      {% endif %}
+    
+      {% if not tribe_button %}
+        {% set tribe_button = "Join the conversation" %}
+      {% endif %}
+
+      <div class="mt-6 mb-8 rounded-2xl
+                  border border-yellow-500/30
+                  bg-gray-100 dark:bg-gray-800
+                  p-5">
+      
+        <div class="flex items-start gap-3">
+      
+          <div class="text-2xl">
+            💬
+          </div>
+      
+          <div class="flex-1">
+      
+            <h3 class="font-bold text-gray-900 dark:text-white text-lg">
+              {{ post.tribe_title or "Continue the conversation" }}
+            </h3>
+      
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {{ post.tribe_description
+                 or "See what other readers are saying about this story and share your own view on Tribe." }}
+            </p>
+      
+            <a
+              href="{{ post.tribe_url }}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-block mt-4 bg-yellow-500 text-black
+                     font-semibold px-5 py-2 rounded-full
+                     hover:opacity-90 transition"
+            >
+              {{ post.tribe_button_text or "Join the conversation" }}
+            </a>
+      
+          </div>
+      
+        </div>
+      
+      </div>
+      
+    {% endif %}
+  
+    <!-- Caption -->
+    <div class="rounded-2xl border border-gray-700
+                bg-gray-100 dark:bg-gray-800 p-5">
+  
+      <div class="flex items-start gap-3">
+  
+        <div class="text-2xl">
+          ✍️
+        </div>
+  
+        <div class="flex-1">
+  
+          <h3 class="font-bold text-gray-900 dark:text-white text-lg">
+            Share this story
+          </h3>
+  
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Create a social caption from this story.
+          </p>
+  
+          <a
+            href="{{ url_for('caption.generate_thread_from_post', post_id=post.id) }}"
+            class="inline-block mt-4 border border-yellow-500
+                   text-yellow-500 font-semibold px-5 py-2
+                   rounded-full hover:bg-yellow-500
+                   hover:text-black transition"
+          >
+            Generate Caption
+          </a>
+  
+        </div>
+      </div>
+  
+    </div>
+  
+  </div>
 
 {% if related_posts %}
 <aside class="mt-8">

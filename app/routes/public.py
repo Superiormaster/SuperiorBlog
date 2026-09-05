@@ -3,7 +3,7 @@ from collections import OrderedDict
 from app.models import Post, Comment, Like, Subscriber, ContactMessage, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit, FootballCache, PageView, Ad
 import os, traceback, re, base64, requests, secrets, uuid
 from requests.exceptions import ConnectionError
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from sqlalchemy import distinct, func, or_, and_
 from uuid import uuid4
 from collections import defaultdict
@@ -36,6 +36,17 @@ public_bp = Blueprint(
     template_folder="../templates/user"
 )
 
+def validate_tribe_url(url):
+    if not url:
+        return True
+
+    parsed = urlparse(url)
+
+    return (
+        parsed.scheme == "https"
+        and parsed.netloc
+    )
+  
 def track_login(user):
     user.login_count = (user.login_count or 0) + 1
     user.last_login = datetime.now(UTC)
@@ -550,8 +561,13 @@ def user_create_or_edit(id=None):
 
     # Pre-fill form on GET
     if request.method == "GET" and post:
-        form.category.data = post.category_id
-        form.labels.data = [l.id for l in post.labels]
+      form.category.data = post.category_id
+      form.labels.data = [l.id for l in post.labels]
+    
+      form.tribe_url.data = post.tribe_url or ""
+      form.tribe_title.data = post.tribe_title or ""
+      form.tribe_description.data = post.tribe_description or ""
+      form.tribe_button_text.data = post.tribe_button_text or ""
 
     guidelines = rules
 
@@ -591,7 +607,11 @@ def user_create_or_edit(id=None):
                 content_hash=hash_content(content_html),
                 resubmission_count=0,
                 status="draft",
-                is_published=False
+                is_published=False,
+                tribe_url=form.tribe_url.data.strip() if form.tribe_url.data else None,
+                tribe_title=form.tribe_title.data.strip() if form.tribe_title.data else None,
+                tribe_description=form.tribe_description.data.strip() if form.tribe_description.data else None,
+                tribe_button_text=form.tribe_button_text.data.strip() if form.tribe_button_text.data else None,
             )
             db.session.add(post)
         else:
@@ -600,6 +620,29 @@ def user_create_or_edit(id=None):
             post.content = content_html.strip()
             post.featured_image = request.form.get("featured_image")
             post.content_hash = hash_content(content_html)
+            post.tribe_url = (
+                form.tribe_url.data.strip()
+                if form.tribe_url.data
+                else None
+            )
+            
+            post.tribe_title = (
+                form.tribe_title.data.strip()
+                if form.tribe_title.data
+                else None
+            )
+            
+            post.tribe_description = (
+                form.tribe_description.data.strip()
+                if form.tribe_description.data
+                else None
+            )
+            
+            post.tribe_button_text = (
+                form.tribe_button_text.data.strip()
+                if form.tribe_button_text.data
+                else None
+            )
             # Only increment resubmission count if rejected
             if post.status == "rejected":
                 post.resubmission_count = (post.resubmission_count or 0) + 1
@@ -634,65 +677,215 @@ def user_create_or_edit(id=None):
 @login_required
 def save_draft():
     """
-    Saves a draft, automatically sets featured image from first Cloudinary image
-    and keeps database lightweight by only storing URLs.
+    Save or update a draft.
+
+    Handles:
+    - title
+    - content
+    - featured image
+    - category
+    - labels
+    - tags
+    - Tribe conversation fields
     """
-    content_html = request.form.get("content", "").strip()
-    title = request.form.get("title", "").strip() or "Untitled Draft"
-    featured_image = request.form.get("featured_image")
-    category_id = request.form.get("category")
-    label_ids = request.form.getlist("labels[]")
+
+    content_html = (
+        request.form.get("content", "").strip()
+    )
+
+    title = (
+        request.form.get("title", "").strip()
+        or "Untitled Draft"
+    )
+
+    featured_image = (
+        request.form.get("featured_image", "").strip()
+        or None
+    )
+
+    category_id = (
+        request.form.get("category")
+    )
+
+    label_ids = request.form.getlist("labels")
+
+    # Tags
     raw_tags = request.form.get("tags", "")
+
+    # Existing post
     post_id = request.form.get("post_id")
 
-    if not content_html:
-        return jsonify({"status": "ignored"})
+    tribe_url = (
+        request.form.get("tribe_url", "").strip()
+        or None
+    )
 
-    # --- Fetch or create post ---
+    tribe_title = (
+        request.form.get("tribe_title", "").strip()
+        or None
+    )
+
+    tribe_description = (
+        request.form.get(
+            "tribe_description",
+            ""
+        ).strip()
+        or None
+    )
+
+    tribe_button_text = (
+        request.form.get(
+            "tribe_button_text",
+            ""
+        ).strip()
+        or None
+    )
+
+    if not content_html:
+        return jsonify({
+            "status": "ignored"
+        })
+
     if post_id:
+
         post = Post.query.get(post_id)
-        if not post or post.user_id != current_user.id:
-            return jsonify({"status": "forbidden"})
+
+        if not post:
+            return jsonify({
+                "status": "not_found"
+            }), 404
+
+        if post.user_id != current_user.id:
+            return jsonify({
+                "status": "forbidden"
+            }), 403
+
         is_new = False
+
     else:
-        post = Post(user_id=current_user.id)
+
+        post = Post(
+            user_id=current_user.id
+        )
+
+        db.session.add(post)
         is_new = True
 
-    # --- Save content and basic info ---
     post.content = content_html
     post.title = title
     post.featured_image = featured_image
+
     post.status = "draft"
     post.is_published = False
-    post.content_hash = hash_content(content_html)
 
-    # --- Automatically set featured image if missing ---
-    if not post.featured_image and content_html:
-        soup = BeautifulSoup(content_html, "html.parser")
+    post.content_hash = hash_content(
+        content_html
+    )
+
+    post.tribe_url = tribe_url
+    post.tribe_title = tribe_title
+    post.tribe_description = tribe_description
+    post.tribe_button_text = tribe_button_text
+
+    if (
+        not post.featured_image
+        and content_html
+    ):
+        soup = BeautifulSoup(
+            content_html,
+            "html.parser"
+        )
+
         first_img = soup.find("img")
-        if first_img:
-            post.featured_image = first_img.get("src")  # Should be Cloudinary URL
 
-    # --- Assign category ---
+        if first_img:
+            post.featured_image = (
+                first_img.get("src")
+            )
+
     if category_id:
-        category = Category.query.get(category_id)
+
+        category = Category.query.get(
+            category_id
+        )
+
         if category:
             post.category = category
 
-    # --- Assign labels ---
-    label_ids = [int(i) for i in label_ids if i.isdigit()]
-    post.labels = Label.query.filter(Label.id.in_(label_ids)).all()
+    try:
+        label_ids = [
+            int(label_id)
+            for label_id in label_ids
+            if str(label_id).isdigit()
+        ]
 
-    # --- Assign tags ---
-    post.tags = process_tags(raw_tags)
+        post.labels = (
+            Label.query
+            .filter(Label.id.in_(label_ids))
+            .all()
+            if label_ids
+            else []
+        )
 
-    if is_new and not post.slug:
-      post.slug = generate_unique_slug(title) or f"draft-{int(time.time())}"
-      db.session.add(post)
+    except (ValueError, TypeError):
+        post.labels = []
+
+    post.tags = process_tags(
+        raw_tags
+    )
+
+    if is_new:
+
+        post.slug = (
+            generate_unique_slug(title)
+            or f"draft-{int(time.time())}"
+        )
 
     safe_commit()
 
-    return jsonify({"status": "saved", "post_id": post.id})
+    print(
+        "========== DRAFT SAVED =========="
+    )
+
+    print(
+        "Post ID:",
+        post.id
+    )
+
+    print(
+        "Category:",
+        post.category_id
+    )
+
+    print(
+        "Labels:",
+        [label.id for label in post.labels]
+    )
+
+    print(
+        "Tribe URL:",
+        post.tribe_url
+    )
+
+    print(
+        "Tribe Title:",
+        post.tribe_title
+    )
+
+    print(
+        "Tribe Description:",
+        post.tribe_description
+    )
+
+    print(
+        "Tribe Button:",
+        post.tribe_button_text
+    )
+
+    return jsonify({
+        "status": "saved",
+        "post_id": post.id
+    })
 
 @public_bp.route("/post/user/<int:id>/submit", methods=["POST"])
 @login_required
@@ -772,7 +965,7 @@ def submit_user_post(id):
             "danger"
         )
 
-    except Exception:
+    except Exception as e:
         db.session.rollback()
         print("Moderation Exception:", str(e))
         flash("Moderation error. Try again.", "danger")

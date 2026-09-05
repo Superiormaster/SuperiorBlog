@@ -1,123 +1,325 @@
-// autosave.js
+// static/js/editor/autosave.js
 
 import { uploadImagesBeforeSave } from "./media.js";
 
-// -----------------------------
-// Auto-save draft every 10s
-// -----------------------------
+/**
+ * Auto-save draft every 10 seconds after editor changes.
+ *
+ * @param {HTMLElement} editor
+ * @param {HTMLFormElement} form
+ */
 export function initAutoSave(editor, form) {
-  const draftBtn = document.getElementById("draftBtn");
-  let postIdInput = form.querySelector('[name="post_id"]');
+  if (!editor || !form) return;
+
+  const draftBtn =
+    document.getElementById("draftBtn");
+
+  let postIdInput =
+    form.querySelector('[name="post_id"]');
 
   if (!postIdInput) {
-    // Dynamically create hidden post_id input if missing
-    const hidden = document.createElement("input");
-    hidden.type = "hidden";
-    hidden.name = "post_id";
-    form.appendChild(hidden);
-    postIdInput = hidden;
+    postIdInput = document.createElement("input");
+
+    postIdInput.type = "hidden";
+    postIdInput.name = "post_id";
+    postIdInput.value = "";
+
+    form.appendChild(postIdInput);
   }
 
   window.isUploadingImages = false;
 
-  let timer;
+  let timer = null;
 
-  editor.addEventListener("input", () => {
-    clearTimeout(timer);
-    timer = setTimeout(async () => {
-      postIdInput = form.querySelector('[name="post_id"]');
-      const content = editor.innerHTML.trim();
-      if (!content) return;
+  /**
+   * Perform the actual autosave.
+   */
+  async function saveDraftAutomatically() {
+    postIdInput =
+      form.querySelector('[name="post_id"]');
 
-      if (window.isUploadingImages) {
-        console.log("Autosave skipped: images uploading");
-        return;
-      }
+    const content =
+      editor.innerHTML.trim();
 
-      try {
-        // -----------------------------
-        // Upload images first
-        // -----------------------------
-        await uploadImagesBeforeSave(editor, form.querySelector('[name="featured_image"]'));
+    if (!content) {
+      console.log(
+        "Autosave skipped: no content"
+      );
+      return;
+    }
 
-        // -----------------------------
-        // Prepare form data
-        // -----------------------------
-        const updatedContent = editor.innerHTML;
-        postIdInput = form.querySelector('[name="post_id"]');
+    if (window.isUploadingImages) {
+      console.log(
+        "Autosave skipped: images uploading"
+      );
+      return;
+    }
 
-        const data = new FormData(form);
-        data.set("content", updatedContent);
-        data.set("title", form.title?.value || "Untitled Draft");
-        data.set("status", "draft");
-        data.set("post_id", postIdInput.value || "");
+    try {
+      await uploadImagesBeforeSave(
+        editor,
+        form.querySelector(
+          '[name="featured_image"]'
+        )
+      );
 
-        // -----------------------------
-        // Send to backend with credentials
-        // -----------------------------
-        const res = await fetch("/post/draft", {
+      const data = new FormData(form);
+
+      // Always use latest editor content
+      data.set(
+        "content",
+        editor.innerHTML
+      );
+
+      data.set(
+        "title",
+        form.title?.value ||
+        "Untitled Draft"
+      );
+
+      data.set(
+        "status",
+        "draft"
+      );
+
+      data.set(
+        "post_id",
+        postIdInput.value || ""
+      );
+
+      const tribeUrl =
+        form.querySelector(
+          '[name="tribe_url"]'
+        );
+
+      const tribeTitle =
+        form.querySelector(
+          '[name="tribe_title"]'
+        );
+
+      const tribeDescription =
+        form.querySelector(
+          '[name="tribe_description"]'
+        );
+
+      const tribeButton =
+        form.querySelector(
+          '[name="tribe_button_text"]'
+        );
+
+      data.set(
+        "tribe_url",
+        tribeUrl?.value?.trim() || ""
+      );
+
+      data.set(
+        "tribe_title",
+        tribeTitle?.value?.trim() || ""
+      );
+
+      data.set(
+        "tribe_description",
+        tribeDescription?.value?.trim() || ""
+      );
+
+      data.set(
+        "tribe_button_text",
+        tribeButton?.value?.trim() || ""
+      );
+
+      console.log(
+        "========== AUTO SAVE =========="
+      );
+
+      console.log(
+        "Title:",
+        data.get("title")
+      );
+
+      console.log(
+        "Category:",
+        data.get("category")
+      );
+
+      console.log(
+        "Labels:",
+        data.getAll("labels")
+      );
+
+      console.log(
+        "Tribe URL:",
+        data.get("tribe_url")
+      );
+
+      console.log(
+        "Tribe Title:",
+        data.get("tribe_title")
+      );
+
+      console.log(
+        "Tribe Description:",
+        data.get("tribe_description")
+      );
+
+      console.log(
+        "Tribe Button:",
+        data.get("tribe_button_text")
+      );
+
+      console.log(
+        "Post ID:",
+        data.get("post_id")
+      );
+
+      const res = await fetch(
+        "/post/draft",
+        {
           method: "POST",
           body: data,
-          credentials: "same-origin", // ✅ ensure cookies/session are sent
-        });
-
-        if (!res.ok) {
-          console.error("Server returned error", res.status, await res.text());
-          throw new Error(`HTTP error! status: ${res.status}`);
+          credentials: "same-origin"
         }
+      );
 
-        let json;
-        try {
-          json = await res.json();
-        } catch (err) {
-          console.warn("Server did not return JSON, continuing anyway", err);
-          json = {};
-        }
+      if (!res.ok) {
+        const errorText =
+          await res.text();
 
-        // Update post_id if backend returned one
-        if (json.post_id) {
-          postIdInput.value = json.post_id;
-        }
+        console.error(
+          "Server returned:",
+          res.status,
+          errorText
+        );
 
-        // UI feedback
-        if (json.status === "saved" || json.status === "updated") {
-          if (draftBtn) draftBtn.textContent = "Draft Saved ✅";
-          showDraftSavedMessage(`Draft ${json.status} successfully`);
-        } else if (json.status === "ignored") {
-          if (draftBtn) draftBtn.textContent = "Draft";
-          console.log("No content to save, draft ignored");
-        }
-
-      } catch (err) {
-        if (draftBtn) draftBtn.textContent = "Draft ❌";
-        console.error("Auto-draft failed:", err);
-        showDraftSavedMessage("Auto-draft failed", true);
-      } finally {
-        if (draftBtn) {
-          setTimeout(() => {
-            draftBtn.textContent = "Draft";
-            draftBtn.disabled = false;
-          }, 1500);
-        }
+        throw new Error(
+          `HTTP ${res.status}`
+        );
       }
-    }, 10000); // debounce 10s
+
+      const json =
+        await res.json();
+
+      console.log(
+        "Autosave response:",
+        json
+      );
+
+      if (json.post_id) {
+        postIdInput.value =
+          json.post_id;
+      }
+
+      if (
+        json.status === "saved" ||
+        json.status === "updated"
+      ) {
+        if (draftBtn) {
+          draftBtn.textContent =
+            "Draft Saved ✅";
+        }
+
+        showDraftSavedMessage(
+          "Draft saved successfully."
+        );
+      }
+
+    } catch (err) {
+      console.error(
+        "Auto-draft failed:",
+        err
+      );
+
+      if (draftBtn) {
+        draftBtn.textContent =
+          "Draft ❌";
+      }
+
+      showDraftSavedMessage(
+        "Auto-draft failed.",
+        true
+      );
+
+    } finally {
+      if (draftBtn) {
+        setTimeout(() => {
+          draftBtn.textContent =
+            "Save Draft";
+
+          draftBtn.disabled =
+            false;
+        }, 1500);
+      }
+    }
+  }
+
+  editor.addEventListener(
+    "input",
+    () => {
+      clearTimeout(timer);
+
+      timer = setTimeout(
+        saveDraftAutomatically,
+        10000
+      );
+    }
+  );
+
+  [
+    "tribe_url",
+    "tribe_title",
+    "tribe_description",
+    "tribe_button_text"
+  ].forEach((fieldName) => {
+    const field =
+      form.querySelector(
+        `[name="${fieldName}"]`
+      );
+
+    if (!field) return;
+
+    field.addEventListener(
+      "input",
+      () => {
+        clearTimeout(timer);
+
+        timer = setTimeout(
+          saveDraftAutomatically,
+          10000
+        );
+      }
+    );
   });
 }
 
-// -----------------------------
-// Optional: small UI message for auto-draft status
-// -----------------------------
-function showDraftSavedMessage(msg, isError = false) {
-  const flash = document.getElementById("flash-messages");
+
+/**
+ * Display autosave status message.
+ */
+function showDraftSavedMessage(
+  msg,
+  isError = false
+) {
+  const flash =
+    document.getElementById(
+      "flash-messages"
+    );
+
   if (!flash) return;
 
-  const div = document.createElement("div");
-  div.className = `px-4 py-2 rounded mb-2 text-sm transition ${
-    isError ? "bg-red-500/20 text-red-700" : "bg-green-500/20 text-green-700"
-  }`;
+  const div =
+    document.createElement("div");
+
+  div.className =
+    `px-4 py-2 rounded mb-2 text-sm transition ${
+      isError
+        ? "bg-red-500/20 text-red-700"
+        : "bg-green-500/20 text-green-700"
+    }`;
+
   div.textContent = msg;
 
   flash.appendChild(div);
 
-  setTimeout(() => div.remove(), 3000);
+  setTimeout(() => {
+    div.remove();
+  }, 3000);
 }
