@@ -689,9 +689,7 @@ def save_draft():
     - Tribe conversation fields
     """
 
-    content_html = (
-        request.form.get("content", "").strip()
-    )
+    content_html = request.form.get("content", "").strip()
 
     title = (
         request.form.get("title", "").strip()
@@ -703,16 +701,12 @@ def save_draft():
         or None
     )
 
-    category_id = (
-        request.form.get("category")
-    )
+    category_id = request.form.get("category")
 
     label_ids = request.form.getlist("labels")
 
-    # Tags
     raw_tags = request.form.get("tags", "")
 
-    # Existing post
     post_id = request.form.get("post_id")
 
     tribe_url = (
@@ -726,18 +720,12 @@ def save_draft():
     )
 
     tribe_description = (
-        request.form.get(
-            "tribe_description",
-            ""
-        ).strip()
+        request.form.get("tribe_description", "").strip()
         or None
     )
 
     tribe_button_text = (
-        request.form.get(
-            "tribe_button_text",
-            ""
-        ).strip()
+        request.form.get("tribe_button_text", "").strip()
         or None
     )
 
@@ -762,35 +750,51 @@ def save_draft():
 
         is_new = False
 
+        if not post.slug:
+            post.slug = (
+                generate_unique_slug(title)
+                or f"draft-{int(time.time())}"
+            )
+
     else:
 
-        post = Post(
-            user_id=current_user.id
+        slug = (
+            generate_unique_slug(title)
+            or f"draft-{int(time.time())}"
         )
 
+        post = Post(
+            user_id=current_user.id,
+            title=title,
+            slug=slug,
+            status="draft",
+            is_published=False,
+            content=content_html,
+            featured_image=featured_image,
+            content_hash=hash_content(content_html),
+        )
+
+        # Safe to add now because slug already exists.
         db.session.add(post)
+
         is_new = True
 
-    post.content = content_html
     post.title = title
+    post.content = content_html
     post.featured_image = featured_image
 
     post.status = "draft"
     post.is_published = False
 
-    post.content_hash = hash_content(
-        content_html
-    )
+    post.content_hash = hash_content(content_html)
 
     post.tribe_url = tribe_url
     post.tribe_title = tribe_title
     post.tribe_description = tribe_description
     post.tribe_button_text = tribe_button_text
 
-    if (
-        not post.featured_image
-        and content_html
-    ):
+    if not post.featured_image and content_html:
+
         soup = BeautifulSoup(
             content_html,
             "html.parser"
@@ -799,49 +803,64 @@ def save_draft():
         first_img = soup.find("img")
 
         if first_img:
-            post.featured_image = (
-                first_img.get("src")
-            )
-
-    if category_id:
-
-        category = Category.query.get(
-            category_id
-        )
-
-        if category:
-            post.category = category
+            post.featured_image = first_img.get("src")
 
     try:
-        label_ids = [
-            int(label_id)
-            for label_id in label_ids
-            if str(label_id).isdigit()
-        ]
 
-        post.labels = (
-            Label.query
-            .filter(Label.id.in_(label_ids))
-            .all()
-            if label_ids
-            else []
+        with db.session.no_autoflush:
+
+            if category_id:
+
+                category = Category.query.get(
+                    category_id
+                )
+
+                if category:
+                    post.category = category
+
+            try:
+
+                label_ids = [
+                    int(label_id)
+                    for label_id in label_ids
+                    if str(label_id).isdigit()
+                ]
+
+            except (ValueError, TypeError):
+
+                label_ids = []
+
+            post.labels = (
+                Label.query
+                .filter(
+                    Label.id.in_(label_ids)
+                )
+                .all()
+                if label_ids
+                else []
+            )
+
+        post.tags = process_tags(raw_tags)
+
+        safe_commit()
+
+    except Exception as e:
+
+        db.session.rollback()
+
+        print(
+            "========== DRAFT SAVE ERROR =========="
         )
 
-    except (ValueError, TypeError):
-        post.labels = []
-
-    post.tags = process_tags(
-        raw_tags
-    )
-
-    if is_new:
-
-        post.slug = (
-            generate_unique_slug(title)
-            or f"draft-{int(time.time())}"
+        print(
+            "Error:",
+            str(e)
         )
 
-    safe_commit()
+        return jsonify({
+            "status": "error",
+            "message": "Failed to save draft."
+        }), 500
 
     print(
         "========== DRAFT SAVED =========="
@@ -880,6 +899,11 @@ def save_draft():
     print(
         "Tribe Button:",
         post.tribe_button_text
+    )
+
+    print(
+        "Slug:",
+        post.slug
     )
 
     return jsonify({
