@@ -20,7 +20,7 @@ from werkzeug.utils import secure_filename
 from slugify import slugify
 import os
 from datetime import datetime, timedelta
-from app.forms import LoginForm, PostForm, ChangePasswordForm
+from app.forms import LoginForm, PostForm, ChangePasswordForm, AdminTribeForm, RemoveTribeForm
 
 admin_bp = Blueprint(
     "admin",
@@ -121,8 +121,148 @@ def dashboard():
 @admin_bp.route("/admin/post/<int:id>")
 @login_required
 def view_post(id):
+
+    if not current_user.is_admin:
+        flash("Access denied", "danger")
+        return redirect(url_for("public.user_login"))
+
     post = Post.query.get_or_404(id)
-    return render_template("admin/pending.html", post=post)
+
+    tribe_form = AdminTribeForm(
+        data={
+            "tribe_url": post.tribe_url or "",
+            "tribe_title": post.tribe_title or "",
+            "tribe_description": post.tribe_description or "",
+            "tribe_button_text": post.tribe_button_text or "",
+        }
+    )
+
+    remove_tribe_form = RemoveTribeForm()
+
+    return render_template(
+        "admin/pending.html",
+        post=post,
+        tribe_form=tribe_form,
+        remove_tribe_form=remove_tribe_form
+    )
+
+@admin_bp.route("/admin/post/<int:id>/tribe/remove", methods=["POST"])
+@login_required
+def remove_post_tribe(id):
+
+    if not current_user.is_admin:
+        flash("Access denied", "danger")
+        return redirect(url_for("public.user_login"))
+
+    post = Post.query.get_or_404(id)
+
+    form = RemoveTribeForm()
+
+    if form.validate_on_submit():
+
+        post.tribe_url = None
+        post.tribe_title = None
+        post.tribe_description = None
+        post.tribe_button_text = None
+
+        try:
+            safe_commit()
+            flash(
+                "Tribe conversation removed successfully.",
+                "success"
+            )
+
+        except Exception as e:
+            db.session.rollback()
+
+            print(
+                "Remove Tribe error:",
+                str(e)
+            )
+
+            flash(
+                "Failed to remove Tribe conversation.",
+                "danger"
+            )
+
+    return redirect(
+        url_for("admin.view_post", id=post.id)
+    )
+
+@admin_bp.route("/admin/post/<int:id>/tribe", methods=["POST"])
+@login_required
+def update_post_tribe(id):
+
+    if not current_user.is_admin:
+        flash("Access denied", "danger")
+        return redirect(url_for("public.user_login"))
+
+    post = Post.query.get_or_404(id)
+
+    form = AdminTribeForm()
+
+    if form.validate_on_submit():
+
+        post.tribe_url = (
+            form.tribe_url.data.strip()
+            if form.tribe_url.data
+            else None
+        )
+
+        post.tribe_title = (
+            form.tribe_title.data.strip()
+            if form.tribe_title.data
+            else None
+        )
+
+        post.tribe_description = (
+            form.tribe_description.data.strip()
+            if form.tribe_description.data
+            else None
+        )
+
+        post.tribe_button_text = (
+            form.tribe_button_text.data.strip()
+            if form.tribe_button_text.data
+            else None
+        )
+
+        try:
+            safe_commit()
+
+            flash(
+                "Tribe conversation updated successfully.",
+                "success"
+            )
+
+        except Exception as e:
+            db.session.rollback()
+
+            print(
+                "Tribe update error:",
+                str(e)
+            )
+
+            flash(
+                "Failed to update Tribe conversation.",
+                "danger"
+            )
+
+    else:
+
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(
+                    f"{field}: {error}",
+                    "danger"
+                )
+
+    return redirect(
+        url_for(
+            "admin.view_post",
+            id=post.id
+        )
+    )
 
 @admin_bp.route("/post/<int:id>/approve", methods=["POST"])
 @admin_bp.route("/approve/<int:id>", methods=["POST"])

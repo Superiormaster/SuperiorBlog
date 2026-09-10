@@ -101,12 +101,27 @@ def create_daily_campaign():
     """
     Create a Daily Digest campaign.
 
+    Includes only posts published today.
     No emails are sent here.
     """
 
+    now = datetime.utcnow()
+
+    # Start of today
+    start_of_day = datetime(
+        now.year,
+        now.month,
+        now.day
+    )
+
     posts = (
         Post.query
-        .filter_by(is_published=True)
+        .filter(
+            Post.is_published == True,
+            Post.published_at.isnot(None),
+            Post.published_at >= start_of_day,
+            Post.published_at <= now
+        )
         .order_by(Post.published_at.desc())
         .limit(5)
         .all()
@@ -119,11 +134,11 @@ def create_daily_campaign():
         "emails/daily_news.html",
         posts=posts,
         subscriber=None,
-        now=datetime.utcnow()
+        now=now
     )
 
     campaign = create_campaign(
-        name=f"Daily Digest {datetime.utcnow().strftime('%B %d, %Y')}",
+        name=f"Daily Digest {now.strftime('%B %d, %Y')}",
         subject="📰 Superior Daily News",
         html_content=html_content,
         campaign_type="daily",
@@ -131,16 +146,28 @@ def create_daily_campaign():
 
     return campaign
 
+
 def create_weekly_campaign():
     """
     Create a Weekly Digest campaign.
 
+    Includes only posts published within the last 7 days.
     No emails are sent here.
     """
 
+    now = datetime.utcnow()
+
+    # Last 7 days
+    seven_days_ago = now - timedelta(days=7)
+
     posts = (
         Post.query
-        .filter_by(is_published=True)
+        .filter(
+            Post.is_published == True,
+            Post.published_at.isnot(None),
+            Post.published_at >= seven_days_ago,
+            Post.published_at <= now
+        )
         .order_by(Post.published_at.desc())
         .limit(5)
         .all()
@@ -153,11 +180,11 @@ def create_weekly_campaign():
         "emails/weekly_digest.html",
         posts=posts,
         subscriber=None,
-        now=datetime.utcnow(),
+        now=now,
     )
 
     campaign = create_campaign(
-        name=f"Weekly Digest {datetime.utcnow().strftime('%B %d, %Y')}",
+        name=f"Weekly Digest {now.strftime('%B %d, %Y')}",
         subject="📰 Superior Weekly Digest",
         html_content=html_content,
         campaign_type="weekly",
@@ -364,6 +391,7 @@ def send_next_batch(campaign_id):
         
             campaign.sent_count += 1
             campaign.completed_count += 1
+            subscriber.last_email_sent = datetime.utcnow()
         
         else:
         
@@ -520,6 +548,8 @@ def retry_failed_batch(campaign_id):
 
             if campaign.failed_count > 0:
                 campaign.failed_count -= 1
+  
+            subscriber.last_email_sent = datetime.utcnow()
 
         else:
 
@@ -563,11 +593,29 @@ def send_welcome_email(subscriber_email, token):
         email=subscriber_email
     ).first()
 
+    if not subscriber:
+        return False
+
     html_content = render_template(
         "emails/welcome_email.html",
         subscriber=subscriber,
         now=datetime.utcnow()
     )
 
-    success = send_email(subscriber_email, "Welcome to Superior News", html_content)
-    log_email(subscriber_email, "Welcome to Superior News", success, subscriber=subscriber)
+    result = send_email(
+        subscriber_email,
+        "Welcome to Superior News",
+        html_content
+    )
+
+    if result["success"]:
+        subscriber.last_email_sent = datetime.utcnow()
+
+    log_email(
+        subscriber_email,
+        "Welcome to Superior News",
+        result["success"],
+        subscriber=subscriber
+    )
+
+    return result["success"]

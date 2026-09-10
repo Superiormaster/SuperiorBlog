@@ -32,7 +32,7 @@ class PostForm(FlaskForm):
         ]
     )
 
-    tribe_description = StringField(
+    tribe_description = TextAreaField(
         "Tribe Conversation Description",
         validators=[
             Optional(),
@@ -211,3 +211,42 @@ class DeletePostForm(FlaskForm):
 
 class SubmitPostForm(FlaskForm):
     submit = SubmitField("Submit")
+
+class AdminTribeForm(FlaskForm):
+    tribe_url = StringField(
+        "Tribe Conversation URL",
+        validators=[
+            Optional(),
+            URL(message="Please enter a valid Tribe URL."),
+            Length(max=500)
+        ]
+    )
+
+    tribe_title = StringField(
+        "Tribe Conversation Title",
+        validators=[
+            Optional(),
+            Length(max=150)
+        ]
+    )
+
+    tribe_description = TextAreaField(
+        "Tribe Conversation Description",
+        validators=[
+            Optional(),
+            Length(max=500)
+        ]
+    )
+
+    tribe_button_text = StringField(
+        "Tribe Button Text",
+        validators=[
+            Optional(),
+            Length(max=100)
+        ]
+    )
+
+    submit = SubmitField("Save Tribe Conversation")
+
+class RemoveTribeForm(FlaskForm):
+    submit = SubmitField("Remove Tribe Conversation")
