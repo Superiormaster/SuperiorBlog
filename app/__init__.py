@@ -1,4 +1,4 @@
-from flask import Flask, request, url_for, redirect, session, flash, has_request_context, send_from_directory
+from flask import Flask, request, url_for, redirect, session, flash, has_request_context, Response, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
 from app.routes.public import public_bp
