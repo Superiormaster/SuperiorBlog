@@ -66,37 +66,47 @@
         </div>
     </div>
 {% elif ad.location == 'post_mid' %}
-  <div class="ad-block not-prose w-full max-w-none mx-0 h-14
+
+  <div class="ad-block not-prose w-full max-w-none mx-0
+              h-[420px]
               rounded-2xl
               bg-white dark:bg-gray-800
               border border-gray-200 dark:border-gray-700
               shadow-sm
-              transition duration-300">
+              transition duration-300
+              overflow-hidden
+              isolate">
 
-    {% if ad.type in ['adsense', 'monetag'] and ad.html_code %}
+    <!-- Advertisement label -->
+    <div class="text-xs tracking-widest uppercase
+                text-gray-400 dark:text-gray-500
+                text-center py-2
+                h-10
+                shrink-0">
+        Advertisement
+    </div>
 
-        <div class="text-xs pt-2 tracking-widest uppercase
-                    text-gray-400 dark:text-gray-500
-                    text-center py-1">
-            Advertisement
-        </div>
+    {% if ad.type in ['adsense', 'monetag', 'adsterra'] and ad.html_code %}
 
-        <div class="media_slot w-full overflow-visible px-2 text-center">
-            {{ ad.html_code | safe }}
+        <!-- Ad network container -->
+        <div class="media_slot w-full
+                    h-[400px]
+                    overflow-hidden
+                    px-2
+                    text-center">
+
+            <div class="w-full h-full overflow-hidden">
+                {{ ad.html_code | safe }}
+            </div>
+
         </div>
 
     {% else %}
 
         <a href="{{ url_for('ads.ad_click', ad_id=ad.id) }}"
-           class="block group">
+           class="block group h-[380px] overflow-hidden">
 
-            <div class="text-xs tracking-widest uppercase pt-2
-                        text-gray-400 dark:text-gray-500
-                        text-center">
-                Advertisement
-            </div>
-
-            <div class="media_slot w-full text-center">
+            <div class="media_slot w-full h-full text-center overflow-hidden">
 
                 {% if ad.image_url %}
 
@@ -104,7 +114,7 @@
                          loading="lazy"
                          decoding="async"
                          alt="{{ ad.title or 'Advertisement' }}"
-                         class="w-full object-cover rounded-lg
+                         class="w-full h-full object-cover rounded-lg
                                 transition-transform duration-300
                                 group-hover:scale-[1.02]">
 
@@ -119,6 +129,7 @@
                 {% endif %}
 
             </div>
+
         </a>
 
     {% endif %}
