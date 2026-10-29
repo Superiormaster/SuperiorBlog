@@ -1,7 +1,7 @@
 {% extends "user/base.html" %}
 
 {% block title %}
-{{ category.meta_title or category.name ~ " News | ProfNet News" }}
+{{ category.meta_title or category.name ~ " News | Superior News" }}
 {% endblock %}
 
 {% block meta_description %}
@@ -9,326 +9,530 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-col">
-  <h1 class="text-3xl text-center text-gray-900 dark:text-gray-200 font-bold mt-16 py-8">{{ category.name }} News</h1>
-  <form action="{{ url_for('public.search') }}" method="get" class="flex mb-6 mt-4 mx-2">
-    <input
-      type="text"
-      name="q"
-      placeholder="Search news..."
-      class="w-full px-4 py-2 rounded-l flex-1 p-2 border border-[#c89a1a] focus:outline-none rounded-l-lg bg-white text-black
-       dark:bg-gray-800 dark:text-white"
-    >
-    <button class="px-4 rounded-r bg-[#c89a1a] text-white py-2 rounded-r-lg"><i class="fa fa-search" aria-hidden="true"></i></button>
-  </form>
+<div class="min-h-screen text-gray-900 dark:bg-gray-950 dark:text-gray-100">
 
-{% for t in trending_posts %} 
-<aside class="bg-white/5 p-4 rounded-lg">
-  <h3 class="text-xl text-center font-semibold mb-4 bg-red-600 text-white px-2 py-1 uppercase">Trending in {{ category.name }} News</h3>
 
-  <div class="overflow-x-auto flex space-x-4 py-4" id="trending-slider">
-    <div class="min-w-[130px] lg:min-h-[250px] bg-gray-700 p-4 rounded flex-shrink-0">
-      <a href="{{ url_for('public.post_detail', slug=t.slug) }}" class="text-lg font-semibold hover:underline truncate block line-clamp-1 mb-1 w-[8.5rem] leading-[1.5rem] overflow-hidden">
-        {{ t.title }}
-      </a>
-        {% if t.featured_image %}
-        <img
-          src="{{ t.featured_image }}"
-          loading="lazy"
-          decoding="async"
-          class="w-32 h-22 object-cover rounded"
-          alt="{{ t.title }}"
-        >
-        {% else %}
-        <div class="fallback-thumbnail border h-24 w-34 rounded border-gray-800 flex items-center justify-center">
-          <div class="bg-neutral-800 h-22 w-32"></div>
+  <!-- CATEGORY HEADER -->
+  <section class="border-b-4 border-[#c89a1a] bg-gray-100 dark:bg-gray-900">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+
+      <div class="mb-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+        <a href="{{ url_for('public.index') }}"
+           class="transition hover:text-[#c89a1a] dark:hover:text-yellow-500">
+          Home
+        </a>
+
+        <i class="fas fa-chevron-right text-xs" aria-hidden="true"></i>
+
+        <span class="font-medium text-gray-700 dark:text-gray-200">
+          {{ category.name }}
+        </span>
+      </div>
+
+      <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#987000] dark:text-yellow-500">
+            Superior News
+          </p>
+
+          <h1 class="text-3xl font-extrabold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl lg:text-5xl">
+            {{ category.name }} News
+          </h1>
+
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400 sm:text-base">
+            The latest {{ category.name|lower }} news, important developments,
+            analysis and updates from Nigeria and around the world.
+          </p>
         </div>
-        {% endif %}
-      <p class="text-sm text-gray-400 mt-2">{{ t.comments|length }} 💬</p>
-    </div>
-  </div>
-</aside>
-{% endfor %}
 
-<div class="py-6 hidden md:block space-y-4">
-    {% for post in posts.items %}
-    <div class="flex flex-row gap-4 bg-gray-200 dark:bg-gray-800 shadow-md rounded p-4 hover:shadow-lg transition">
-  
-      <!-- Image -->
-      <div class="md:w-1/3 w-full">
-        {% if post.featured_image %}
+        <span class="inline-flex w-fit items-center gap-2 border-l-4 border-[#c89a1a] bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+          <span class="h-2 w-2 rounded-full bg-red-600"></span>
+          Latest Updates
+        </span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SEARCH -->
+  <section class="mx-auto max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
+    <form action="{{ url_for('public.search') }}"
+          method="get"
+          role="search"
+          class="flex w-full max-w-2xl">
+
+      <label for="category-search" class="sr-only">
+        Search Superior News
+      </label>
+
+      <input
+        id="category-search"
+        type="search"
+        name="q"
+        placeholder="Search news, topics and stories..."
+        autocomplete="off"
+        class="min-w-0 flex-1 rounded-l-md border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-500 focus:border-[#c89a1a] focus:ring-2 focus:ring-[#c89a1a]/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500"
+      >
+
+      <button
+        type="submit"
+        aria-label="Search news"
+        class="flex items-center justify-center gap-2 rounded-r-md bg-[#c89a1a] px-5 py-3 font-semibold text-white transition hover:bg-[#a67c00] focus:outline-none focus:ring-2 focus:ring-[#c89a1a] focus:ring-offset-2 dark:focus:ring-offset-gray-950"
+      >
+        <i class="fa fa-search" aria-hidden="true"></i>
+        <span class="hidden sm:inline">Search</span>
+      </button>
+
+    </form>
+  </section>
+
+  <!-- TRENDING STORIES -->
+  {% if trending_posts %}
+  <section class="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8"
+           aria-labelledby="trending-heading">
+
+    <div class="mb-4 flex items-center justify-between border-b-2 border-gray-200 pb-3 dark:border-gray-800">
+      <h2 id="trending-heading"
+          class="flex items-center gap-2 text-xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-2xl">
+        <span class="h-7 w-1.5 bg-red-600"></span>
+        Trending in {{ category.name }}
+      </h2>
+
+      <span class="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
+        Trending
+      </span>
+    </div>
+
+    <div id="trending-slider"
+         class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+      {% for t in trending_posts %}
+      <article class="group flex min-w-0 gap-3 border-b border-gray-200 pb-4 transition dark:border-gray-800 sm:rounded-lg sm:border sm:bg-gray-50 sm:p-3 sm:dark:bg-gray-900">
+
+        <a
+          href="{{ url_for('public.post_detail', slug=t.slug) }}"
+          class="block w-28 flex-shrink-0 overflow-hidden rounded-md bg-gray-200 dark:bg-gray-800 sm:w-32"
+          aria-label="Read {{ t.title }}"
+        >
+          {% if t.featured_image %}
           <img
-            src="{{ post.featured_image }}"
+            src="{{ t.featured_image }}"
             loading="lazy"
             decoding="async"
-            class="w-full h-40 md:h-48 object-cover rounded"
-            alt="{{ post.title }}"
+            class="h-24 w-24 object-cover transition duration-300 group-hover:scale-105 sm:h-28"
+            alt="{{ t.title }}"
           >
-        {% else %}
-          <div class="h-30 md:h-48 w-full rounded bg-neutral-800 flex items-center justify-center text-gray-500">
-            S News
+          {% else %}
+          <div class="flex h-24 w-24 items-center justify-center bg-gray-200 text-xs font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400 sm:h-28">
+            Superior News
           </div>
-        {% endif %}
-      </div>
-  
-      <!-- Content -->
-      <div class="md:w-2/3 w-fit relative">
-  
-        <!-- Labels -->
-        <div class="absolute top-0 left-0 flex gap-1 flex-wrap">
-          {% for label in post.labels %}
-            <span class="bg-red-500 text-xs px-2 py-1 text-white rounded">
-              {{ label.name }}
+          {% endif %}
+        </a>
+
+        <div class="flex min-w-0 flex-1 flex-col justify-between">
+          <div>
+            <span class="mb-1 inline-block text-[10px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
+              {{ category.name }}
             </span>
-          {% endfor %}
-        </div>
-  
-        <h3 class="text-xl md:text-2xl font-semibold text-gray-900
-        dark:text-yellow-600 mt-5 leading-snug line-clamp-2">
-          <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
-             class="text-gray-900 dark:text-yellow-600 hover:underline">
-            {{ post.title }}
-          </a>
-        </h3>
-  
-        <p class="text-gray-500 text-sm">
-          Published on {{ post.created_at.strftime('%B %d, %Y') }}
-        </p>
-  
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          By <b>{{ post.author.username }}</b>
-        </p>
-  
-        <!-- Tags -->
-        <div class="flex gap-2 flex-wrap">
-          {% for tag in post.tags %}
-            <a href="{{ url_for('public.tag', slug=tag.slug) }}"
-               class="text-xs text-yellow-500 bg-gray-800 px-2 py-1 rounded">
-              #{{ tag.name }}
-            </a>
-          {% endfor %}
+
+            <h3 class="line-clamp-3 text-sm font-bold leading-5 text-gray-800 transition group-hover:text-[#987000] dark:text-yellow-600 dark:group-hover:text-yellow-500 sm:text-base">
+              <a href="{{ url_for('public.post_detail', slug=t.slug) }}">
+                {{ t.title }}
+              </a>
+            </h3>
+          </div>
+
+          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            <i class="far fa-comments mr-1" aria-hidden="true"></i>
+            {{ t.comments|length }} comments
+          </p>
         </div>
 
-        <p class="text-gray-500"><i class="fa-regular fa-clock mr-1"></i>{{ post.read_time }} min read</p>
-  
-      </div>
-    </div>
-    {% else %}
-      <p class="text-gray-400 text-center">No {{ category.name }} news yet.</p>
-    {% endfor %}
-  </div>
-  
-  <div class="py-6 md:hidden space-y-5">
-  {% for post in posts.items %}
-  <div class="flex gap-3 bg-gray-200 dark:bg-gray-800 
-              rounded-lg p-3 md:p-4 
-              hover:shadow-lg transition duration-200">
-
-    <!-- Image -->
-    <div class="w-32 md:w-52 flex-shrink-0">
-      {% if post.featured_image %}
-        <img
-          src="{{ post.featured_image }}"
-          loading="lazy"
-          decoding="async"
-          class="w-full h-24 md:h-36 object-cover rounded-md"
-          alt="{{ post.title }}"
-        >
-      {% else %}
-        <div class="w-full h-24 md:h-36 rounded-md 
-                    bg-neutral-800 flex items-center 
-                    justify-center text-gray-400 text-sm">
-          S News
-        </div>
-      {% endif %}
-      <div class="absolute text-gray-900 dark:text-gray-400 top-0 right-0 relative">
-        <span class="text-xs"><i class="fa-regular fa-clock mr-1"></i>{{ post.read_time }} min read</span>
-      </div>
-    </div>
-
-    <!-- Content -->
-    <div class="flex flex-col justify-between flex-1">
-
-      <!-- Labels -->
-      <div class="flex gap-1 flex-wrap mb-1">
-        {% for label in post.labels %}
-          <span class="bg-red-600 text-[10px] md:text-xs 
-                       px-2 py-0.5 text-white rounded">
-            {{ label.name }}
-          </span>
-        {% endfor %}
-      </div>
-
-      <!-- Title -->
-      <h3 class="text-base md:text-xl font-semibold text-gray-900 dark:text-yellow-600
-                 leading-tight line-clamp-2">
-        <a href="{{ url_for('public.post_detail', slug=post.slug) }}"
-           class="text-gray-900 dark:text-yellow-600 hover:underline">
-          {{ post.title }}
-        </a>
-      </h3>
-
-      <!-- Meta -->
-      <div class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">
-        <p>Published on {{ post.created_at.strftime('%B %d, %Y') }}</p>
-        <p>By {{ post.author.username }}</p>
-      </div>
-
-
-      <!-- Tags -->
-      <div class="flex gap-1 flex-wrap mt-2">
-        {% for tag in post.tags %}
-          <a href="{{ url_for('public.tag', slug=tag.slug) }}"
-             class="text-[10px] md:text-xs 
-                    text-yellow-500 bg-gray-800 
-                    px-2 py-0.5 rounded">
-            #{{ tag.name }}
-          </a>
-        {% endfor %}
-      </div>
-
-    </div>
-  </div>
-  {% else %}
-    <p class="text-gray-400 text-center">
-      No {{ category.name }} news yet.
-    </p>
-  {% endfor %}
-</div>
-
-<div class="flex justify-center gap-2 py-6">
-  {% if posts.has_prev %}
-    <a href="{{ url_for('public.category', slug=category.slug, page=posts.prev_num) }}"
-       class="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-900 rounded hover:bg-gray-400 dark:hover:bg-gray-600">
-       Previous
-    </a>
-  {% endif %}
-
-  {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-    {% if page_num %}
-      {% if page_num == posts.page %}
-        <span class="px-4 py-2 bg-[#c89a1a] text-white rounded">{{ page_num }}</span>
-      {% else %}
-        <a href="{{ url_for('public.category', slug=category.slug, page=page_num) }}"
-           class="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-900 rounded hover:bg-gray-400 dark:hover:bg-gray-600">
-           {{ page_num }}
-        </a>
-      {% endif %}
-    {% else %}
-      <span class="px-2">…</span>
-    {% endif %}
-  {% endfor %}
-
-  {% if posts.has_next %}
-    <a href="{{ url_for('public.category', slug=category.slug, page=posts.next_num) }}"
-       class="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-900 rounded hover:bg-gray-400 dark:hover:bg-gray-600">
-       Next
-    </a>
-  {% endif %}
-</div>
-
-<footer class="drawer_footer bg-gray-800 text-gray-300 px-4 py-10">
-
-  <!-- Newsletter -->
-  <div class="p-6 rounded-xl bg-gradient-to-r from-gray-700/20 to-neutral-500/20 border border-yellow-500/20">
-    <h3 class="font-semibold mb-3 text-center">Stay ahead. Get the top stories every morning</h3>
-    <input type="hidden" name="csrf_token" value="...">
-    <form action="{{ url_for('public.subscribe') }}" method="post" class="flex flex-col md:flex-row gap-3">
-      {{ form.hidden_tag() }}
-      {{ form.email(class="form-control flex-1 p-3 rounded-lg bg-white text-black dark:bg-gray-800 dark:text-white w-full border border-[#c89a1a] focus:outline-none", placeholder="Enter your email to stay informed") }}
-      {{ form.submit(class="btn btn-primary px-6 py-3 rounded-lg font-medium text-black bg-[#c89a1a]") }}
-      
-    </form>
-  </div>
-
-  <!-- Footer Links -->
-  <div class="max-w-5xl mx-auto mt-2 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 text-left mb-8">
-    <!-- General Links -->
-    <div class="flex flex-col space-y-2">
-      <h4 class="font-semibold mb-2 text-white">General</h4>
-      <a href="{{ url_for('public.contact', type='contact') }}" class="hover:text-white link-gold">Contact Us</a>
-      <a href="{{ url_for('public.contact', type='feedback') }}" class="hover:text-white link-gold">Write a feedback</a>
-      <a href="{{ url_for('public.contact', type='report') }}" class="hover:text-white link-gold">Report a problem</a>
-      <a href="{{ url_for('public.disclaimer') }}" class="hover:underline hover:text-white link-gold">Disclaimer</a>
-      <a href="{{ url_for('public.about') }}" class="hover:text-white link-gold">About Us</a>
-      <a href="{{ url_for('public.privacy') }}" class="hover:text-white link-gold">Privacy Policy</a>
-      <a href="{{ url_for('public.terms') }}" class="hover:text-white link-gold">Terms & Conditions</a>
-    </div>
-
-    <!-- Categories -->
-    <div class="flex flex-col space-y-2">
-      <h4 class="font-semibold mb-2 text-white">Categories</h4>
-      {% for cat in nav_categories %}
-        <a href="{{ url_for('public.category', slug=cat.slug) }}" class="capitalize btn-primary link-gold btn-danger">
-          {{ cat.name }}
-        </a>
+      </article>
       {% endfor %}
-    </div>
 
-    <div class="flex hidden md:flex flex-col space-y-2">
-      <h4 class="font-semibold text-center mb-2 text-white">Follow Us</h4>
-      <div class="flex space-x-4 justify-center text-xl md:text-2xl">
-        <a href="https://www.facebook.com/share/1MoaNAoJJZ/" target="_blank" class="hover:scale-110 transition">
-          <i class="fab fa-facebook-f text-[#1877F2]"></i>
-        </a>
-        <a href="https://twitter.com/@SMprogra" target="_blank" class="hover:scale-110 transition">
-          <i class="fab fa-x-twitter text-[#1DA1F2]"></i>
-        </a>
-        <a href="https://www.instagram.com/superiormastersdesign" target="_blank" class="hover:scale-110 transition">
-          <i class="fab fa-instagram text-[#E4405F]"></i>
-        </a>
-        <a href="https://youtube.com/@lifootballmoments" target="_blank" class="hover:scale-110 transition">
-          <i class="fab fa-youtube text-[#FF0000]"></i>
-        </a>
-        <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" class="hover:scale-110 transition">
-          <i class="fab fa-linkedin-in text-[#0A66C2]"></i>
-        </a>
-      </div>
     </div>
+  </section>
+  {% endif %}
 
-    <div class="md:flex hidden flex flex-col space-y-2">
-      <h4 class="font-semibold mb-2 text-white">Tools</h4>
-      <a href="{{ url_for('caption.caption_page') }}" class="hover:text-white link-gold">Generate Captions</a>
+  <!-- MAIN CATEGORY CONTENT -->
+  <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
+
+      <!-- MAIN NEWS COLUMN -->
+      <main id="main-content" class="min-w-0 lg:col-span-8">
+
+        <div class="mb-6 flex items-center justify-between border-b-2 border-gray-200 pb-3 dark:border-gray-800">
+          <h2 class="flex items-center gap-2 text-2xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-3xl">
+            <span class="h-8 w-1.5 bg-[#c89a1a]"></span>
+            Latest {{ category.name }} News
+          </h2>
+
+          {% if posts.total is defined %}
+          <span class="hidden text-sm text-gray-500 dark:text-gray-400 sm:inline">
+            {{ posts.total }} stories
+          </span>
+          {% endif %}
+        </div>
+
+        <!-- DESKTOP ARTICLE LIST -->
+        <div class="hidden space-y-0 md:block">
+
+          {% for post in posts.items %}
+          <article class="group grid grid-cols-12 gap-5 border-b border-gray-200 py-6 first:pt-0 dark:border-gray-800">
+
+            <div class="col-span-4">
+              <a
+                href="{{ url_for('public.post_detail', slug=post.slug) }}"
+                class="block overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800"
+                aria-label="Read {{ post.title }}"
+              >
+                {% if post.featured_image %}
+                <img
+                  src="{{ post.featured_image }}"
+                  loading="lazy"
+                  decoding="async"
+                  class="h-40 w-full object-cover transition duration-300 group-hover:scale-[1.03] lg:h-48"
+                  alt="{{ post.title }}"
+                >
+                {% else %}
+                <div class="flex h-40 items-center justify-center bg-gray-200 text-sm font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400 lg:h-48">
+                  Superior News
+                </div>
+                {% endif %}
+              </a>
+            </div>
+
+            <div class="col-span-8 flex min-w-0 flex-col">
+
+              {% if post.labels %}
+              <div class="mb-2 flex flex-wrap gap-2">
+                {% for label in post.labels %}
+                <span class="inline-flex rounded-sm bg-red-600 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                  {{ label.name }}
+                </span>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <h3 class="line-clamp-3 text-lg font-extrabold leading-snug text-gray-800 transition group-hover:text-[#987000] dark:text-yellow-600 dark:group-hover:text-yellow-500 lg:text-xl">
+                <a href="{{ url_for('public.post_detail', slug=post.slug) }}">
+                  {{ post.title }}
+                </a>
+              </h3>
+
+              <div class="mt-3 flex flex-col gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                <span>
+                  Published on {{ post.created_at.strftime('%B %d, %Y') }}
+                </span>
+
+                <span class="hidden text-gray-300 dark:text-gray-700 sm:inline">|</span>
+
+                <span>By {{ post.author.username }}</span>
+
+                <span class="hidden text-gray-300 dark:text-gray-700 sm:inline">|</span>
+
+                <span><i class="far fa-clock mr-1" aria-hidden="true"></i>{{ post.read_time }} min read</span>
+              </div>
+
+              {% if post.tags %}
+              <div class="mt-3 flex flex-wrap gap-2">
+                {% for tag in post.tags %}
+                <a
+                  href="{{ url_for('public.tag', slug=tag.slug) }}"
+                  class="rounded-sm bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 transition hover:bg-[#c89a1a]/20 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-300 dark:hover:text-yellow-500"
+                >
+                  #{{ tag.name }}
+                </a>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+            </div>
+          </article>
+
+          <!-- ADS AFTER EVERY CATEGORY POST -->
+          {% if loop.index % 3 == 0 %}
+          <div class="my-6 w-full space-y-6">
+
+            <!-- Home Mid Ad -->
+            {% set location = "home_mid" %}
+            {% include "ads/adBlock.html" %}
+
+            <!-- Homepage Banner Ad -->
+            {% if homepage_banner_ad %}
+              {% with ad=homepage_banner_ad %}
+                {% include "ads/superiorHomepageBanner.html" %}
+              {% endwith %}
+            {% endif %}
+
+          </div>
+          {% endif %}
+
+          {% else %}
+          <div class="rounded-lg border border-gray-200 bg-gray-50 px-5 py-12 text-center dark:border-gray-800 dark:bg-gray-900">
+            <i class="far fa-newspaper mb-4 text-3xl text-gray-400 dark:text-gray-500" aria-hidden="true"></i>
+
+            <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">
+              No {{ category.name }} news yet
+            </h3>
+
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              New stories will appear here when they are published.
+            </p>
+          </div>
+          {% endfor %}
+
+        </div>
+
+        <!-- MOBILE ARTICLE LIST -->
+        <div class="space-y-0 md:hidden">
+
+          {% for post in posts.items %}
+          <article class="group flex gap-3 border-b border-gray-200 py-5 first:pt-0 dark:border-gray-800">
+
+            <div class="w-28 flex-shrink-0 sm:w-36">
+              <a
+                href="{{ url_for('public.post_detail', slug=post.slug) }}"
+                class="block overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800"
+                aria-label="Read {{ post.title }}"
+              >
+                {% if post.featured_image %}
+                <img
+                  src="{{ post.featured_image }}"
+                  loading="lazy"
+                  decoding="async"
+                  class="h-24 w-24 object-cover transition duration-300 group-hover:scale-105 sm:h-28"
+                  alt="{{ post.title }}"
+                >
+                {% else %}
+                <div class="flex h-24 items-center w-24 justify-center bg-gray-200 text-center text-xs font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400 sm:h-28">
+                  Superior News
+                </div>
+                {% endif %}
+              </a>
+               <p class="text-gray-500 text-xs dark:text-gray-400 mt-1">
+                  <i class="far fa-clock mr-1" aria-hidden="true"></i>
+                  {{ post.read_time }} min read
+              </p>
+            </div>
+
+            <div class="flex min-w-0 flex-1 flex-col">
+
+              {% if post.labels %}
+              <div class="mb-1 flex flex-wrap gap-1">
+                {% for label in post.labels %}
+                <span class="rounded-sm bg-red-600 px-1.5 py-0.5 text-[6px] font-bold uppercase tracking-wide text-white">
+                  {{ label.name }}
+                </span>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <h3 class="line-clamp-2 text-sm font-extrabold leading-5 text-gray-800 transition group-hover:text-[#987000] dark:text-yellow-600 dark:group-hover:text-yellow-500 sm:text-base sm:leading-6">
+                <a href="{{ url_for('public.post_detail', slug=post.slug) }}">
+                  {{ post.title }}
+                </a>
+              </h3>
+
+              <div class="mt-2 space-y-1 text-gray-500 dark:text-gray-400 text-xs">
+                <p>Published on {{ post.created_at.strftime('%B %d, %Y') }}</p>
+                <p>By {{ post.author.username }}</p>
+              </div>
+
+              {% if post.tags %}
+              <div class="mt-2 flex flex-wrap gap-1">
+                {% for tag in post.tags %}
+                <a
+                  href="{{ url_for('public.tag', slug=tag.slug) }}"
+                  class="rounded-sm bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600 transition hover:text-[#987000] dark:bg-gray-800 dark:text-gray-300 dark:hover:text-yellow-500"
+                >
+                  #{{ tag.name }}
+                </a>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+            </div>
+          </article>
+
+          <!-- ADS AFTER EVERY MOBILE CATEGORY POST -->
+          {% if loop.index % 3 == 0 %}
+          <div class="my-5 w-full space-y-5">
+
+            <!-- Home Mid Ad -->
+            {% set location = "home_mid" %}
+            {% include "ads/adBlock.html" %}
+
+            <!-- Homepage Banner Ad -->
+            {% if homepage_banner_ad %}
+              {% with ad=homepage_banner_ad %}
+                {% include "ads/superiorHomepageBanner.html" %}
+              {% endwith %}
+            {% endif %}
+
+          </div>
+          {% endif %}
+
+          {% else %}
+          <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-10 text-center dark:border-gray-800 dark:bg-gray-900">
+            <i class="far fa-newspaper mb-3 text-3xl text-gray-400 dark:text-gray-500" aria-hidden="true"></i>
+
+            <h3 class="font-bold text-gray-900 dark:text-gray-100">
+              No {{ category.name }} news yet
+            </h3>
+
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              Please check back for new stories.
+            </p>
+          </div>
+          {% endfor %}
+
+        </div>
+
+        <!-- PAGINATION -->
+        {% if posts.pages > 1 %}
+        <nav class="mt-8 border-t border-gray-200 pt-6 dark:border-gray-800"
+             aria-label="Category news pagination">
+
+          <div class="flex flex-wrap items-center justify-center gap-2">
+
+            {% if posts.has_prev %}
+            <a
+              href="{{ url_for('public.category', slug=category.slug, page=posts.prev_num) }}"
+              class="inline-flex min-h-10 items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#c89a1a] hover:bg-[#c89a1a]/10 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              <i class="fas fa-chevron-left text-xs" aria-hidden="true"></i>
+              <span>Previous</span>
+            </a>
+            {% endif %}
+
+            {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+              {% if page_num %}
+                {% if page_num == posts.page %}
+                <span
+                  aria-current="page"
+                  class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md bg-[#c89a1a] px-3 py-2 text-sm font-bold text-white"
+                >
+                  {{ page_num }}
+                </span>
+                {% else %}
+                <a
+                  href="{{ url_for('public.category', slug=category.slug, page=page_num) }}"
+                  class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#c89a1a] hover:bg-[#c89a1a]/10 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                >
+                  {{ page_num }}
+                </a>
+                {% endif %}
+              {% else %}
+              <span class="px-1 text-gray-400 dark:text-gray-500" aria-hidden="true">…</span>
+              {% endif %}
+            {% endfor %}
+
+            {% if posts.has_next %}
+            <a
+              href="{{ url_for('public.category', slug=category.slug, page=posts.next_num) }}"
+              class="inline-flex min-h-10 items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#c89a1a] hover:bg-[#c89a1a]/10 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              <span>Next</span>
+              <i class="fas fa-chevron-right text-xs" aria-hidden="true"></i>
+            </a>
+            {% endif %}
+
+          </div>
+
+          <p class="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
+            Page {{ posts.page }} of {{ posts.pages }}
+          </p>
+
+        </nav>
+        {% endif %}
+
+      </main>
+
+      <!-- RIGHT INFORMATION RAIL — NO ADS -->
+      <aside class="min-w-0 lg:col-span-4"
+             aria-label="Additional news information">
+
+        <!-- ABOUT THIS CATEGORY -->
+        <section class="border-t-4 border-[#c89a1a] bg-gray-100 p-5 dark:bg-gray-800">
+          <h2 class="text-lg font-extrabold text-gray-900 dark:text-gray-100">
+            About {{ category.name }}
+          </h2>
+
+          <p class="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-400">
+            Follow Superior News for the latest {{ category.name|lower }} stories,
+            reporting and developments. Visit this page for updates as new
+            articles are published.
+          </p>
+
+          <a
+            href="{{ url_for('public.index') }}"
+            class="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#987000] transition hover:underline dark:text-yellow-500"
+          >
+            Explore all news
+            <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
+          </a>
+        </section>
+
+        <!-- CATEGORY NAVIGATION -->
+        {% if nav_categories %}
+        <section class="mt-6 border border-gray-200 dark:border-gray-800">
+
+          <div class="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+            <h2 class="font-extrabold text-gray-900 dark:text-gray-100">
+              Explore Categories
+            </h2>
+          </div>
+
+          <nav class="divide-y divide-gray-200 dark:divide-gray-800"
+               aria-label="Explore news categories">
+
+            {% for cat in nav_categories %}
+            <a
+              href="{{ url_for('public.category', slug=cat.slug) }}"
+              class="flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-gray-700 transition hover:text-[#987000] dark:text-gray-300 dark:hover:bg-gray-900 dark:hover:text-yellow-500"
+            >
+              <span>{{ cat.name }}</span>
+              <i class="fas fa-chevron-right text-[10px] text-gray-400" aria-hidden="true"></i>
+            </a>
+            {% endfor %}
+
+          </nav>
+        </section>
+        {% endif %}
+
+        <!-- SEARCH PROMPT -->
+        <section class="mt-6 border border-gray-200 p-5 dark:border-gray-800">
+
+          <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#c89a1a]/15 text-[#987000] dark:text-yellow-500">
+            <i class="fas fa-search" aria-hidden="true"></i>
+          </div>
+
+          <h2 class="text-lg font-extrabold text-gray-900 dark:text-gray-100">
+            Find a story
+          </h2>
+
+          <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-400">
+            Looking for a particular topic? Search Superior News for articles
+            and updates.
+          </p>
+
+          <a
+            href="{{ url_for('public.search') }}"
+            class="mt-4 inline-flex items-center gap-2 rounded-md bg-gray-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600"
+          >
+            Search news
+            <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
+          </a>
+
+        </section>
+
+      </aside>
+
     </div>
   </div>
 
-  <div class="max-w-5xl mx-auto grid grid-cols-1 gap-6 text-center md:text-left mb-8">
-    <!-- Optional Extra / Generate Captions -->
-    <div class="md:hidden flex flex-col space-y-2">
-      <h4 class="font-semibold mb-2 text-white">Tools</h4>
-      <a href="{{ url_for('caption.caption_page') }}" class="hover:text-white link-gold">Generate Captions</a>
-    </div>
-
-    <!-- Social Links -->
-    <div class="flex md:hidden flex-col space-y-2">
-      <h4 class="font-semibold text-center mb-2 text-white">Follow Us</h4>
-      <div class="flex space-x-4 justify-center md: text-xl md:text-2xl">
-        <a href="https://www.facebook.com/share/1MoaNAoJJZ/" target="_blank" class="hover:scale-110 transition">
-          <i class="fab fa-facebook-f text-[#1877F2]"></i>
-        </a>
-        <a href="https://twitter.com/@SMprogra" target="_blank" class="hover:scale-110 transition">
-          <i class="fab fa-x-twitter text-[#1DA1F2]"></i>
-        </a>
-        <a href="https://www.instagram.com/superiormastersdesign" target="_blank" class="hover:scale-110 transition">
-          <i class="fab fa-instagram text-[#E4405F]"></i>
-        </a>
-        <a href="https://youtube.com/@lifootballmoments" target="_blank" class="hover:scale-110 transition">
-          <i class="fab fa-youtube text-[#FF0000]"></i>
-        </a>
-        <a href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320" target="_blank" class="hover:scale-110 transition">
-          <i class="fab fa-linkedin-in text-[#0A66C2]"></i>
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Brand & Copyright -->
-  <div class="border-t border-gray-700 pt-6 text-center">
-    <img src="{{ url_for('static', filename='Img/Logo.png') }}" alt="Superior Masters Logo" class="w-12 mx-auto mb-2">
-    <span class="uppercase tracking-wide text-gray-400 block mb-1">SUPERIOR MASTERS INTL</span>
-    <p class="text-gray-500 text-sm md:text-base">© {{ year }} Superior News. All rights reserved.</p>
-  </div>
-</footer>
 </div>
 
 {% endblock %}

@@ -81,38 +81,95 @@
 <body class="bg-white dark:bg-gray-900 w-full duration-700 transition-colors">
 {% set location = "full_page" %}
 {% include "ads/adBlock.html" %}
-<header class="h-16 fixed w-full top-0 flex items-center justify-between border-b shadow-sm px-4 z-30 bg-headerBgDark text-darkText">
-  
-  <!-- Left: Logo -->
-  <div class="flex items-center gap-4">
-    <img src="{{ url_for('static', filename='Img/New.png') }}" class="h-6" alt="Superior icon">
-  </div>
 
-  <!-- Right: Auth & Hamburger -->
-  <div class="flex items-center gap-4">
-      <button id="toggle-dark" class="p-2 rounded-full focus:outline-none bg-gray-200 dark:bg-gray-700 transition-colors">
-        <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-800 dark:text-yellow-300 transition-colors" fill="currentColor" viewBox="0 0 20 20">
-          <path id="icon-path" d="M17.293 13.293a8 8 0 01-10.586-10.586 8 8 0 1010.586 10.586z"/>
-        </svg>
-      </button>
+<header class="fixed left-0 right-0 top-0 border-b border-gray-800 bg-gray-900 text-white shadow-md h-18 w-full shadow-lg z-30">
+    <div class="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:px-6 lg:px-8">
 
-    {% if current_user.is_authenticated %}
-      <a href="{{ url_for('public.user_logout') }}" class="text-sm md:text-xl link-gold border rounded p-1">Logout</a>
-    {% else %}
-      <a href="{{ url_for('public.user_login') }}" class="text-sm md:text-xl link-gold border rounded p-1">Login</a>
-    {% endif %}
+        <!-- Logo and description -->
+        <a href="{{ url_for('public.index') }}"
+           class="flex min-w-0 flex-col items-start justify-center"
+           aria-label="Superior News home">
 
-    <!-- Hamburger menu (mobile) -->
-    <div id="openDrawer" aria-controls="mainDrawer" aria-expanded="false" aria-label="Open menu" class="md:hidden menu-btn cursor-pointer relative z-50 bg-gray-800 px-3 py-2 rounded">
-      <svg class="w-8 h-6" viewBox="0 0 24 24" fill="none">
-        <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+            <img
+                src="{{ url_for('static', filename='Img/New.png') }}"
+                alt="Superior News"
+                class="h-10 w-auto max-w-[180px] object-contain sm:h-12"
+            >
+        </a>
+
+        <!-- Header actions -->
+        <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+
+            <!-- Theme toggle -->
+            <button
+                id="toggle-dark"
+                type="button"
+                aria-label="Toggle page theme"
+                class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-yellow-400 transition hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            >
+                <svg
+                    id="theme-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <path
+                        id="icon-path"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364-.707-.707M6.343 6.343l-.707-.707m12.728 0-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
+                    />
+                </svg>
+            </button>
+
+            <!-- Login / Logout -->
+            {% if current_user.is_authenticated %}
+                <a
+                    href="{{ url_for('public.user_logout') }}"
+                    data-redirect
+                    class="rounded-md border border-yellow-500 bg-yellow-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-yellow-700"
+                >
+                    Logout
+                </a>
+            {% else %}
+                <a
+                    href="{{ url_for('public.user_login') }}"
+                    data-redirect
+                    class="rounded-md border border-yellow-500 bg-yellow-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-yellow-700"
+                >
+                    Login
+                </a>
+            {% endif %}
+
+            <!-- Mobile menu button -->
+            <button
+                id="openDrawer"
+                type="button"
+                aria-controls="mainDrawer"
+                aria-expanded="false"
+                aria-label="Open navigation menu"
+                class="flex h-10 w-10 items-center justify-center rounded-md bg-gray-800 text-white transition hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 md:hidden"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+
+        </div>
     </div>
-  </div>
-
 </header>
-    
-    <main id="mainContent" class="w-full max-w-7xl mx-auto mt-16">
+
+    <main id="mainContent" class="mt-14">
       {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             <div class="fixed top-5 right-5 space-y-2 z-50" id="flash-messages">
@@ -282,5 +339,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
     {% block scripts %}{% endblock %}
+{% include "partials/footer.html" %}
 </body>
 </html>

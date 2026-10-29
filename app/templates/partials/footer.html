@@ -1,0 +1,200 @@
+<footer class="mt-12 bg-gray-900 px-4 py-10 text-gray-300 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-[1440px]">
+        {# NEWSLETTER #}
+
+    <div class="mb-10 rounded-xl border border-yellow-500/20 bg-gray-900 p-5 sm:p-6"><h2 class="mb-3 text-center text-xl font-extrabold text-white">
+        Stay ahead. Get the top stories every morning.
+    </h2>
+    
+    <p class="mb-5 text-center text-sm text-gray-400">
+        Get important news and updates delivered to your inbox.
+    </p>
+    
+    <form
+        action="{{ url_for('public.subscribe') }}"
+        method="POST"
+        class="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row"
+    >
+        {{ newsletter_form.hidden_tag() }}
+    
+        {{ newsletter_form.email(
+            class="min-w-0 flex-1 rounded-lg border border-gray-600 bg-gray-800 px-4 py-3 text-white outline-none placeholder:text-gray-400 focus:border-yellow-500",
+            placeholder="Enter your email to stay informed"
+        ) }}
+    
+        {{ newsletter_form.submit(
+            class="rounded-lg bg-yellow-600 px-6 py-3 font-bold text-gray-950 transition hover:bg-yellow-500"
+        ) }}
+    </form>
+    
+    </div>
+
+    {# FOOTER NAVIGATION #}
+    <div class="grid grid-cols-2 gap-8 border-b border-gray-800 bg-gray-950 pb-10 sm:grid-cols-2 md:grid-cols-4">
+
+        {# GENERAL #}
+        <div class="flex flex-col gap-3">
+
+            <h3 class="mb-1 font-extrabold text-white">
+                General
+            </h3>
+
+            <a href="{{ url_for('public.contact', type='contact') }}"
+               class="text-sm hover:text-yellow-400">
+                Contact Us
+            </a>
+
+            <a href="{{ url_for('public.contact', type='feedback') }}"
+               class="text-sm hover:text-yellow-400">
+                Write Feedback
+            </a>
+
+            <a href="{{ url_for('public.contact', type='report') }}"
+               class="text-sm hover:text-yellow-400">
+                Report a Problem
+            </a>
+
+            <a href="{{ url_for('public.disclaimer') }}"
+               class="text-sm hover:text-yellow-400">
+                Disclaimer
+            </a>
+
+            <a href="{{ url_for('public.about') }}"
+               class="text-sm hover:text-yellow-400">
+                About Us
+            </a>
+
+            <a href="{{ url_for('public.privacy') }}"
+               class="text-sm hover:text-yellow-400">
+                Privacy Policy
+            </a>
+
+            <a href="{{ url_for('public.terms') }}"
+               class="text-sm hover:text-yellow-400">
+                Terms &amp; Conditions
+            </a>
+
+        </div>
+
+        {# CATEGORIES #}
+        <div class="flex flex-col gap-3">
+
+            <h3 class="mb-1 font-extrabold text-white">
+                Categories
+            </h3>
+
+            {% for cat in nav_categories %}
+                <a
+                    href="{{ url_for('public.category', slug=cat.slug) }}"
+                    class="text-sm hover:text-yellow-400"
+                >
+                    {{ cat.name }}
+                </a>
+            {% endfor %}
+
+        </div>
+
+        {# TOOLS #}
+        <div class="flex flex-col gap-3">
+
+            <h3 class="mb-1 font-extrabold text-white">
+                Tools
+            </h3>
+
+            <a
+                href="{{ url_for('caption.caption_page') }}"
+                class="text-sm hover:text-yellow-400"
+            >
+                Generate Captions
+            </a>
+
+        </div>
+
+        {# SOCIAL MEDIA #}
+        <div class="flex flex-col gap-4">
+
+            <h3 class="font-extrabold text-white">
+                Follow Us
+            </h3>
+
+            <div class="flex flex-wrap gap-4 text-xl">
+
+                <a
+                    href="https://www.facebook.com/share/1MoaNAoJJZ/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Facebook"
+                    class="transition hover:scale-110"
+                >
+                    <i class="fab fa-facebook-f text-[#1877F2]"></i>
+                </a>
+
+                <a
+                    href="https://twitter.com/@SMprogra"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="X"
+                    class="transition hover:scale-110"
+                >
+                    <i class="fab fa-x-twitter text-gray-100"></i>
+                </a>
+
+                <a
+                    href="https://www.instagram.com/superiormastersdesign"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                    class="transition hover:scale-110"
+                >
+                    <i class="fab fa-instagram text-[#E4405F]"></i>
+                </a>
+
+                <a
+                    href="https://youtube.com/@lifootballmoments"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="YouTube"
+                    class="transition hover:scale-110"
+                >
+                    <i class="fab fa-youtube text-[#FF0000]"></i>
+                </a>
+
+                <a
+                    href="https://www.linkedin.com/in/ejezie-mary-johnpaul-439825320"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="LinkedIn"
+                    class="transition hover:scale-110"
+                >
+                    <i class="fab fa-linkedin-in text-[#0A66C2]"></i>
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {# BRAND AND COPYRIGHT #}
+    <div class="pt-7 text-center">
+
+        <img
+            src="{{ url_for('static', filename='Img/Logo.png') }}"
+            alt="Superior Masters Logo"
+            class="mx-auto mb-3 h-12 w-12 object-contain"
+            loading="lazy"
+        >
+
+        <span class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-400">
+            SUPERIOR MASTERS INTL
+        </span>
+
+        <p class="text-sm text-gray-500">
+            &copy; {{ year|default(2026) }} Superior News. All rights reserved.
+        </p>
+
+    </div>
+
+</div>
+
+</footer>

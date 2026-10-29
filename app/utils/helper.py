@@ -90,21 +90,3 @@ def get_related_posts(post, limit=5):
     return related
 
 logging.basicConfig(level=logging.INFO)
-
-def publish_scheduled_posts(app):
-  with app.app_context():
-    now = datetime.utcnow()
-
-    posts = Post.query.filter(
-        Post.status == "scheduled",
-        Post.scheduled_at <= now
-    ).all()
-
-    for post in posts:
-        post.status = "published"
-        post.is_published = True
-        post.published_at = now
-        logging.info(f"Post {post.id} published at {now}")
-
-    if posts:
-        db.session.commit()

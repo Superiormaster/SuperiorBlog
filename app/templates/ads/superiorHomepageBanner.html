@@ -1,0 +1,189 @@
+{% if homepage_banner_context %}
+    {% set ad = homepage_banner_context.ad %}
+    {% set media = ad.media[0] if ad.media else none %}
+
+    {% if media %}
+    <div
+        class="superior-ad-block superior-homepage-ad not-prose
+           relative isolate my-4
+           h-[250px] w-full
+           overflow-hidden rounded-xl
+           border border-gray-200
+           bg-white shadow-sm
+           dark:border-gray-700 dark:bg-gray-800
+           sm:h-[280px]
+           lg:max-w-2xl lg:h-[300px]"
+        id="superior-homepage-ad-{{ ad.campaign_id }}"
+        data-campaign-id="{{ ad.campaign_id }}"
+        data-impression-url="{{ homepage_banner_context.impression_url }}"
+        data-impression-event-id="{{ homepage_banner_context.impression_event_id }}"
+        data-publisher="{{ homepage_banner_context.publisher }}"
+        data-placement="{{ homepage_banner_context.placement }}"
+    >
+
+        <!-- Fixed-height advertisement label -->
+        <div
+            class="flex h-[30px] w-full shrink-0
+               items-center justify-center
+               text-center text-[10px] uppercase tracking-widest
+               text-gray-500 dark:text-gray-400"
+        >
+            Advertisement
+        </div>
+
+        <!-- Fixed-height media area -->
+        <div
+            class="relative h-[220px] w-full overflow-hidden
+               sm:h-[250px]
+               lg:h-[270px]"
+        >
+
+            {% if media.media_type in ['image', 'gif'] %}
+
+                <a
+                    href="{{ homepage_banner_context.click_url }}"
+                    target="_blank"
+                    rel="sponsored nofollow noopener noreferrer"
+                    aria-label="Visit advertiser website"
+                    class="absolute inset-0 flex h-full w-full
+                     items-center justify-center overflow-hidden p-2"
+                >
+                    <img
+                        src="{{ media.url }}"
+                        alt="{{ ad.name or 'Advertisement' }}"
+                        loading="lazy"
+                        decoding="async"
+                        class="block h-full w-full object-cover object-center"
+                    >
+                </a>
+
+            {% elif media.media_type == 'video' %}
+
+                <div
+                    class="absolute inset-0
+                           flex h-full w-full
+                           items-center justify-center
+                           overflow-hidden bg-black"
+                >
+                    <video
+                        controls
+                        muted
+                        preload="none"
+                        playsinline
+                        class="block h-full w-full
+                               max-h-full max-w-full
+                               object-contain object-center"
+                    >
+                        <source
+                            src="{{ media.url }}"
+                            type="{{ media.content_type or 'video/mp4' }}"
+                        >
+                        Your browser does not support this video.
+                    </video>
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+    {% endif %}
+{% endif %}
+
+<script>
+(function () {
+    "use strict";
+
+    const adId = {{ (
+        "superior-homepage-ad-" ~
+        homepage_banner_context.ad.campaign_id
+    ) | tojson if homepage_banner_context else "null" }};
+
+    if (!adId) return;
+
+    const ad = document.getElementById(adId);
+
+    if (!ad || ad.dataset.trackingInitialized === "true") return;
+
+    ad.dataset.trackingInitialized = "true";
+
+    const campaignId = Number(ad.dataset.campaignId);
+    const impressionUrl = ad.dataset.impressionUrl;
+    const eventId = ad.dataset.impressionEventId;
+    const publisher = ad.dataset.publisher;
+    const placement = ad.dataset.placement;
+
+    if (
+        !Number.isInteger(campaignId) ||
+        campaignId <= 0 ||
+        !impressionUrl ||
+        !eventId ||
+        !publisher ||
+        !placement
+    ) {
+        return;
+    }
+
+    let sent = false;
+    let timer = null;
+
+    function stopTimer() {
+        if (timer !== null) {
+            clearTimeout(timer);
+            timer = null;
+        }
+    }
+
+    function sendImpression() {
+        if (sent || document.visibilityState === "hidden") return;
+
+        sent = true;
+        stopTimer();
+
+        fetch(impressionUrl, {
+            method: "POST",
+            mode: "cors",
+            credentials: "omit",
+            keepalive: true,
+            headers: {
+                "Content-Type": "text/plain;charset=UTF-8"
+            },
+            body: JSON.stringify({
+                campaign_id: campaignId,
+                event_id: eventId,
+                publisher: publisher,
+                placement: placement
+            })
+        }).catch(function () {});
+    }
+
+    if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                const visible =
+                    entry.isIntersecting &&
+                    entry.intersectionRatio >= 0.5 &&
+                    document.visibilityState !== "hidden";
+
+                if (visible) {
+                    if (timer === null && !sent) {
+                        timer = setTimeout(sendImpression, 1000);
+                    }
+                } else {
+                    stopTimer();
+                }
+            });
+        }, {
+            threshold: [0, 0.5, 1]
+        });
+
+        observer.observe(ad);
+
+        document.addEventListener("visibilitychange", function () {
+            if (document.visibilityState === "hidden") {
+                stopTimer();
+            }
+        });
+    }
+})();
+</script>

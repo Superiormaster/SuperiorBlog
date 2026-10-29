@@ -17,7 +17,6 @@ def send_email(to, subject, html_content, text_content=None, cc=None, bcc=None):
 
     url = "https://api.brevo.com/v3/smtp/email"
     api_key = current_app.config.get("BREVO_API_KEY")
-    print(api_key[:10] + "..." if api_key else "No key loaded")
     sender_email = current_app.config.get("DEFAULT_EMAIL_SENDER")
     session = requests.Session()
 

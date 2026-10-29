@@ -15,6 +15,7 @@ from app.forms import UserLoginForm
 import os, pytz
 from app.utils.db_helpers import safe_commit
 from app.utils.AdService import get_active_ads
+from app.forms import SubscribeForm
 from datetime import datetime, UTC, date
 
 migrate = Migrate()
@@ -94,6 +95,12 @@ def create_app():
     @app.context_processor
     def inject_year():
         return {'year': datetime.now().year}
+
+    @app.context_processor
+    def inject_newsletter_form():
+        return {
+            "newsletter_form": SubscribeForm()
+        }
 
     @app.template_filter("localtime")
     def localtime_filter(utc_dt):

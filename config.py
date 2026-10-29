@@ -44,6 +44,23 @@ class Config:
     CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
     REDIRECT_URI = os.getenv("REDIRECT_URI")
 
+    # Superior Ads central advertising API
+    SUPERIOR_ADS_BASE_URL = os.getenv(
+        "SUPERIOR_ADS_BASE_URL",
+        "http://127.0.0.1:5001",
+    ).rstrip("/")
+    SUPERIOR_ADS_PUBLIC_URL = os.getenv(
+        "SUPERIOR_ADS_PUBLIC_URL",
+        "http://localhost:5173",
+    ).rstrip("/")
+    
+    SUPERIOR_ADS_ENABLED = (
+        os.getenv("SUPERIOR_ADS_ENABLED", "false").lower()
+        in {"1", "true", "yes"}
+    )
+
+    SUPERIOR_ADS_TIMEOUT = 3
+
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
     api_key=os.getenv("CLOUDINARY_API_KEY"),

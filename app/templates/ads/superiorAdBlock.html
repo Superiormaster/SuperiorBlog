@@ -1,0 +1,311 @@
+{% if ad %}
+{% set media = ad.media[0] if ad.media else none %}
+
+<div
+    class="ad-block superior-ad-block not-prose relative isolate mx-0
+           h-[420px] w-full max-w-none overflow-hidden
+           rounded-2xl border border-gray-200
+           bg-white shadow-sm transition duration-300
+           dark:border-gray-700 dark:bg-gray-800"
+    id="superior-ad-{{ ad_instance_id }}"
+    data-superior-campaign-id="{{ ad.campaign_id }}"
+    data-campaign-id="{{ ad.campaign_id }}"
+    data-impression-url="{{ ad.tracking.impression_url }}"
+    data-impression-event-id="{{ ad.tracking.impression_event_id }}"
+    data-publisher="{{ publisher }}"
+    data-placement="{{ placement }}"
+>
+    <!-- Advertisement label -->
+    <div
+        class="flex h-10 shrink-0 items-center justify-center
+               text-center text-xs uppercase tracking-widest
+               text-gray-500 dark:text-gray-400"
+    >
+        Advertisement
+    </div>
+
+    <!-- Fixed-height content area -->
+    <div class="flex h-[380px] flex-col overflow-hidden">
+
+        {% if media and media.media_type in ['image', 'gif'] %}
+
+            <!-- Image / GIF advertisement -->
+            <a
+                href="{{ ad.tracking.click_url }}"
+                target="_blank"
+                rel="sponsored nofollow noopener noreferrer"
+                class="flex min-h-0 flex-1 flex-col overflow-hidden"
+                aria-label="Visit advertiser website"
+            >
+                <div
+                    class="flex min-h-0 flex-1 items-center justify-center
+                           overflow-hidden px-3"
+                >
+                    <img
+                        src="{{ media.url }}"
+                        alt="{{ ad.name or 'Advertisement' }}"
+                        loading="lazy"
+                        decoding="async"
+                        class="block max-h-full max-w-full object-contain"
+                    >
+                </div>
+            </a>
+
+        {% elif media and media.media_type == 'video' %}
+
+            <!-- Video advertisement -->
+            <div
+                class="flex min-h-0 flex-1 flex-col overflow-hidden"
+            >
+                <div
+                    class="flex min-h-0 flex-1 items-center
+                           justify-center overflow-hidden bg-black"
+                >
+                    <video
+                        controls
+                        preload="none"
+                        playsinline
+                        poster="{{ media.thumbnail_url or '' }}"
+                        class="block max-h-full max-w-full object-contain"
+                    >
+                        <source
+                            src="{{ media.url }}"
+                            type="{{ media.content_type or 'video/mp4' }}"
+                        >
+                        Your browser does not support this video.
+                    </video>
+                </div>
+
+                <div
+                    class="shrink-0 px-4 py-3 text-center"
+                >
+
+                    <a
+                        href="{{ ad.tracking.click_url }}"
+                        target="_blank"
+                        rel="sponsored nofollow noopener noreferrer"
+                        class="mt-2 inline-block text-sm font-semibold
+                               text-indigo-600 underline
+                               dark:text-indigo-400"
+                    >
+                        Visit advertiser
+                    </a>
+                </div>
+            </div>
+
+        {% else %}
+
+            <!-- Text-only advertisement -->
+            <a
+                href="{{ ad.tracking.click_url }}"
+                target="_blank"
+                rel="sponsored nofollow noopener noreferrer"
+                class="flex h-full flex-col items-center
+                       justify-center overflow-y-auto p-6 text-center"
+            >
+                <h3
+                    class="text-lg font-semibold
+                           text-gray-900 dark:text-white"
+                >
+                    {{ ad.name or 'Sponsored' }}
+                </h3>
+
+                {% if ad.description %}
+                    <p
+                        class="mt-3 text-sm leading-6
+                               text-gray-600 dark:text-gray-300"
+                    >
+                        {{ ad.description }}
+                    </p>
+                {% endif %}
+
+                <span
+                    class="mt-4 inline-block text-sm font-semibold
+                           text-indigo-600 underline
+                           dark:text-indigo-400"
+                >
+                    Learn more
+                </span>
+            </a>
+
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    const adId = {{ ("superior-ad-" ~ ad_instance_id) | tojson }};
+    const ad = document.getElementById(adId);
+
+    if (!ad || ad.dataset.trackingInitialized === "true") {
+        return;
+    }
+
+    ad.dataset.trackingInitialized = "true";
+
+    const campaignId = Number(ad.dataset.campaignId);
+    const impressionUrl = ad.dataset.impressionUrl;
+    const eventId = ad.dataset.impressionEventId;
+    const publisher = ad.dataset.publisher;
+    const placement = ad.dataset.placement;
+
+    if (
+        !Number.isInteger(campaignId) ||
+        campaignId <= 0 ||
+        !impressionUrl ||
+        !eventId ||
+        !publisher ||
+        !placement
+    ) {
+        console.warn(
+            "[Superior Ads] Missing tracking information:",
+            campaignId
+        );
+        return;
+    }
+
+    let impressionSent = false;
+    let visibilityTimer = null;
+
+    function stopVisibilityTimer() {
+        if (visibilityTimer !== null) {
+            clearTimeout(visibilityTimer);
+            visibilityTimer = null;
+        }
+    }
+
+    function sendImpression() {
+        if (impressionSent || document.visibilityState === "hidden") {
+            return;
+        }
+
+        impressionSent = true;
+        stopVisibilityTimer();
+
+        const payload = {
+            campaign_id: campaignId,
+            event_id: eventId,
+            publisher: publisher,
+            placement: placement
+        };
+
+        fetch(impressionUrl, {
+            method: "POST",
+            mode: "cors",
+            credentials: "omit",
+            keepalive: true,
+            headers: {
+                "Content-Type": "text/plain;charset=UTF-8"
+            },
+            body: JSON.stringify(payload)
+        }).then(function (response) {
+            if (!response.ok) {
+                console.warn(
+                    "[Superior Ads] Impression rejected:",
+                    campaignId,
+                    response.status
+                );
+            }
+        }).catch(function (error) {
+            console.warn(
+                "[Superior Ads] Impression request failed:",
+                error
+            );
+        });
+    }
+
+    if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver(
+            function (entries) {
+                for (const entry of entries) {
+                    const visible =
+                        entry.isIntersecting &&
+                        entry.intersectionRatio >= 0.5 &&
+                        document.visibilityState !== "hidden";
+
+                    if (visible) {
+                        if (visibilityTimer === null && !impressionSent) {
+                            visibilityTimer = setTimeout(
+                                sendImpression,
+                                1000
+                            );
+                        }
+                    } else {
+                        stopVisibilityTimer();
+                    }
+                }
+            },
+            {
+                threshold: [0, 0.5, 1]
+            }
+        );
+
+        observer.observe(ad);
+
+        document.addEventListener(
+            "visibilitychange",
+            function () {
+                if (document.visibilityState === "hidden") {
+                    stopVisibilityTimer();
+                }
+            }
+        );
+    } else {
+        // Fallback for browsers without IntersectionObserver.
+        function checkVisibility() {
+            if (
+                impressionSent ||
+                document.visibilityState === "hidden"
+            ) {
+                return;
+            }
+
+            const rect = ad.getBoundingClientRect();
+
+            const visibleHeight = Math.max(
+                0,
+                Math.min(rect.bottom, window.innerHeight) -
+                Math.max(rect.top, 0)
+            );
+
+            const visibleRatio =
+                rect.height > 0
+                    ? visibleHeight / rect.height
+                    : 0;
+
+            if (visibleRatio >= 0.5) {
+                if (visibilityTimer === null) {
+                    visibilityTimer = setTimeout(
+                        sendImpression,
+                        1000
+                    );
+                }
+            } else {
+                stopVisibilityTimer();
+            }
+        }
+
+        window.addEventListener(
+            "scroll",
+            checkVisibility,
+            { passive: true }
+        );
+
+        window.addEventListener(
+            "resize",
+            checkVisibility
+        );
+
+        document.addEventListener(
+            "visibilitychange",
+            checkVisibility
+        );
+
+        checkVisibility();
+    }
+})();
+</script>
+{% endif %}

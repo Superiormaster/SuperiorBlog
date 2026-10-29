@@ -1,0 +1,99 @@
+{% if sidebar_context %}
+{% set ad = sidebar_context.ad %}
+{% set media = ad.media[0] if ad.media else none %}
+
+{% if media and media.media_type in ["image", "gif"] %}
+<aside class="superior-sidebar-ad mb-5 w-72 fixed right-0 top-24 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900"
+       data-campaign-id="{{ ad.campaign_id }}"
+       data-impression-url="{{ sidebar_context.impression_url }}"
+       data-impression-event-id="{{ sidebar_context.impression_event_id }}"
+       data-publisher="{{ sidebar_context.publisher }}"
+       data-placement="{{ sidebar_context.placement }}">
+
+    <div class="px-3 py-2">
+        <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Sponsored
+        </span>
+    </div>
+
+    <a href="{{ sidebar_context.click_url }}"
+       target="_blank"
+       rel="sponsored nofollow noopener noreferrer"
+       aria-label="View sponsored advertisement"
+       class="block">
+
+        <img
+            src="{{ media.url }}"
+            alt="{{ ad.name or 'Sponsored advertisement' }}"
+            class="block aspect-[1/2] w-full bg-gray-100 object-contain dark:bg-gray-800"
+            loading="lazy"
+            decoding="async">
+    </a>
+</aside>
+
+<script>
+(function () {
+    const container = document.currentScript.previousElementSibling;
+
+    if (!container || container.dataset.impressionInitialized) return;
+    container.dataset.impressionInitialized = "true";
+
+    let sent = false;
+    let visibleSince = null;
+
+    function sendImpression() {
+        if (sent) return;
+        sent = true;
+
+        const payload = {
+            campaign_id: container.dataset.campaignId,
+            event_id: container.dataset.impressionEventId,
+            publisher: container.dataset.publisher,
+            placement: container.dataset.placement
+        };
+
+        fetch(container.dataset.impressionUrl, {
+            method: "POST",
+            mode: "cors",
+            headers: {
+                "Content-Type": "text/plain;charset=UTF-8"
+            },
+            body: JSON.stringify(payload),
+            keepalive: true
+        }).catch(function () {});
+    }
+
+    if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+                    if (visibleSince === null) {
+                        visibleSince = Date.now();
+                    }
+
+                    if (Date.now() - visibleSince >= 1000) {
+                        sendImpression();
+                        observer.disconnect();
+                    } else {
+                        setTimeout(function () {
+                            if (
+                                visibleSince !== null &&
+                                Date.now() - visibleSince >= 1000
+                            ) {
+                                sendImpression();
+                                observer.disconnect();
+                            }
+                        }, 1050);
+                    }
+                } else {
+                    visibleSince = null;
+                }
+            });
+        }, { threshold: [0.5] });
+
+        observer.observe(container);
+    }
+})();
+</script>
+{% endif %}
+{% endif %}

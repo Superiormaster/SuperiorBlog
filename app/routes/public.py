@@ -4,6 +4,10 @@ from app.models import Post, Comment, Like, Subscriber, ContactMessage, Reply, C
 import os, traceback, re, base64, requests, secrets, uuid
 from requests.exceptions import ConnectionError
 from urllib.parse import quote, urlparse
+from app.services.superior_ads import (
+    get_superior_ad,
+    make_ad_tracking_context,
+)
 from sqlalchemy import distinct, func, or_, and_
 from uuid import uuid4
 from collections import defaultdict
@@ -15,7 +19,7 @@ from app.moderation.rules import CATEGORY_RULES
 from app.moderation.spam import is_spam
 from app.moderation.grammar import grammar_score
 from app.moderation.duplicate import hash_content
-from app.utils.helper import process_tags, get_related_posts, publish_scheduled_posts
+from app.utils.helper import process_tags, get_related_posts
 from app.utils.cloudinary_helper import upload_image_file
 from app.utils.adInjector import inject_inpost_content
 from app.utils.email import send_email
@@ -1209,7 +1213,7 @@ def user_logout():
 def index():
     form = SubscribeForm()
     three_days_ago = datetime.utcnow() - timedelta(days=3)
-    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+    fourteen_days_ago = datetime.utcnow() - timedelta(days=14)
     six_hours_ago = datetime.utcnow() - timedelta(hours=6)
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     twelve_hours_ago = datetime.utcnow() - timedelta(hours=12)
@@ -1259,7 +1263,7 @@ def index():
     posts_query = Post.query.filter(
         Post.is_published == True,
         Post.status == "published",
-        Post.created_at >= seven_days_ago
+        Post.created_at >= fourteen_days_ago
     )
     
     # Exclude latest posts only if they exist
@@ -1319,16 +1323,6 @@ def index():
 
     breaking_posts = [p for p in breaking_posts if p is not None]
 
-    # Get cached data
-    live = FootballCache.query.filter_by(data_type="live", league="PL").first()
-    table = FootballCache.query.filter_by(data_type="table", league="PL").first()
-
-    live_matches = live.json_data if live else []
-
-    league_table = []
-    if table and isinstance(table.json_data, list) and len(table.json_data) > 0:
-        league_table = table.json_data[0].get("table", [])
-
     popular_tags = (
         Tag.query
         .join(post_tags)
@@ -1339,8 +1333,33 @@ def index():
         .limit(10)
         .all()
     )
+  
+    homepage_banner_ad = get_superior_ad(
+        placement="homepage_banner",
+    )
+    
+    sidebar_ad = get_superior_ad(
+        placement="sidebar",
+    )
+    
+    homepage_banner_context = None
+    sidebar_context = None
+    
+    if homepage_banner_ad:
+        homepage_banner_context = make_ad_tracking_context(
+            homepage_banner_ad,
+            publisher="superior-news",
+            placement="homepage_banner",
+        )
+    
+    if sidebar_ad:
+        sidebar_context = make_ad_tracking_context(
+            sidebar_ad,
+            publisher="superior-news",
+            placement="sidebar",
+        )
 
-    return render_template("homepage.html", posts=posts, popular_posts=popular_posts, popular_tags=popular_tags, latest_posts=latest_posts, category_sections=today_categories, breaking_posts=breaking_posts, Post=Post, live_matches=live_matches, league_table=league_table, form=form)
+    return render_template("homepage.html", posts=posts, popular_posts=popular_posts, popular_tags=popular_tags, latest_posts=latest_posts, category_sections=today_categories, homepage_banner_ad=homepage_banner_ad, sidebar_ad=sidebar_ad, homepage_banner_context=homepage_banner_context, sidebar_context=sidebar_context, breaking_posts=breaking_posts, Post=Post, form=form)
 
 @public_bp.route("/post/<slug>", endpoint='post_detail')
 def post_detail(slug):
@@ -1411,9 +1430,10 @@ def post_detail(slug):
         section_title = "Trending in This Category"
     else:
         section_title = "Related Stories"
-    
+  
     content_html = inject_inpost_content(
         post.content,
+        category=post.category.name if post.category else None,
     )
 
     if not safe_commit():
@@ -1603,7 +1623,33 @@ def category(slug):
     )
 
     comment_count = func.count(Comment.id)
-    
+
+    homepage_banner_ad = get_superior_ad(
+        placement="homepage_banner",
+    )
+
+    sidebar_ad = get_superior_ad(
+        placement="sidebar",
+    )
+
+    homepage_banner_context = (
+        make_ad_tracking_context(
+            homepage_banner_ad,
+            placement="homepage_banner",
+        )
+        if homepage_banner_ad
+        else None
+    )
+
+    sidebar_context = (
+        make_ad_tracking_context(
+            sidebar_ad,
+            placement="sidebar",
+        )
+        if sidebar_ad
+        else None
+    )
+
     trending_posts = (
         Post.query
         .filter(
@@ -1628,6 +1674,7 @@ def category(slug):
         category=category,
         posts=posts,
         form=form,
+        homepage_banner_ad=homepage_banner_ad, sidebar_ad=sidebar_ad, homepage_banner_context=homepage_banner_context, sidebar_context=sidebar_context,
         trending_posts=trending_posts
     )
 

@@ -1396,16 +1396,29 @@ def search_tags():
     ])
 
 @admin_bp.route("/delete/<int:id>", methods=["POST"])
-@login_required
 @csrf.exempt
+@login_required
 def delete(id):
+    if not current_user.is_admin:
+        flash("Access denied", "danger")
+        return redirect(url_for("public.user_login"))
+
     post = Post.query.get_or_404(id)
 
-    db.session.delete(post)
-    if not safe_commit():
-        print("Failed to delete post")
+    try:
+        db.session.delete(post)
 
-    flash("Post deleted", "success")
+        if not safe_commit():
+            db.session.rollback()
+            flash("Failed to delete post.", "danger")
+        else:
+            flash("Post deleted successfully.", "success")
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Failed to delete post")
+        flash("An error occurred while deleting the post.", "danger")
+
     return redirect(url_for("admin.dashboard"))
 
 @admin_bp.route("/logout")

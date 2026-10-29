@@ -140,7 +140,19 @@
               </form>
             </div>
             {% elif post.status == 'draft' %}
-            <span class="text-xs text-gray-500 text-right">Saved as draft</span>
+
+            <div class="flex flex-col gap-2">
+                <span class="text-xs text-gray-500 text-right">Saved as draft</span><form action="{{ url_for('admin.delete', id=post.id) }}"
+                  method="POST"
+                  onsubmit="return confirm('Are you sure you want to permanently delete this draft? This action cannot be undone.')">
+            
+                <button type="submit"
+                        class="w-full rounded bg-red-600 hover:bg-red-700 text-white py-2 text-sm">
+                    Delete Draft
+                </button>
+            </form>
+            
+            </div>
             {% elif post.status == 'rejected'%}
             <span class="text-sm text-gray-400">
             {{ post.rejection_reason or 'Reviewed' }}
@@ -212,7 +224,19 @@
       </form>
     </div>
     {% elif post.status == 'draft' %}
-    <span class="text-xs text-gray-500 text-right">Saved as draft</span>
+
+    <div class="flex flex-col gap-2">
+        <span class="text-xs text-gray-500">Saved as draft</span><form action="{{ url_for('admin.delete', id=post.id) }}"
+          method="POST"
+          onsubmit="return confirm('Are you sure you want to permanently delete this draft? This action cannot be undone.')">
+    
+        <button type="submit"
+                class="w-full rounded bg-red-600 hover:bg-red-700 text-white py-2 text-sm">
+            Delete Draft
+        </button>
+    </form>
+    
+    </div>
     {% elif post.status in ['rejected', 'published'] %}
     <span class="text-sm text-gray-400">
     {{ post.rejection_reason or 'Reviewed' }}
