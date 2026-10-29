@@ -273,7 +273,7 @@
             </div>
 
 
-            <div class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
+            <div class="grid grid-cols-1 gap-x-5 gap-y-6 space-y-3 sm:grid-cols-2 xl:grid-cols-3">
 
                 {% for post in latest_posts %}
 
@@ -307,7 +307,7 @@
                         <a
                             data-redirect
                             href="{{ url_for('public.post_detail', slug=post.slug) }}"
-                            class="group-hover:text-[#987000] dark:text-yellow-600 dark:group-hover:text-yellow-500 underline-offset-4 hover:underline"
+                            class="line-clamp-2 text-sm font-extrabold leading-5 text-gray-800 transition sm:text-base sm:leading-6 group-hover:text-[#987000] dark:text-yellow-600 dark:group-hover:text-yellow-500 underline-offset-4 hover:underline"
                         >
                             {{ post.title }}
                         </a>
@@ -429,7 +429,7 @@
                             <a
                                 data-redirect
                                 href="{{ url_for('public.post_detail', slug=post.slug) }}"
-                                class=" group-hover:text-[#987000] dark:text-yellow-600 dark:group-hover:text-yellow-500 underline-offset-4 hover:underline"
+                                class="line-clamp-2 text-sm font-extrabold leading-5 text-gray-800 transition sm:text-base sm:leading-6 group-hover:text-[#987000] dark:text-yellow-600 dark:group-hover:text-yellow-500 underline-offset-4 hover:underline"
                             >
                                 {{ post.title }}
                             </a>
@@ -569,7 +569,7 @@
                             <a
                                 data-redirect
                                 href="{{ url_for('public.post_detail', slug=post.slug) }}"
-                                class="decoration-red-700 group-hover:text-[#987000] dark:text-yellow-600 dark:group-hover:text-yellow-500 underline-offset-4 hover:underline"
+                                class="line-clamp-2 text-sm leading-5 sm:text-base sm:leading-6 decoration-red-700 group-hover:text-[#987000] dark:text-yellow-600 dark:group-hover:text-yellow-500 underline-offset-4 hover:underline"
                             >
                                 {{ post.title }}
                             </a>
@@ -681,10 +681,10 @@
 
                         {% endif %}
 
-                        <p class="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
-                            <i class="fa-regular fa-clock mr-1" aria-hidden="true"></i>
-                            {{ post.read_time }} min read
-                        </p>
+                       <p class="text-gray-500 text-xs dark:text-gray-400 mt-1">
+                          <i class="far fa-clock mr-1" aria-hidden="true"></i>
+                          {{ post.read_time }} min read
+                      </p>
 
                     </div>
 
@@ -713,7 +713,7 @@
                             <a
                                 data-redirect
                                 href="{{ url_for('public.post_detail', slug=post.slug) }}"
-                                class="decoration-red-700 group-hover:text-[#987000] dark:text-yellow-600 dark:group-hover:text-yellow-500 underline-offset-4 hover:underline"
+                                class="line-clamp-2 text-sm font-extrabold leading-5 text-gray-800 transition sm:text-base sm:leading-6 decoration-red-700 group-hover:text-[#987000] dark:text-yellow-600 dark:group-hover:text-yellow-500 underline-offset-4 hover:underline"
                             >
                                 {{ post.title }}
                             </a>
