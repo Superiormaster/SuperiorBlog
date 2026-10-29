@@ -1,56 +1,200 @@
 {% extends "user/base.html" %}
-{% block title %}Search{% endblock %}
+
+{% block title %}
+{% if query %}Search: {{ query }} | Superior News{% else %}Search News | Superior News{% endif %}
+{% endblock %}
+
+{% block meta_description %}
+Search Superior News for the latest Nigerian and world news, politics, business, sports, entertainment and analysis.
+{% endblock %}
 
 {% block content %}
 
-<div class="max-w-4xl mx-auto px-4 mt-16">
+<div class="min-h-screen text-gray-900 dark:text-gray-100">  <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+<!-- PAGE HEADER --><header class="mb-6 border-b border-gray-200 pb-6 dark:border-gray-800">
+  <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#987000] dark:text-yellow-500">
+    Superior News
+  </p>  <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
+    Search News
+  </h1>  <p class="mt-12 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400 sm:text-base">
+    Find the latest news, important developments and analysis from Nigeria and around the world.
+  </p>
+</header><!-- SEARCH BAR: BELOW THE DESCRIPTION --><section class="mb-8 mt-1" aria-label="Search news">
+  <form
+    action="{{ url_for('public.search') }}"
+    method="get"
+    role="search"
+    class="flex w-full max-w-3xl"
+  >
+    <label for="search-query" class="sr-only">
+      Search news, topics and stories
+    </label><input
+  id="search-query"
+  type="search"
+  name="q"
+  value="{{ query }}"
+  placeholder="Search news, topics and stories..."
+  autocomplete="off"
+  required
+  class="min-w-0 flex-1 rounded-l-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-500 focus:border-[#c89a1a] focus:ring-2 focus:ring-[#c89a1a]/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500"
+>
 
-  <!-- Heading -->
-  <div class="mb-10 text-center">
-    <h2 class="text-3xl font-bold dark:text-white">
-      Search results
+<button
+  type="submit"
+  class="inline-flex flex-shrink-0 items-center justify-center gap-2 rounded-r-lg bg-[#c89a1a] px-4 py-3.5 text-sm font-bold text-white transition hover:bg-[#a67c00] focus:outline-none focus:ring-2 focus:ring-[#c89a1a] focus:ring-offset-2 dark:focus:ring-offset-gray-950 sm:px-6"
+>
+  <i class="fas fa-search" aria-hidden="true"></i>
+  <span class="hidden sm:inline">Search</span>
+</button>
+
+  </form>
+</section>
+
+<!-- SEARCH RESULTS HEADING -->
+{% if query %}
+<div class="mb-6 mt-16 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-4 dark:border-gray-800">
+  <div>
+    <h2 class="text-xl font-extrabold sm:text-2xl">
+      Search Results
     </h2>
-    {% if query %}
-      <p class="text-gray-500 dark:text-gray-400 mt-2">
-        {{ results|length }} result{{ 's' if results|length != 1 else '' }} for 
-        <span class="font-semibold text-indigo-600 dark:text-indigo-400">"{{ query }}"</span>
-      </p>
-    {% endif %}
-  </div>
 
-  <!-- Results -->
-  <div class="space-y-6">
-
-    {% for post in results %}
-    <article class="p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-sm hover:shadow-md transition duration-300 border border-gray-100 dark:border-gray-800">
-
-      <a href="{{ url_for('public.post_detail', slug=post.slug) }}" class="block">
-
-        <h3 class="text-2xl font-semibold text-gray-800 dark:text-yellow-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition">
-          {{ post.title }}
-        </h3>
-
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
-          {{ post.created_at.strftime('%B %d, %Y') }}
-        </p>
-
-      </a>
-    </article>
-
-    {% else %}
-
-    <!-- Empty State -->
-    <div class="text-center py-16">
-      <div class="text-6xl mb-4">🔍</div>
-      <h3 class="text-xl font-semibold dark:text-white">No results found</h3>
-      <p class="text-gray-500 dark:text-gray-400 mt-2">
-        Try using different keywords.
-      </p>
-    </div>
-
-    {% endfor %}
-
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+      {{ results|length }}
+      result{{ 's' if results|length != 1 else '' }}
+      for
+      <span class="break-words font-semibold text-gray-800 dark:text-gray-200">
+        "{{ query }}"
+      </span>
+    </p>
   </div>
 </div>
+{% endif %}
 
-{% endblock %}
+<!-- RESULTS GRID -->
+{% if results %}
+
+<div class="grid grid-cols-1 space-y-3 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+
+  {% for post in results %}
+  <article class="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
+
+    <!-- FEATURED IMAGE -->
+    <a
+      href="{{ url_for('public.post_detail', slug=post.slug) }}"
+      class="block overflow-hidden bg-gray-100 dark:bg-gray-800"
+      aria-label="Read {{ post.title }}"
+    >
+      {% if post.featured_image %}
+      <img
+        src="{{ post.featured_image }}"
+        alt="{{ post.title }}"
+        loading="lazy"
+        decoding="async"
+        class="h-48 w-full object-cover transition duration-300 group-hover:scale-[1.03] sm:h-52"
+      >
+      {% else %}
+      <div class="flex h-48 w-full items-center justify-center bg-gray-200 text-sm font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400 sm:h-52">
+        <span>
+          <i class="far fa-newspaper mr-2" aria-hidden="true"></i>
+          Superior News
+        </span>
+      </div>
+      {% endif %}
+    </a>
+
+    <!-- ARTICLE DETAILS -->
+    <div class="flex flex-1 flex-col p-4 sm:p-5">
+
+      {% if post.category %}
+      <a
+        href="{{ url_for('public.category', slug=post.category.slug) }}"
+        class="mb-2 inline-block w-fit text-xs font-bold uppercase tracking-wider text-[#987000] hover:underline dark:text-yellow-500"
+      >
+        {{ post.category.name }}
+      </a>
+      {% endif %}
+
+      <!-- CLAMPED HEADLINE -->
+      <h3 class="line-clamp-3 text-lg font-extrabold leading-snug text-gray-900 transition group-hover:text-[#987000] dark:text-gray-100 dark:group-hover:text-yellow-500 sm:text-xl">
+        <a href="{{ url_for('public.post_detail', slug=post.slug) }}">
+          {{ post.title }}
+        </a>
+      </h3>
+
+      <!-- DATE AND READ TIME -->
+      <div class="mt-auto flex flex-col gap-x-3 gap-y-2 pt-4 text-xs text-gray-500 dark:text-gray-400">
+        <span>
+          <i class="far fa-calendar-alt mr-1" aria-hidden="true"></i>
+          {{ post.created_at.strftime('%b %d, %Y') }}
+        </span>
+
+        {% if post.read_time %}
+        <span>
+          <i class="far fa-clock mr-1" aria-hidden="true"></i>
+          {{ post.read_time }} min read
+        </span>
+        {% endif %}
+      </div>
+
+      <!-- READ MORE -->
+      <a
+        href="{{ url_for('public.post_detail', slug=post.slug) }}"
+        class="mt-4 inline-flex w-fit items-center gap-2 text-sm font-bold text-[#987000] transition hover:gap-3 dark:text-yellow-500"
+      >
+        Read story
+        <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
+      </a>
+
+    </div>
+  </article>
+  {% endfor %}
+
+</div>
+
+{% elif query %}
+
+<!-- NO RESULTS -->
+<section class="rounded-xl border border-gray-200 bg-white px-5 py-14 text-center dark:border-gray-800 dark:bg-gray-900">
+  <div class="mb-5 text-5xl text-gray-400 dark:text-gray-500">
+    <i class="fas fa-search" aria-hidden="true"></i>
+  </div>
+
+  <h2 class="text-xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-2xl">
+    No results found
+  </h2>
+
+  <p class="mx-auto mt-3 max-w-md text-sm leading-6 text-gray-600 dark:text-gray-400">
+    We couldn't find published stories matching "{{ query }}".
+    Try a different keyword or a shorter search phrase.
+  </p>
+
+  <a
+    href="{{ url_for('public.search') }}"
+    class="mt-6 inline-flex items-center gap-2 rounded-md bg-[#c89a1a] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#a67c00]"
+  >
+    <i class="fas fa-search" aria-hidden="true"></i>
+    New Search
+  </a>
+</section>
+
+{% else %}
+
+<!-- INITIAL SEARCH STATE -->
+<section class="rounded-xl border border-gray-200 bg-white px-5 py-14 text-center dark:border-gray-800 dark:bg-gray-900">
+  <div class="mb-5 text-5xl text-gray-400 dark:text-gray-500">
+    <i class="far fa-newspaper" aria-hidden="true"></i>
+  </div>
+
+  <h2 class="text-xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-2xl">
+    Find the stories that matter
+  </h2>
+
+  <p class="mx-auto mt-3 max-w-md text-sm leading-6 text-gray-600 dark:text-gray-400">
+    Enter a keyword, person, organisation or topic in the search box above to find published news on Superior News.
+  </p>
+</section>
+
+{% endif %}
+
+  </div>
+</div>{% endblock %}

@@ -1619,7 +1619,7 @@ def category(slug):
         category.posts
         .filter_by(is_published=True)
         .order_by(Post.created_at.desc())
-        .paginate(page=page, per_page=10, error_out=False)
+        .paginate(page=page, per_page=15, error_out=False)
     )
 
     comment_count = func.count(Comment.id)
