@@ -6,6 +6,7 @@ from flask_login import (
     login_user, logout_user,
     login_required, current_user
 )
+from app.extensions import cache
 from markupsafe import escape, Markup
 from sqlalchemy import or_, func, cast, Integer
 from app.utils.db_helpers import safe_commit
@@ -14,6 +15,7 @@ from app.utils.email import send_email
 from app.models import Post, AppSettings, User, ContactMessage, Repost, Subscriber, DigestDraft, Ad, XPost, BreakingNews, Tag, Comment, PageView, EmailCampaign, CampaignRecipient
 from app.extensions import db, csrf
 from werkzeug.security import check_password_hash, generate_password_hash
+from app.utils.admin_analytics_cache import get_admin_analytics
 from app.utils.admin_email import *
 from app.utils.analytics import analytics_block, get_range, percentage_growth, safe_list, active_users_by_day, active_users, track_login
 from werkzeug.utils import secure_filename
@@ -86,36 +88,45 @@ def dashboard():
     if not current_user.is_admin:
         flash("Access denied", "danger")
         return redirect(url_for("public.user_login"))
-  
-    page = request.args.get("page", 1, type=int)
-    q = request.args.get("q", "").strip()
+
+    page = max(request.args.get("page", 1, type=int), 1)
+    query_text = request.args.get("q", "").strip()[:150]
     status = request.args.get("status", "all").lower()
 
-    # Start query with all posts
     query = Post.query
 
-    # Search by title if query provided
-    if q:
-        query = query.filter(Post.title.ilike(f"%{q}%"))
+    if query_text:
+        query = query.filter(
+            Post.title.ilike(f"%{query_text}%")
+        )
 
-    # Filter by status if not "all"
-    if status == "published":
-        query = query.filter_by(status="published")
-    elif status == "draft":
-        query = query.filter_by(status="draft")
-    elif status == "pending":
-        query = query.filter_by(status="pending")
-    elif status == "rejected":
-        query = query.filter_by(status="rejected")
+    allowed_statuses = {
+        "published",
+        "draft",
+        "pending",
+        "rejected",
+    }
 
-    # Order by newest first
-    posts = query.order_by(Post.created_at.desc()).paginate(page=page, per_page=10)
+    if status in allowed_statuses:
+        query = query.filter(Post.status == status)
+    else:
+        status = "all"
+
+    posts = (
+        query
+        .order_by(Post.created_at.desc())
+        .paginate(
+            page=page,
+            per_page=10,
+            error_out=False,
+        )
+    )
 
     return render_template(
         "admin/dashboard.html",
         posts=posts,
-        q=q,
-        status=status
+        q=query_text,
+        status=status,
     )
 
 @admin_bp.route("/admin/post/<int:id>")
@@ -269,6 +280,10 @@ def update_post_tribe(id):
 @login_required
 @csrf.exempt
 def approve_post(id):
+    if not current_user.is_admin:
+        flash("Access denied", "danger")
+        return redirect(url_for("public.user_login"))
+  
     post = Post.query.get_or_404(id)
 
     post.status = "published"
@@ -276,8 +291,6 @@ def approve_post(id):
     post.rejection_reason = None
     post.published_at = datetime.utcnow()
     post.is_locked = True
-
-    post.author.rejected_posts = (post.author.rejected_posts or 0) + 1
 
     if not safe_commit():
         print("Failed to approve post")
@@ -292,6 +305,10 @@ def approve_post(id):
 @login_required
 @csrf.exempt
 def reject_post(id):
+    if not current_user.is_admin:
+        flash("Access denied", "danger")
+        return redirect(url_for("public.user_login"))
+  
     post = Post.query.get_or_404(id)
     reason = request.form.get("reason", "No reason provided")
 
@@ -308,29 +325,54 @@ def reject_post(id):
     next_page = request.referrer or url_for("admin.dashboard")
     return redirect(next_page)
 
+def get_page(default=1):
+    return max(
+        request.args.get("page", default, type=int) or default,
+        1,
+    )
+
 @admin_bp.route("/admin/subscribers")
 @login_required
 def list_subscribers():
-    page = request.args.get("page", 1, type=int)
-    per_page = 25
+    if not current_user.is_admin:
+        flash("Access denied", "danger")
+        return redirect(url_for("public.user_login"))
+
+    page = get_page()
 
     pagination = (
         Subscriber.query
         .order_by(Subscriber.created_at.desc())
-        .paginate(page=page, per_page=per_page, error_out=False)
+        .paginate(
+            page=page,
+            per_page=25,
+            error_out=False,
+        )
     )
 
-    total_subscribers=Subscriber.query.count()
-    active_subscribers = Subscriber.query.filter_by(is_active=True).count()
-    unsubscribed = Subscriber.query.filter_by(is_active=False).count()
+    counts = db.session.query(
+        func.count(Subscriber.id).label("total"),
+        func.sum(
+            db.case(
+                (Subscriber.is_active.is_(True), 1),
+                else_=0,
+            )
+        ).label("active"),
+        func.sum(
+            db.case(
+                (Subscriber.is_active.is_(False), 1),
+                else_=0,
+            )
+        ).label("inactive"),
+    ).one()
 
     return render_template(
         "admin/subscribers.html",
         subscribers=pagination.items,
         pagination=pagination,
-        total_subscribers=total_subscribers,
-        active_subscribers=active_subscribers,
-        unsubscribed=unsubscribed,
+        total_subscribers=counts.total or 0,
+        active_subscribers=counts.active or 0,
+        unsubscribed=counts.inactive or 0,
     )
 
 @admin_bp.route('/admin/subscriber/<int:id>/toggle-digest', methods=['POST'])
@@ -352,11 +394,28 @@ def resend_welcome(id):
     flash("Welcome email resent")
     return redirect(url_for('admin.list_subscribers'))
 
-@admin_bp.route('/admin/drafts')
+@admin_bp.route("/admin/drafts")
 @login_required
 def list_drafts():
-    drafts = DigestDraft.query.order_by(DigestDraft.id.desc()).all()
-    return render_template('admin/drafts.html', drafts=drafts)
+    if not current_user.is_admin:
+        flash("Access denied", "danger")
+        return redirect(url_for("public.user_login"))
+
+    pagination = (
+        DigestDraft.query
+        .order_by(DigestDraft.id.desc())
+        .paginate(
+            page=get_page(),
+            per_page=20,
+            error_out=False,
+        )
+    )
+
+    return render_template(
+        "admin/drafts.html",
+        drafts=pagination.items,
+        pagination=pagination,
+    )
 
 @admin_bp.route('/admin/draft/preview/<int:id>') 
 @login_required 
@@ -634,18 +693,34 @@ def campaign_details(id):
 
         number = batch.batch_number
 
-        recipients = (
-            CampaignRecipient.query
+        total, sent, failed = (
+            db.session.query(
+                func.count(CampaignRecipient.id),
+                func.coalesce(
+                    func.sum(
+                        db.case(
+                            (CampaignRecipient.status == "sent", 1),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ),
+                func.coalesce(
+                    func.sum(
+                        db.case(
+                            (CampaignRecipient.status == "failed", 1),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ),
+            )
             .filter_by(
                 campaign_id=id,
-                batch_number=number
+                batch_number=number,
             )
-            .all()
+            .one()
         )
-
-        total = len(recipients)
-        sent = sum(r.status == "sent" for r in recipients)
-        failed = sum(r.status == "failed" for r in recipients)
 
         if total == 0:
             status = "pending"
@@ -806,6 +881,20 @@ def email_logs():
     if email_search:
         query = query.filter(EmailLog.email.ilike(f"%{email_search}%"))
 
+    try:
+        start_date_obj = (
+            datetime.strptime(start_date, "%Y-%m-%d")
+            if start_date else None
+        )
+    
+        end_date_obj = (
+            datetime.strptime(end_date, "%Y-%m-%d")
+            if end_date else None
+        )
+    except ValueError:
+        flash("Invalid date filter.", "danger")
+        return redirect(url_for("admin.email_logs"))
+
     # Filter by date range
     if start_date:
         start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
@@ -815,7 +904,15 @@ def email_logs():
         end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
         query = query.filter(EmailLog.created_at <= end_date_obj)
 
-    logs = EmailLog.query.order_by(EmailLog.created_at.desc()).paginate(page=page, per_page=20)
+    logs = (
+        query
+        .order_by(EmailLog.created_at.desc())
+        .paginate(
+            page=get_page(),
+            per_page=20,
+            error_out=False,
+        )
+    )
 
     return render_template("admin/email_logs.html", logs=logs,
         subject=subject,
@@ -888,358 +985,32 @@ def view_message(id):
 @admin_bp.route("/analytics")
 @login_required
 def analytics():
-    try:
-        range_days = int(request.args.get("range", 7))
-    except (TypeError, ValueError):
+    if not current_user.is_admin:
+        flash("Access denied", "danger")
+        return redirect(url_for("public.user_login"))
+
+    allowed_ranges = {7, 30, 90}
+
+    range_days = request.args.get("range", 7, type=int)
+
+    if range_days not in allowed_ranges:
         range_days = 7
 
-    growth_defaults = 0
-    # -----------------------------
-    # BASIC COUNTS
-    # -----------------------------
-    #total_posts = Post.query.count()
-    total_posts, total_posts_growth = analytics_block(
-        Post, Post.created_at, range_days
-    )
-    
-    # TOTAL REGISTERED USERS
-    total_registered_users = User.query.count()
-    now = datetime.utcnow()
+    data = get_admin_analytics(range_days)
 
-    current_users = User.query.filter(
-        User.created_at >= now - timedelta(days=range_days)
-    ).count()
-    
-    previous_users = User.query.filter(
-        User.created_at.between(
-            now - timedelta(days=range_days * 2),
-            now - timedelta(days=range_days)
-        )
-    ).count()
-    
-    total_registered_users_growth = percentage_growth(
-        current_users,
-        previous_users
-    )
-    
-    #-----------------------------
-    # FOR FUTURE CALCULATION
-    #-----------------------------
-    total_time_on_page = db.session.query(
-        func.coalesce(func.sum(PageView.read_time) / 60.0, 0)
-    ).filter(
-        PageView.created_at >= datetime.utcnow() - timedelta(days=range_days)
-    ).scalar()
-    
-    total_unique_sessions = db.session.query(
-        func.count(func.distinct(PageView.session_id))
-    ).filter(
-        PageView.created_at >= datetime.utcnow() - timedelta(days=range_days)
-    ).scalar() or 0
-    
-    avg_time_per_session = ( total_time_on_page / total_unique_sessions
-      if total_unique_sessions > 0 else 0
-    )
-    
-    # TOTAL DELETED ACCOUNTS
-    total_deleted_accounts = User.query.filter_by(is_deleted=True).count()
-
-    total_caption_users = XPost.query.distinct(XPost.user_id).count()
-
-    #-----------------------------
-    # AVG POSTS AND AVG CAPTIONS
-    #-----------------------------
-    total_users = User.query.count()
-
-    total_avg_posts = round(
-        Post.query.count() / total_users, 2
-    ) if total_users else 0
-    
-    total_avg_caption = round(
-        XPost.query.count() / total_users, 2
-    ) if total_users else 0
-    
-    total_avg_posts_growth = growth_defaults
-    total_avg_caption_growth = growth_defaults
-
-    posts = Post.query.all()
-    total_likes = sum(p.likes.count() for p in posts)
-    total_replies = Comment.query.count()
-    total_repost = Repost.query.count()
-
-    #-----------------------------
-    # DAU, MAU AND WAU INDUSTRIAL CALCULATION
-    #-----------------------------
-    now = datetime.utcnow()
-    dau_labels, dau_values = active_users_by_day(7)
-
-    DAU = db.session.query(
-        func.count(func.distinct(User.id))
-    ).filter(User.last_login >= now - timedelta(days=1)).scalar() or 0
-    
-    WAU = db.session.query(
-        func.count(func.distinct(User.id))
-    ).filter(User.last_login >= now - timedelta(days=7)).scalar() or 0
-    
-    MAU = db.session.query(
-        func.count(func.distinct(User.id))
-    ).filter(User.last_login >= now - timedelta(days=30)).scalar() or 0
-    DAU_prev = db.session.query(
-        func.count(func.distinct(User.id))
-    ).filter(
-        User.last_login.between(
-            now - timedelta(days=2),
-            now - timedelta(days=1)
-        )
-    ).scalar() or 0
-    WAU_prev = db.session.query(
-        func.count(func.distinct(User.id))
-    ).filter(
-        User.last_login.between(
-            now - timedelta(days=14),
-            now - timedelta(days=7)
-        )
-    ).scalar() or 0
-    
-    MAU_prev = db.session.query(
-        func.count(func.distinct(User.id))
-    ).filter(
-        User.last_login.between(
-            now - timedelta(days=60),
-            now - timedelta(days=30)
-        )
-    ).scalar() or 0
-    
-    DAU_growth = percentage_growth(DAU, DAU_prev)
-    WAU_growth = percentage_growth(WAU, WAU_prev)
-    MAU_growth = percentage_growth(MAU, MAU_prev)
-
-    # -----------------------------
-    # VIEWS & ENGAGEMENT
-    # -----------------------------
-    total_views = db.session.query(
-        func.count(PageView.id)
-    ).filter(
-        PageView.created_at >= now - timedelta(days=range_days)
-    ).scalar() or 0
-    posts = Post.query.order_by(Post.created_at.asc()).all()
-    total_impressions = db.session.query(db.func.sum(Post.impressions)).scalar() or 0
-    total_profile_visits = db.session.query(db.func.sum(User.profile_visits)).scalar() or 0
-    total_shares = db.session.query(db.func.sum(Post.shares)).scalar() or 0
-
-    #-----------------------------
-    # ENGAGEMENT
-    #-----------------------------
-    total_engagements = total_likes + total_replies + total_shares + total_repost
-    total_engagement_rate = (
-        round((total_engagements / total_impressions) * 100, 2)
-        if total_impressions > 0 else 0
-    )
-
-    # -----------------------------
-    # READ TIME
-    # -----------------------------
-    total_read_time = db.session.query(
-        db.func.sum(Post.read_time)
-    ).scalar() or 0
-
-    #-----------------------------
-    # NUMBER OF CREATORS AND ACTIVENESS
-    # FOR FUTURE PURPOSE
-    #-----------------------------
-    total_content_creators = db.session.query(
-        db.func.count(db.func.distinct(Post.user_id))
-    ).scalar() or 0
-    total_logged_in_users = User.query.filter(User.last_login.isnot(None)).count()
-    active_last_7_days = User.query.filter(
-        User.last_login >= now - timedelta(days=7)
-    ).count()
-
-    # -----------------------------
-    # PLATFORM CHART DATA
-    # -----------------------------
-    post_counts = db.session.query(
-        func.date(Post.created_at),
-        func.count(Post.id)
-    ).group_by(func.date(Post.created_at)).all()
-    
-    labels = [str(d[0]) for d in post_counts]
-    post_data = [d[1] for d in post_counts]
-    
-    like_counts = db.session.query(
-        func.date(Post.created_at).label("date"),
-        func.sum(Post.like_count).label("likes_count")
-    ).group_by(func.date(Post.created_at)).order_by(func.date(Post.created_at)).all()
-    likes_labels = [str(d[0]) for d in like_counts]
-    likes_data = [d[1] for d in like_counts]
-    
-    #like_counts = [post.likes.count() for post in posts]
-    
-    view_counts = db.session.query(
-        func.date(PageView.created_at),
-        func.count(PageView.id)
-    ).group_by(func.date(PageView.created_at)).all()
-    
-    views_labels = [str(d[0]) for d in view_counts]
-    views_data = [d[1] for d in view_counts]
-    
-    caption_data = []
-
-    xpost_counts = db.session.query(
-        func.date(XPost.created_at),
-        func.count(XPost.id)
-    ).group_by(
-        func.date(XPost.created_at)
-    ).order_by(
-        func.date(XPost.created_at)
-    ).all()
-
-    xpost_labels = [p[0] for p in xpost_counts]
-    xpost_data = [p[1] for p in xpost_counts]
-
-    #-----------------------------
-    # CAPTION ANALYSIS
-    #-----------------------------
-    avg_caption_length = db.session.query(
-          func.avg(func.length(XPost.text))
-      ).scalar() or 0
-    
-    short_posts = db.session.query(func.count(XPost.id)).filter(
-        func.length(XPost.text) <= 120
-    ).scalar()
-    
-    medium_posts = db.session.query(func.count(XPost.id)).filter(
-        func.length(XPost.text).between(121, 200)
-    ).scalar()
-    
-    long_posts = db.session.query(func.count(XPost.id)).filter(
-        func.length(XPost.text) > 200
-    ).scalar()
-    
-    avg_confidence = db.session.query(
-        func.avg(XPost.confidence_score)
-    ).scalar() or 0
-    
-    best_times = db.session.query(
-        XPost.best_post_time,
-        func.count(XPost.id)
-    ).group_by(
-        XPost.best_post_time
-    ).order_by(
-        func.count(XPost.id).desc()
-    ).limit(5).all()
-    
-    best_time_labels = [str(t[0]) for t in best_times]
-    best_time_data = [t[1] for t in best_times]
-    
-    xposts = XPost.query.all()
-
-    total_predicted = 0
-    for post in xposts:
-        if post.predicted_engagement:
-            total_predicted += sum(post.predicted_engagement.values())
-    
-    avg_predicted_engagement = (
-        total_predicted / len(xposts)
-    ) if xposts else 0
-    
-    top_x_creators = db.session.query(
-        User.username,
-        func.count(XPost.id)
-    ).join(XPost, XPost.user_id == User.id)\
-    .group_by(User.username)\
-    .order_by(func.count(XPost.id).desc())\
-    .limit(5).all()
-
-    top_x_creators_display = [
-        {"username": u, "posts": c} for u, c in top_x_creators
-    ]
-    
-    length_engagement = []
-
-    for post in xposts:
-        if post.metrics:
-            total_eng = sum(
-                m.likes + m.replies 
-                for m in post.metrics
-            )
-            length_engagement.append({
-                "length": len(post.text),
-                "engagement": total_eng
-            })
-    
-    caption_counts = db.session.query(
-        func.date(XPost.created_at),
-        func.count(XPost.id)
-    ).group_by(func.date(XPost.created_at)).all()
-
-    caption_counts_display = [
-        {"date": str(d[0]), "count": d[1]} for d in caption_counts
-    ]
+    growth_defaults = data["growth_defaults"]
 
     return render_template(
         "admin/analytics.html",
         range_days=range_days,
+        **data,
 
-        # Totals
-        total_views=total_views,
-        total_read_time=total_read_time,
-        total_active_users=total_logged_in_users,
-        total_time_on_page=total_time_on_page,
-        avg_time_per_session=round(avg_time_per_session, 2),
-        DAU=DAU,
-        WAU=WAU,
-        MAU=MAU,
-        DAU_growth=DAU_growth,
-        WAU_growth=WAU_growth,
-        MAU_growth=MAU_growth,
-        dau_labels=dau_labels,
-        dau_values=dau_values,
-        total_content_creators=total_content_creators,
-        active_last_7_days=active_last_7_days,
-        total_registered_users=total_registered_users,
-        total_likes=total_likes,
-        total_replies=total_replies,
-        total_posts=total_posts,
-        total_deleted_accounts=total_deleted_accounts,
-        total_caption_users=total_caption_users,
-        total_avg_caption=total_avg_caption,
-        total_avg_caption_growth=total_avg_caption_growth,
-        total_avg_posts=total_avg_posts,
-        total_avg_posts_growth=total_avg_posts_growth,
-        unique_visitors=total_unique_sessions,
-
-        avg_caption_length=round(avg_caption_length, 2),
-        short_posts=short_posts,
-        medium_posts=medium_posts,
-        long_posts=long_posts,
-        avg_confidence=round(avg_confidence, 2),
-        top_x_creators_display=top_x_creators_display,
-        caption_counts_display=caption_counts_display,
-        best_time_labels=best_time_labels,
-        best_time_data=best_time_data,
-        avg_predicted_engagement=round(avg_predicted_engagement, 2),
-        total_repost=total_repost,
-        total_impressions=total_impressions,
-        views_data=safe_list(views_data),
-        likes_data=safe_list(likes_data),
-        labels=labels,
-        post_data=post_data,
-        xpost_labels=xpost_labels,
-        xpost_data=xpost_data,
-        total_profile_visits=total_profile_visits,
-        total_shares=total_shares,
-        total_engagements=total_engagements,
-        total_engagement_rate=total_engagement_rate,
-
-        # Growth (can later be dynamic)
+        # Keep the existing template variables available.
         growth_percentage=growth_defaults,
         total_read_time_growth=growth_defaults,
         total_active_users_growth=growth_defaults,
-        total_registered_users_growth=growth_defaults,
         total_likes_growth=growth_defaults,
         total_replies_growth=growth_defaults,
-        total_posts_growth=growth_defaults,
         total_deleted_accounts_growth=growth_defaults,
         total_caption_users_growth=growth_defaults,
         total_repost_growth=growth_defaults,
@@ -1248,14 +1019,36 @@ def analytics():
         total_shares_growth=growth_defaults,
         total_engagements_growth=growth_defaults,
         total_engagement_rate_growth=growth_defaults,
+        total_time_on_page_growth=growth_defaults,
+        unique_visitors_growth=growth_defaults,
     )
 
 # ---------- LIST ADS ----------
 @admin_bp.route("/ads")
 @login_required
 def ads_list():
-    ads = Ad.query.order_by(Ad.priority.desc(), Ad.created_at.desc()).all()
-    return render_template("admin/ads_list.html", ads=ads)
+    if not current_user.is_admin:
+        flash("Access denied", "danger")
+        return redirect(url_for("public.user_login"))
+
+    pagination = (
+        Ad.query
+        .order_by(
+            Ad.priority.desc(),
+            Ad.created_at.desc(),
+        )
+        .paginate(
+            page=max(request.args.get("page", 1, type=int) or 1, 1),
+            per_page=12,
+            error_out=False,
+        )
+    )
+
+    return render_template(
+        "admin/ads_list.html",
+        ads=pagination.items,
+        pagination=pagination,
+    )
 
 def upload_to_cloudinary(file, width,
     height=200):

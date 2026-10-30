@@ -59,8 +59,8 @@ Search Superior News for the latest Nigerian and world news, politics, business,
     </h2>
 
     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-      {{ results|length }}
-      result{{ 's' if results|length != 1 else '' }}
+      {{ results.total }}
+      result{{ 's' if results.total != 1 else '' }}
       for
       <span class="break-words font-semibold text-gray-800 dark:text-gray-200">
         "{{ query }}"
@@ -71,11 +71,11 @@ Search Superior News for the latest Nigerian and world news, politics, business,
 {% endif %}
 
 <!-- RESULTS GRID -->
-{% if results %}
+{% if results and results.items %}
 
 <div class="grid grid-cols-1 space-y-3 gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
-  {% for post in results %}
+  {% for post in results.items %}
   <article class="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
 
     <!-- FEATURED IMAGE -->
@@ -180,7 +180,7 @@ Search Superior News for the latest Nigerian and world news, politics, business,
 {% else %}
 
 <!-- INITIAL SEARCH STATE -->
-<section class="rounded-xl border border-gray-200 bg-white px-5 py-14 text-center dark:border-gray-800 dark:bg-gray-900">
+<section class="rounded-xl mt-24 border border-gray-200 bg-white px-5 py-14 text-center dark:border-gray-800 dark:bg-gray-900">
   <div class="mb-5 text-5xl text-gray-400 dark:text-gray-500">
     <i class="far fa-newspaper" aria-hidden="true"></i>
   </div>
@@ -194,6 +194,31 @@ Search Superior News for the latest Nigerian and world news, politics, business,
   </p>
 </section>
 
+{% endif %}
+
+{% if results and results.pages > 1 %}
+<nav class="mt-8 flex items-center justify-center gap-3"
+     aria-label="Search results pagination">
+
+  {% if results.has_prev %}
+  <a href="{{ url_for('public.search', q=query, page=results.prev_num) }}"
+     class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800">
+    Previous
+  </a>
+  {% endif %}
+
+  <span class="text-sm text-gray-500 dark:text-gray-400">
+    Page {{ results.page }} of {{ results.pages }}
+  </span>
+
+  {% if results.has_next %}
+  <a href="{{ url_for('public.search', q=query, page=results.next_num) }}"
+     class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800">
+    Next
+  </a>
+  {% endif %}
+
+</nav>
 {% endif %}
 
   </div>

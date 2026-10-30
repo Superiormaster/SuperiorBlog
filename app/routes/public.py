@@ -1,24 +1,81 @@
-from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, current_app, flash, make_response
-from collections import OrderedDict
-from app.models import Post, Comment, Like, Subscriber, ContactMessage, Reply, Category, User, AppSettings, Tag, post_tags, Label, ProfileVisit, FootballCache, PageView, Ad
-import os, traceback, re, base64, requests, secrets, uuid
-from requests.exceptions import ConnectionError
+from collections import OrderedDict, defaultdict
+from datetime import datetime, UTC, timedelta
 from urllib.parse import quote, urlparse
+import os
+import re
+import secrets
+import time
+import traceback
+import uuid
+
+import requests
+from requests.exceptions import ConnectionError
+from bs4 import BeautifulSoup
+
+from flask import (
+    Blueprint,
+    request,
+    render_template,
+    redirect,
+    url_for,
+    session,
+    jsonify,
+    current_app,
+    flash,
+    make_response,
+    abort,
+)
+
+from flask_login import (
+    login_user,
+    logout_user,
+    current_user,
+    login_required,
+)
+
+from sqlalchemy import (
+    and_,
+    desc,
+    distinct,
+    func,
+    or_,
+)
+
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+
+from cloudinary.exceptions import Error as CloudinaryError
+
+from app.models import (
+    Post,
+    Comment,
+    Like,
+    Subscriber,
+    ContactMessage,
+    Reply,
+    Category,
+    User,
+    AppSettings,
+    Tag,
+    post_tags,
+    Label,
+    ProfileVisit,
+    FootballCache,
+    PageView,
+    Ad,
+)
+
 from app.services.superior_ads import (
     get_superior_ad,
     make_ad_tracking_context,
 )
-from sqlalchemy import distinct, func, or_, and_
-from uuid import uuid4
-from collections import defaultdict
-from bs4 import BeautifulSoup
-from datetime import datetime, UTC, timedelta
+
 from app.moderation.engine import auto_moderate
-from cloudinary.exceptions import Error as CloudinaryError
 from app.moderation.rules import CATEGORY_RULES
 from app.moderation.spam import is_spam
 from app.moderation.grammar import grammar_score
 from app.moderation.duplicate import hash_content
+
 from app.utils.helper import process_tags, get_related_posts
 from app.utils.cloudinary_helper import upload_image_file
 from app.utils.adInjector import inject_inpost_content
@@ -26,19 +83,97 @@ from app.utils.email import send_email
 from app.utils.admin_email import send_welcome_email
 from app.utils.decorators import generate_unique_slug
 from app.utils.db_helpers import safe_commit
+
 from app.extensions import db, cache, csrf
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
-from oauthlib.oauth2 import WebApplicationClient
-from sqlalchemy import func, desc
-from flask_login import login_user, logout_user, current_user, login_required
-from app.forms import UserLoginForm, UserRegisterForm, ChangePasswordForm, PostForm, ProfileForm, DeletePostForm, SubmitPostForm, ResetPasswordForm, ForgotPasswordForm, SubscribeForm
+
+from app.forms import (
+    UserLoginForm,
+    UserRegisterForm,
+    ChangePasswordForm,
+    PostForm,
+    ProfileForm,
+    DeletePostForm,
+    SubmitPostForm,
+    ResetPasswordForm,
+    ForgotPasswordForm,
+    SubscribeForm,
+)
 
 public_bp = Blueprint(
     "public",
-    __name__, 
-    template_folder="../templates/user"
+    __name__,
+    template_folder="../templates/user",
 )
+
+# --------------------------------------------------
+# PUBLIC CACHE HELPERS
+# --------------------------------------------------
+
+PUBLIC_CACHE_TIMEOUT = 60
+HOMEPAGE_CACHE_TIMEOUT = 60
+CATEGORY_CACHE_TIMEOUT = 120
+TAG_CACHE_TIMEOUT = 120
+
+
+def clear_public_content_cache(category_id=None):
+    keys = (
+        "public_homepage_categories",
+        "public_popular_tags",
+        "public_homepage_data",
+        "public_breaking_posts",
+        "public_latest_posts",
+        "public_popular_posts",
+    )
+
+    for key in keys:
+        try:
+            cache.delete(key)
+        except Exception:
+            current_app.logger.exception(
+                "Failed to invalidate public cache: %s",
+                key,
+            )
+
+    if category_id is not None:
+        try:
+            cache.delete(
+                f"public_category_trending_ids_{category_id}"
+            )
+        except Exception:
+            current_app.logger.exception(
+                "Failed to invalidate trending cache for category %s",
+                category_id,
+            )
+
+
+def get_cached_value(key, timeout, loader):
+    """
+    Return cached data when available.
+
+    If the cache is unavailable, load fresh data instead.
+    """
+    try:
+        value = cache.get(key)
+
+        if value is not None:
+            return value
+    except Exception:
+        current_app.logger.exception(
+            "Cache read failed for key: %s",
+            key,
+        )
+
+    value = loader()
+
+    try:
+        cache.set(key, value, timeout=timeout)
+    except Exception:
+        current_app.logger.exception(
+            "Cache write failed for key: %s",
+            key,
+        )
+
+    return value
 
 def validate_tribe_url(url):
     if not url:
@@ -237,22 +372,39 @@ def profile_setup():
 @login_required
 @csrf.exempt
 def user_profile(username):
-    user = User.query.filter_by(username=username).first_or_404()
+    user = User.query.filter_by(
+        username=username
+    ).first_or_404()
+
     is_owner = current_user.id == user.id
 
-    # log the visit
-    visit = ProfileVisit(
-        visited_user_id=username,
-        visitor_id=current_user.id if current_user.is_authenticated else None
-    )
-    db.session.add(visit)
-    if not safe_commit():
-        print("Failed to add visit")
+    # Do not count the owner's visits to their own profile.
+    if not is_owner:
+        try:
+            visit = ProfileVisit(
+                visited_user_id=user.id,
+                visitor_id=current_user.id,
+            )
+
+            db.session.add(visit)
+
+            if not safe_commit():
+                current_app.logger.error(
+                    "Failed to record profile visit for user %s",
+                    user.id,
+                )
+
+        except Exception:
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "Error recording profile visit"
+            )
 
     return render_template(
         "user/profile.html",
         user=user,
-        is_owner=is_owner
+        is_owner=is_owner,
     )
 
 @public_bp.route("/profile/edit", methods=["GET", "POST"])
@@ -303,22 +455,56 @@ def user_analysis(page_path):
     
     start_date = now - timedelta(days=range_days)
 
-    query = Post.query.filter_by(user_id=current_user.id)
+        # Only retrieve posts created during the selected period.
+    posts = (
+        Post.query
+        .filter(
+            Post.user_id == current_user.id,
+            Post.created_at >= start_date,
+        )
+        .order_by(Post.created_at.desc())
+        .all()
+    )
 
-    if start_date:
-        query = query.filter(Post.created_at >= start_date)
-
-    posts = query.all()
+    post_ids = [post.id for post in posts]
     no_of_posts = len(posts)
 
-    total_views = sum(p.views or 0 for p in posts)
-    total_likes = sum(p.likes.count() for p in posts)
-    total_read_time = sum(p.read_time or 0 for p in posts)
-    profile_visits = ProfileVisit.query.filter_by(
-        visited_user_id=current_user.id
-    ).count()
-    total_shares = sum(p.shares or 0 for p in posts)
-    total_replies = sum(len(c.replies) for p in posts for c in p.comments)
+    total_views = sum(post.views or 0 for post in posts)
+    total_read_time = sum(post.read_time or 0 for post in posts)
+    total_shares = sum(post.shares or 0 for post in posts)
+
+    # Aggregate likes in one database query.
+    likes_map = {}
+
+    if post_ids:
+        likes_map = dict(
+            db.session.query(
+                Like.post_id,
+                func.count(Like.id),
+            )
+            .filter(Like.post_id.in_(post_ids))
+            .group_by(Like.post_id)
+            .all()
+        )
+
+    total_likes = sum(likes_map.values())
+
+    # Count replies through SQL rather than loading every reply.
+    total_replies = 0
+
+    if post_ids:
+        total_replies = (
+            db.session.query(func.count(Reply.id))
+            .join(Comment, Reply.comment_id == Comment.id)
+            .filter(Comment.post_id.in_(post_ids))
+            .scalar()
+        ) or 0
+
+    profile_visits = (
+        ProfileVisit.query
+        .filter_by(visited_user_id=current_user.id)
+        .count()
+    )
 
     # ✅ Average time per view
     pageview_query = db.session.query(
@@ -339,31 +525,83 @@ def user_analysis(page_path):
     previous_avg_read_time = previous_engagement_rate = 0
     engagement_rate_growth = 0
     previous_profile_visits = previous_total_replies = previous_total_shares = 0
-    if start_date:
-        period_length = now - start_date
-        prev_start = start_date - period_length
-        previous_posts = Post.query.filter(
-            Post.user_id == current_user.id,
-            Post.created_at >= prev_start,
-            Post.created_at < start_date
-        ).all()
-        previous_views = sum(p.views or 0 for p in previous_posts)
-        previous_likes = sum(p.likes.count() for p in previous_posts) if start_date else 0
-        previous_read_time = sum(p.read_time or 0 for p in previous_posts) if start_date else 0
-        previous_total_shares = sum(p.shares or 0 for p in previous_posts)
-        previous_profile_visits = ProfileVisit.query.filter(
+
+    period_length = now - start_date
+    prev_start = start_date - period_length
+
+    previous_posts_query = Post.query.filter(
+        Post.user_id == current_user.id,
+        Post.created_at >= prev_start,
+        Post.created_at < start_date,
+    )
+
+    previous_posts = previous_posts_query.all()
+    previous_post_ids = [post.id for post in previous_posts]
+
+    previous_posts_count = len(previous_posts)
+
+    previous_views = sum(
+        post.views or 0
+        for post in previous_posts
+    )
+
+    previous_read_time = sum(
+        post.read_time or 0
+        for post in previous_posts
+    )
+
+    previous_total_shares = sum(
+        post.shares or 0
+        for post in previous_posts
+    )
+
+    previous_likes = 0
+    previous_total_replies = 0
+
+    if previous_post_ids:
+        previous_likes = (
+            db.session.query(func.count(Like.id))
+            .filter(Like.post_id.in_(previous_post_ids))
+            .scalar()
+        ) or 0
+
+        previous_total_replies = (
+            db.session.query(func.count(Reply.id))
+            .join(Comment, Reply.comment_id == Comment.id)
+            .filter(Comment.post_id.in_(previous_post_ids))
+            .scalar()
+        ) or 0
+
+    previous_profile_visits = (
+        ProfileVisit.query
+        .filter(
             ProfileVisit.visited_user_id == current_user.id,
             ProfileVisit.created_at >= prev_start,
-            ProfileVisit.created_at < start_date
-        ).count()
-        previous_total_replies = sum(
-            len(c.replies) for p in previous_posts for c in p.comments
+            ProfileVisit.created_at < start_date,
         )
-        previous_total_engagements = previous_likes + previous_total_replies + previous_total_shares
-        previous_engagement_rate = round((previous_total_engagements / previous_views) * 100, 2) if previous_views else 0
-        previous_posts_count = len(previous_posts) if start_date else 0
-    else:
-        previous_views = previous_likes = previous_read_time = previous_posts_count = 0
+        .count()
+    )
+
+    previous_total_engagements = (
+        previous_likes
+        + previous_total_replies
+        + previous_total_shares
+    )
+
+    previous_engagement_rate = (
+        round(
+            previous_total_engagements / previous_views * 100,
+            2,
+        )
+        if previous_views
+        else 0
+    )
+
+    previous_avg_read_time = (
+        round(previous_read_time / previous_posts_count, 2)
+        if previous_posts_count
+        else 0
+    )
 
     views_growth = calculate_growth(total_views, previous_views)
     likes_growth = calculate_growth(total_likes, previous_likes)
@@ -415,15 +653,26 @@ def user_analysis(page_path):
     daily_views = defaultdict(int)
     daily_likes = defaultdict(int)
 
-    for p in posts:
-        if p.created_at:
-            day = p.created_at.strftime("%Y-%m-%d")
-            daily_views[day] += p.views or 0
-            daily_likes[day] += p.likes.count()
+    for post in posts:
+        if not post.created_at:
+            continue
+
+        day = post.created_at.strftime("%Y-%m-%d")
+
+        daily_views[day] += post.views or 0
+        daily_likes[day] += likes_map.get(post.id, 0)
 
     chart_labels = sorted(daily_views.keys())
-    views_data = [daily_views[d] for d in chart_labels]
-    likes_data = [daily_likes[d] for d in chart_labels]
+
+    views_data = [
+        daily_views[day]
+        for day in chart_labels
+    ]
+
+    likes_data = [
+        daily_likes[day]
+        for day in chart_labels
+    ]
 
     return render_template(
         "user/analysis.html",
@@ -465,17 +714,54 @@ def user_analysis(page_path):
 @login_required
 @csrf.exempt
 def share_post(post_id):
-    post = Post.query.get_or_404(post_id)
-    post.shares = (post.shares or 0) + 1
-    if not safe_commit():
-        print("Failed to share post")
-    return {"success": True}
+    post_exists = db.session.query(
+        Post.id
+    ).filter(
+        Post.id == post_id
+    ).first()
+
+    if not post_exists:
+        return jsonify({
+            "success": False,
+            "message": "Post not found.",
+        }), 404
+
+    try:
+        db.session.query(Post).filter(
+            Post.id == post_id
+        ).update(
+            {
+                Post.shares: func.coalesce(Post.shares, 0) + 1,
+            },
+            synchronize_session=False,
+        )
+
+        if not safe_commit():
+            return jsonify({
+                "success": False,
+                "message": "Unable to record share.",
+            }), 500
+
+        return jsonify({
+            "success": True,
+        })
+
+    except Exception:
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Failed to increment shares for post %s",
+            post_id,
+        )
+
+        return jsonify({
+            "success": False,
+            "message": "Unable to record share.",
+        }), 500
 
 @public_bp.route('/dashboard')
 @login_required
 def user_dashboard():
-    all_user_posts = Post.query.filter_by(user_id=current_user.id).all()
-
     delete_form = DeletePostForm()
     submit_form = SubmitPostForm()
 
@@ -669,8 +955,15 @@ def user_create_or_edit(id=None):
         post.tags = process_tags(raw_tags)
         print("Draft content size (bytes):", len(request.form.get("content", "").encode("utf-8")))
 
-        safe_commit()
-
+        if not safe_commit():
+            flash(
+                "Unable to save the draft. Please try again.",
+                "danger",
+            )
+            return redirect(url_for("public.user_dashboard"))
+        
+        clear_public_content_cache()
+        
         flash("Draft saved successfully.", "success")
         return redirect(url_for("public.user_dashboard"))
 
@@ -846,7 +1139,20 @@ def save_draft():
 
         post.tags = process_tags(raw_tags)
 
-        safe_commit()
+        if not safe_commit():
+            db.session.rollback()
+        
+            current_app.logger.error(
+                "Draft save transaction failed for user %s",
+                current_user.id,
+            )
+        
+            return jsonify({
+                "status": "error",
+                "message": "Failed to save draft.",
+            }), 500
+        
+        clear_public_content_cache()
 
     except Exception as e:
 
@@ -1066,12 +1372,19 @@ def delete_post(id):
     form = DeletePostForm()
 
     if form.validate_on_submit():
-      db.session.delete(post)
-      if not safe_commit():
-        print("Failed to delete post")
-  
-      flash("Post deleted successfully.", "success")
-    return redirect(url_for("public.user_dashboard"))
+        db.session.delete(post)
+
+        if not safe_commit():
+            flash(
+                "Failed to delete the post.",
+                "danger",
+            )
+        else:
+            clear_public_content_cache()
+            flash(
+                "Post deleted successfully.",
+                "success",
+            )
 
 @public_bp.route("/login/google")
 def google_login():
@@ -1111,7 +1424,24 @@ def google_callback():
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code"
     }
-    token_response = requests.post(token_url, data=data).json()
+    try:
+        response = requests.post(
+            token_url,
+            data=data,
+            timeout=15,
+        )
+        response.raise_for_status()
+        token_response = response.json()
+    except (requests.RequestException, ValueError):
+        current_app.logger.exception(
+            "Google OAuth token exchange failed"
+        )
+        flash(
+            "Google could not log you in. Please try again.",
+            "error",
+        )
+        return redirect(url_for("public.user_login"))
+
     # 🚨 Ensure id_token exists
     id_token_value = token_response.get("id_token")
     if not id_token_value:
@@ -1138,7 +1468,7 @@ def google_callback():
         user.last_login = datetime.utcnow()
         user.login_count = (user.login_count or 0) + 1
     else:
-        user = User(email=user_email, username=f"user_{uuid4().hex[:8]}", oauth_provider="google", oauth_id=oauth_id, is_active=1, created_at=datetime.utcnow(), last_login=datetime.utcnow(), login_count=1,)
+        user = User(email=user_email, username=f"user_{uuid.uuid4().hex[:8]}", oauth_provider="google", oauth_id=oauth_id, is_active=1, created_at=datetime.utcnow(), last_login=datetime.utcnow(), login_count=1,)
         db.session.add(user)
         db.session.flush()
 
@@ -1164,44 +1494,138 @@ def google_callback():
 
 @public_bp.route("/auth/google/onetap", methods=["POST"])
 def google_one_tap():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     token = data.get("credential")
 
     if not token:
-        return jsonify({"error": "No token provided"}), 400
+        return jsonify({
+            "success": False,
+            "error": "No token provided",
+        }), 400
+
+    client_id = current_app.config.get("GOOGLE_CLIENT_ID")
+
+    if not client_id:
+        current_app.logger.error(
+            "GOOGLE_CLIENT_ID is missing from application configuration"
+        )
+        return jsonify({
+            "success": False,
+            "error": "Google login is not configured.",
+        }), 500
 
     try:
         idinfo = id_token.verify_oauth2_token(
             token,
             google_requests.Request(),
-            GOOGLE_CLIENT_ID
+            client_id,
         )
     except ValueError:
-        return jsonify({"error": "Invalid token"}), 400
+        return jsonify({
+            "success": False,
+            "error": "Invalid Google credential.",
+        }), 400
+    except Exception:
+        current_app.logger.exception(
+            "Google One Tap verification failed"
+        )
+        return jsonify({
+            "success": False,
+            "error": "Google authentication failed.",
+        }), 400
 
-    # User info from Google
-    email = idinfo["email"]
-    name = idinfo.get("name")
-    oauth_id = idinfo["sub"]
+    email = (idinfo.get("email") or "").strip().lower()
+    oauth_id = idinfo.get("sub")
+    name = (idinfo.get("name") or "").strip()
     picture = idinfo.get("picture")
 
-    # Get or create user
-    user = User.query.filter_by(oauth_id=oauth_id).first()
-    if not user:
-        user = User(
-            email=email,
-            username=name,
-            oauth_provider="google",
-            oauth_id=oauth_id,
-            avatar=picture
-        )
-        db.session.add(user)
+    # Do not accept an unverified Google email.
+    if not email or not oauth_id or not idinfo.get("email_verified"):
+        return jsonify({
+            "success": False,
+            "error": "A verified Google email is required.",
+        }), 400
+
+    try:
+        user = User.query.filter(
+            or_(
+                User.oauth_id == oauth_id,
+                User.email == email,
+            )
+        ).first()
+
+        if user:
+            # Do not silently link a different Google identity
+            # to an existing account with the same email.
+            if user.oauth_id and user.oauth_id != oauth_id:
+                return jsonify({
+                    "success": False,
+                    "error": (
+                        "This email is already associated with "
+                        "another login method."
+                    ),
+                }), 409
+
+            if not user.oauth_id:
+                user.oauth_id = oauth_id
+                user.oauth_provider = "google"
+
+            if picture and not user.avatar:
+                user.avatar = picture
+
+        else:
+            base_username = re.sub(
+                r"[^a-zA-Z0-9_]",
+                "",
+                name.replace(" ", "_"),
+            ).strip("_").lower()
+
+            base_username = base_username[:20] or "user"
+
+            username = f"{base_username}_{uuid.uuid4().hex[:8]}"
+
+            user = User(
+                email=email,
+                username=username,
+                oauth_provider="google",
+                oauth_id=oauth_id,
+                avatar=picture,
+            )
+
+            db.session.add(user)
+
+        user.last_login = datetime.now(UTC)
+        user.login_count = (user.login_count or 0) + 1
+
         if not safe_commit():
-          print("Failed to login user")
+            return jsonify({
+                "success": False,
+                "error": "Unable to complete Google login.",
+            }), 500
 
-    login_user(user)
+        login_user(user)
 
-    return jsonify({"success": True})
+        return jsonify({
+            "success": True,
+            "profile_completed": bool(user.profile_completed),
+            "redirect_url": (
+                url_for("public.user_dashboard")
+                if user.profile_completed
+                else url_for("public.profile_setup")
+            ),
+        })
+
+    except Exception:
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Google One Tap account processing failed"
+        )
+
+        return jsonify({
+            "success": False,
+            "error": "Unable to complete Google login.",
+        }), 500
 
 @public_bp.route('/logout')
 def user_logout():
@@ -1212,146 +1636,241 @@ def user_logout():
 @public_bp.route("/")
 def index():
     form = SubscribeForm()
-    three_days_ago = datetime.utcnow() - timedelta(days=3)
-    fourteen_days_ago = datetime.utcnow() - timedelta(days=14)
-    six_hours_ago = datetime.utcnow() - timedelta(hours=6)
-    one_day_ago = datetime.utcnow() - timedelta(days=1)
-    twelve_hours_ago = datetime.utcnow() - timedelta(hours=12)
 
-    # Latest posts (3)
+    now = datetime.utcnow()
+    one_day_ago = now - timedelta(days=1)
+    fourteen_days_ago = now - timedelta(days=14)
+    six_hours_ago = now - timedelta(hours=6)
+
+    # --------------------------------------------------
+    # 1. LATEST POSTS
+    # --------------------------------------------------
     latest_posts = (
         Post.query
-        .filter(Post.is_published == True, Post.status == "published", Post.created_at >= one_day_ago)
+        .filter(
+            Post.is_published.is_(True),
+            Post.status == "published",
+            Post.created_at >= one_day_ago,
+        )
         .order_by(Post.created_at.desc())
         .limit(3)
         .all()
     )
 
-    latest_posts = [p for p in latest_posts if p is not None]
-    latest_ids = [p.id for p in latest_posts]
+    latest_ids = [post.id for post in latest_posts]
 
-    # Popular / most reach posts (excluding the latest 3)
+    # --------------------------------------------------
+    # 2. POPULAR POSTS
+    # Aggregate comments only for eligible recent posts.
+    # --------------------------------------------------
+    eligible_posts = (
+        db.session.query(Post.id)
+        .filter(
+            Post.is_published.is_(True),
+            Post.status == "published",
+            Post.created_at >= one_day_ago,
+        )
+        .subquery()
+    )
+
     comment_counts = (
         db.session.query(
-            Comment.post_id,
-            func.count(Comment.id).label("comment_count")
+            Comment.post_id.label("post_id"),
+            func.count(Comment.id).label("comment_count"),
+        )
+        .join(
+            eligible_posts,
+            eligible_posts.c.id == Comment.post_id,
         )
         .group_by(Comment.post_id)
         .subquery()
     )
 
-    popular_posts = (
-        db.session.query(
-            Post,
-            (Post.views + Post.like_count + func.coalesce(comment_counts.c.comment_count, 0)).label("popularity")
+    popularity_score = (
+        func.coalesce(Post.views, 0)
+        + func.coalesce(Post.like_count, 0)
+        + func.coalesce(comment_counts.c.comment_count, 0)
+    )
+
+    popular_query = (
+        db.session.query(Post)
+        .outerjoin(
+            comment_counts,
+            Post.id == comment_counts.c.post_id,
         )
-        .outerjoin(comment_counts, Post.id == comment_counts.c.post_id)
         .filter(
-            Post.is_published == True,
+            Post.is_published.is_(True),
             Post.status == "published",
             Post.created_at >= one_day_ago,
+        )
+    )
+
+    if latest_ids:
+        popular_query = popular_query.filter(
             ~Post.id.in_(latest_ids)
         )
-        .order_by(desc("popularity"))
+
+    popular_posts = (
+        popular_query
+        .order_by(
+            popularity_score.desc(),
+            Post.created_at.desc(),
+        )
         .limit(3)
         .all()
     )
 
-    popular_posts = [p for p, _ in popular_posts if p is not None]
-    popular_ids = [p.id for p in popular_posts]
+    popular_ids = [post.id for post in popular_posts]
 
+    # --------------------------------------------------
+    # 3. OTHER RECENT POSTS
+    # --------------------------------------------------
     posts_query = Post.query.filter(
-        Post.is_published == True,
+        Post.is_published.is_(True),
         Post.status == "published",
-        Post.created_at >= fourteen_days_ago
+        Post.created_at >= fourteen_days_ago,
     )
-    
-    # Exclude latest posts only if they exist
-    if latest_ids:
-        posts_query = posts_query.filter(~Post.id.in_(latest_ids))
-    
-    # Exclude popular posts only if they exist
-    if popular_ids:
-        posts_query = posts_query.filter(~Post.id.in_(popular_ids))
-    
-    posts = posts_query.order_by(Post.created_at.desc()).limit(50).all()
 
-    posts = [p for p in posts if p is not None]
+    excluded_ids = latest_ids + popular_ids
 
-    comment_counts = (
-        db.session.query(
-            Comment.post_id,
-            func.count(Comment.id).label("comment_count")
+    if excluded_ids:
+        posts_query = posts_query.filter(
+            ~Post.id.in_(excluded_ids)
         )
-        .group_by(Comment.post_id)
-        .subquery()
+
+    posts = (
+        posts_query
+        .order_by(Post.created_at.desc())
+        .limit(50)
+        .all()
     )
 
-    today_categories = OrderedDict()
+    # --------------------------------------------------
+    # 4. CATEGORY SECTIONS
+    # Fetch recent posts once instead of querying every
+    # category separately.
+    # --------------------------------------------------
+    def load_homepage_categories():
+        categories = (
+            Category.query
+            .order_by(Category.name)
+            .all()
+        )
 
-    categories = Category.query.order_by(Category.name).all()
+        recent_category_posts = (
+            Post.query
+            .filter(
+                Post.is_published.is_(True),
+                Post.status == "published",
+                Post.created_at >= one_day_ago,
+                Post.category_id.isnot(None),
+            )
+            .order_by(
+                Post.category_id,
+                Post.created_at.desc(),
+            )
+            .all()
+        )
 
-    for category in categories:
-      category_posts = (
-          Post.query.filter(
-              Post.category_id == category.id,
-              Post.is_published == True,
-              Post.status == "published",
-              Post.created_at >= one_day_ago,
-          )
-          .order_by(Post.created_at.desc())
-          .limit(3)
-          .all()
-      )
-      
-      if category_posts:
-          today_categories[category] = category_posts
+        grouped = defaultdict(list)
 
+        for post in recent_category_posts:
+            category_id = post.category_id
+
+            if len(grouped[category_id]) < 3:
+                grouped[category_id].append(post)
+
+        result = OrderedDict()
+
+        for category in categories:
+            category_posts = grouped.get(category.id, [])
+
+            if category_posts:
+                result[category] = category_posts
+
+        return result
+
+    today_categories = get_cached_value(
+        "public_homepage_categories",
+        timeout=60,
+        loader=load_homepage_categories,
+    )
+
+    # --------------------------------------------------
+    # 5. BREAKING NEWS
+    # --------------------------------------------------
     breaking_posts = (
         Post.query
         .join(Post.labels)
         .filter(
             Label.name.ilike("%breaking%"),
-            Post.is_published == True,
+            Post.is_published.is_(True),
             Post.status == "published",
-            Post.published_at >= six_hours_ago
+            Post.published_at >= six_hours_ago,
         )
         .order_by(Post.published_at.desc())
         .limit(5)
         .all()
     )
 
-    breaking_posts = [p for p in breaking_posts if p is not None]
+    # --------------------------------------------------
+    # 6. POPULAR TAGS
+    # --------------------------------------------------
+    def load_popular_tags():
+        return (
+            db.session.query(
+                Tag,
+                func.count(Post.id).label("post_count"),
+            )
+            .join(post_tags, post_tags.c.tag_id == Tag.id)
+            .join(Post, Post.id == post_tags.c.post_id)
+            .filter(
+                Post.is_published.is_(True),
+                Post.status == "published",
+            )
+            .group_by(Tag.id)
+            .order_by(
+                func.count(Post.id).desc(),
+                Tag.id.asc(),
+            )
+            .limit(10)
+            .all()
+        )
 
-    popular_tags = (
-        Tag.query
-        .join(post_tags)
-        .join(Post)
-        .filter(Post.is_published == True)
-        .group_by(Tag.id)
-        .order_by(func.count(Post.id).desc())
-        .limit(10)
-        .all()
+    popular_tag_rows = get_cached_value(
+        "public_popular_tags",
+        timeout=300,
+        loader=load_popular_tags,
     )
-  
+
+    # Keep popular_tags as a list of Tag objects for the template.
+    popular_tags = [
+        tag
+        for tag, post_count in popular_tag_rows
+    ]
+
+    # --------------------------------------------------
+    # 7. SUPERIOR ADS
+    # Keep ad selection and tracking context request-specific.
+    # --------------------------------------------------
     homepage_banner_ad = get_superior_ad(
         placement="homepage_banner",
     )
-    
+
     sidebar_ad = get_superior_ad(
         placement="sidebar",
     )
-    
+
     homepage_banner_context = None
     sidebar_context = None
-    
+
     if homepage_banner_ad:
         homepage_banner_context = make_ad_tracking_context(
             homepage_banner_ad,
             publisher="superior-news",
             placement="homepage_banner",
         )
-    
+
     if sidebar_ad:
         sidebar_context = make_ad_tracking_context(
             sidebar_ad,
@@ -1359,13 +1878,42 @@ def index():
             placement="sidebar",
         )
 
-    return render_template("homepage.html", posts=posts, popular_posts=popular_posts, popular_tags=popular_tags, latest_posts=latest_posts, category_sections=today_categories, homepage_banner_ad=homepage_banner_ad, sidebar_ad=sidebar_ad, homepage_banner_context=homepage_banner_context, sidebar_context=sidebar_context, breaking_posts=breaking_posts, Post=Post, form=form)
+    # --------------------------------------------------
+    # 8. RENDER HOMEPAGE
+    # --------------------------------------------------
+    return render_template(
+        "homepage.html",
+        posts=posts,
+        popular_posts=popular_posts,
+        popular_tags=popular_tags,
+        latest_posts=latest_posts,
+        category_sections=today_categories,
+        homepage_banner_ad=homepage_banner_ad,
+        sidebar_ad=sidebar_ad,
+        homepage_banner_context=homepage_banner_context,
+        sidebar_context=sidebar_context,
+        breaking_posts=breaking_posts,
+        Post=Post,
+        form=form,
+    )
 
 @public_bp.route("/post/<slug>", endpoint='post_detail')
 def post_detail(slug):
+    if not slug or slug.lower() in {"none", "null", "undefined"}:
+        current_app.logger.warning(
+            "Invalid article slug requested: %r | Referer: %r",
+            slug,
+            request.referrer,
+        )
+        abort(404)
+
     two_days_ago = datetime.utcnow() - timedelta(days=2)
     form = SubscribeForm()
-    post = Post.query.filter_by(slug=slug, is_published=True).first_or_404()
+    post = Post.query.filter(
+        Post.slug == slug,
+        Post.is_published.is_(True),
+        Post.status == "published",
+    ).first_or_404()
   
     # ---------------------------
     # VIEW COUNT (SAFE)
@@ -1379,13 +1927,17 @@ def post_detail(slug):
     ip_address = request.remote_addr
 
     # Check if this session/user/IP has already viewed this post
-    already_viewed = PageView.query.filter(
-        and_(
+    view_cutoff = datetime.now(UTC) - timedelta(hours=24)
+
+    already_viewed = (
+        db.session.query(PageView.id)
+        .filter(
             PageView.path == f"/post/{slug}",
             PageView.session_id == session_id,
-            PageView.created_at >= datetime.now(UTC) - timedelta(hours=24)
+            PageView.created_at >= view_cutoff,
         )
-    ).first()
+        .first()
+    )
   
     if not already_viewed:
         # Increment post view count
@@ -1399,27 +1951,26 @@ def post_detail(slug):
         ))
         safe_commit()
 
-    latest_posts = (
-        Post.query
-        .filter_by(is_published=True)
-        .order_by(Post.created_at.desc())
-        .limit(5)
-        .all()
-    )
-
     # ---------------------------
     # CATEGORY-BASED RELATED + TRENDING
     # ---------------------------
     related_posts = (
         Post.query
         .filter(
-            Post.is_published == True,
+            Post.is_published.is_(True),
+            Post.status == "published",
             Post.category_id == post.category_id,
             Post.id != post.id,
-            Post.published_at >= two_days_ago
+            Post.published_at >= two_days_ago,
+            Post.slug.isnot(None),
+            Post.slug != "",
         )
         .order_by(
-            desc(Post.views + Post.like_count + Post.related_clicks)
+            desc(
+                func.coalesce(Post.views, 0)
+                + func.coalesce(Post.like_count, 0)
+                + func.coalesce(Post.related_clicks, 0)
+            )
         )
         .limit(5)
         .all()
@@ -1435,11 +1986,8 @@ def post_detail(slug):
         post.content,
         category=post.category.name if post.category else None,
     )
-
-    if not safe_commit():
-        print("Failed to view post")
-
-    return render_template("post.html", post=post, content_html=content_html, latest_posts=latest_posts, related_posts=related_posts, form=form, section_title=section_title)
+  
+    return render_template("post.html", post=post, content_html=content_html, related_posts=related_posts, form=form, section_title=section_title)
 
 @public_bp.route("/track-related-click", methods=["POST"])
 def track_related_click():
@@ -1492,48 +2040,75 @@ def add_reply(comment_id):
 
 @public_bp.route("/search")
 def search():
-    query = request.args.get("q", "")
-    results = []
+    query = request.args.get("q", "").strip()[:150]
+
+    page = request.args.get("page", 1, type=int)
+    page = max(page, 1)
+
+    results = None
 
     if query:
-        results = Post.query.filter(
-            Post.is_published == True,
-            Post.title.ilike(f"%{query}%") |
-            Post.content.ilike(f"%{query}%")
-        ).order_by(Post.created_at.desc()).all()
+        search_filter = or_(
+            Post.title.ilike(f"%{query}%"),
+            Post.content.ilike(f"%{query}%"),
+        )
 
-    return render_template("search.html", query=query, results=results)
+        results = (
+            Post.query
+            .filter(
+                Post.is_published.is_(True),
+                Post.status == "published",
+                search_filter,
+            )
+            .order_by(Post.created_at.desc())
+            .paginate(
+                page=page,
+                per_page=15,
+                error_out=False,
+            )
+        )
+
+    return render_template(
+        "search.html",
+        query=query,
+        results=results,
+    )
 
 @public_bp.route("/load-more")
 def load_more():
-    page = request.args.get("page", 1, type=int)
+    page = max(
+        request.args.get("page", 1, type=int),
+        1,
+    )
 
     pagination = (
         Post.query
-        .filter_by(is_published=True)
+        .filter(
+            Post.is_published.is_(True),
+            Post.status == "published",
+        )
         .order_by(Post.created_at.desc())
-        .paginate(page=page, per_page=5, error_out=False)
+        .paginate(
+            page=page,
+            per_page=5,
+            error_out=False,
+        )
     )
-    data = get_posts_for_page(page)  # Your function to get data
-    if not data:
-        return jsonify({"error": "No more data"}), 404
-    return jsonify(data)
 
-    # ✅ STOP when no posts
     if not pagination.items:
         return jsonify({
             "html": "",
-            "has_more": False
+            "has_more": False,
         })
 
     html = render_template(
         "post_cards.html",
-        posts=pagination.items
+        posts=pagination.items,
     )
 
     return jsonify({
         "html": html,
-        "has_more": pagination.has_next
+        "has_more": pagination.has_next,
     })
 
 @public_bp.route("/pricing", endpoint="pricing")
@@ -1583,47 +2158,103 @@ def subscribe():
     flash("Thanks for subscribing", "success")
     return redirect(request.referrer)
 
-@public_bp.route('/unsubscribe/<token>')
+@public_bp.route("/unsubscribe/<token>")
 def unsubscribe(token):
-    subscriber = Subscriber.query.filter_by(unsubscribe_token=token).first_or_404()
+    subscriber = Subscriber.query.filter_by(
+        unsubscribe_token=token
+    ).first_or_404()
 
-    if subscriber:
-        subscriber.is_active = False
-        if not safe_commit():
-            current_app.logger.error(f"Failed to unsubscribe {subscriber.email}")
-            return "Error unsubscribing. Please try again.", 500
-        flash("You have been unsubscribed successfully. {subscriber.email}", "success")
-    else:
-        flash("Invalid or expired unsubscribe link.", "danger")
+    subscriber.is_active = False
 
-    return redirect(url_for('public.index'))
+    if not safe_commit():
+        current_app.logger.error(
+            "Failed to unsubscribe %s",
+            subscriber.email,
+        )
+
+        return (
+            "Error unsubscribing. Please try again.",
+            500,
+        )
+
+    flash(
+        f"You have been unsubscribed successfully. {subscriber.email}",
+        "success",
+    )
+
+    return redirect(url_for("public.index"))
 
 @public_bp.route("/tag/<string:slug>")
 def tag(slug):
-    tag = Tag.query.filter_by(slug=slug).first_or_404()
+    tag = Tag.query.filter_by(
+        slug=slug
+    ).first_or_404()
 
-    posts = Post.query.filter(
-        Post.tags.contains(tag),
-        Post.is_published == True
-    ).order_by(Post.created_at.desc()).all()
+    page = max(
+        request.args.get("page", 1, type=int),
+        1,
+    )
 
-    return render_template("tag.html", tag=tag, posts=posts)
+    posts = (
+        Post.query
+        .filter(
+            Post.tags.any(Tag.id == tag.id),
+            Post.is_published.is_(True),
+            Post.status == "published",
+        )
+        .order_by(
+            Post.created_at.desc(),
+            Post.id.desc(),
+        )
+        .paginate(
+            page=page,
+            per_page=15,
+            error_out=False,
+        )
+    )
+
+    return render_template(
+        "tag.html",
+        tag=tag,
+        posts=posts,
+    )
 
 @public_bp.route("/category/<string:slug>")
 def category(slug):
     form = SubscribeForm()
-    category = Category.query.filter_by(slug=slug).first_or_404()
-    page = request.args.get("page", 1, type=int)
 
-    posts = (
-        category.posts
-        .filter_by(is_published=True)
-        .order_by(Post.created_at.desc())
-        .paginate(page=page, per_page=15, error_out=False)
+    category = (
+        Category.query
+        .filter_by(slug=slug)
+        .first_or_404()
     )
 
-    comment_count = func.count(Comment.id)
+    page = max(
+        request.args.get("page", 1, type=int),
+        1,
+    )
 
+    # --------------------------------------------------
+    # 1. CATEGORY ARTICLE PAGINATION
+    # --------------------------------------------------
+    posts = (
+        Post.query
+        .filter(
+            Post.category_id == category.id,
+            Post.is_published.is_(True),
+            Post.status == "published",
+        )
+        .order_by(Post.created_at.desc())
+        .paginate(
+            page=page,
+            per_page=15,
+            error_out=False,
+        )
+    )
+
+    # --------------------------------------------------
+    # 2. SUPERIOR ADS
+    # --------------------------------------------------
     homepage_banner_ad = get_superior_ad(
         placement="homepage_banner",
     )
@@ -1635,6 +2266,7 @@ def category(slug):
     homepage_banner_context = (
         make_ad_tracking_context(
             homepage_banner_ad,
+            publisher="superior-news",
             placement="homepage_banner",
         )
         if homepage_banner_ad
@@ -1644,38 +2276,121 @@ def category(slug):
     sidebar_context = (
         make_ad_tracking_context(
             sidebar_ad,
+            publisher="superior-news",
             placement="sidebar",
         )
         if sidebar_ad
         else None
     )
 
-    trending_posts = (
-        Post.query
-        .filter(
-            Post.category_id == category.id,
-            Post.is_published == True,
-            Post.status == "published"
+    # --------------------------------------------------
+    # 3. TRENDING POSTS
+    # First identify articles with at least five comments.
+    # --------------------------------------------------
+    def load_trending_post_ids():
+        comment_counts = (
+            db.session.query(
+                Comment.post_id.label("post_id"),
+                func.count(Comment.id).label("comment_count"),
+            )
+            .join(Post, Post.id == Comment.post_id)
+            .filter(
+                Post.category_id == category.id,
+                Post.is_published.is_(True),
+                Post.status == "published",
+            )
+            .group_by(Comment.post_id)
+            .having(func.count(Comment.id) >= 5)
+            .subquery()
         )
-        .outerjoin(Post.comments)
-        .group_by(Post.id)
-        .having(comment_count >= 5)
-        .order_by(desc(Post.views + Post.like_count + comment_count))
-        .limit(5)
-        .all()
+
+        popularity_score = (
+            func.coalesce(Post.views, 0)
+            + func.coalesce(Post.like_count, 0)
+            + func.coalesce(comment_counts.c.comment_count, 0)
+        )
+
+        rows = (
+            db.session.query(Post.id)
+            .join(
+                comment_counts,
+                comment_counts.c.post_id == Post.id,
+            )
+            .filter(
+                Post.category_id == category.id,
+                Post.is_published.is_(True),
+                Post.status == "published",
+            )
+            .order_by(
+                popularity_score.desc(),
+                Post.created_at.desc(),
+            )
+            .limit(5)
+            .all()
+        )
+
+        return [row[0] for row in rows]
+
+    trending_cache_key = (
+        f"public_category_trending_ids_{category.id}"
     )
 
-    category.views += 1
-    if not safe_commit():
-        print("Failed to view category post")
+    trending_ids = get_cached_value(
+        trending_cache_key,
+        timeout=60,
+        loader=load_trending_post_ids,
+    )
 
+    # Retrieve the records in the same ranking order.
+    if trending_ids:
+        trending_records = (
+            Post.query
+            .filter(
+                Post.id.in_(trending_ids),
+                Post.category_id == category.id,
+                Post.is_published.is_(True),
+                Post.status == "published",
+            )
+            .all()
+        )
+
+        trending_by_id = {
+            post.id: post
+            for post in trending_records
+        }
+
+        trending_posts = [
+            trending_by_id[post_id]
+            for post_id in trending_ids
+            if post_id in trending_by_id
+        ]
+    else:
+        trending_posts = []
+
+    # --------------------------------------------------
+    # 4. CATEGORY VIEW COUNT
+    # --------------------------------------------------
+    category.views = (category.views or 0) + 1
+
+    if not safe_commit():
+        current_app.logger.warning(
+            "Failed to increment category views for category %s",
+            category.id,
+        )
+
+    # --------------------------------------------------
+    # 5. RENDER CATEGORY PAGE
+    # --------------------------------------------------
     return render_template(
         "category.html",
         category=category,
         posts=posts,
         form=form,
-        homepage_banner_ad=homepage_banner_ad, sidebar_ad=sidebar_ad, homepage_banner_context=homepage_banner_context, sidebar_context=sidebar_context,
-        trending_posts=trending_posts
+        homepage_banner_ad=homepage_banner_ad,
+        sidebar_ad=sidebar_ad,
+        homepage_banner_context=homepage_banner_context,
+        sidebar_context=sidebar_context,
+        trending_posts=trending_posts,
     )
 
 @csrf.exempt
@@ -1803,41 +2518,76 @@ def safe_date(dt):
         return datetime.fromisoformat(dt)
     return dt
 
-# Sitemap for Google News
+def safe_date(dt):
+    if not dt:
+        return datetime.utcnow()
+
+    if isinstance(dt, str):
+        try:
+            return datetime.fromisoformat(dt)
+        except ValueError:
+            return datetime.utcnow()
+
+    return dt
+
+
 @public_bp.route("/sitemap.xml")
 @cache.cached(timeout=3600)
 def sitemap():
     pages = []
 
-    # Homepage
     pages.append({
-        "loc": url_for("public.index", _external=True),
-        "lastmod": datetime.utcnow()
+        "loc": url_for(
+            "public.index",
+            _external=True,
+        ),
+        "lastmod": datetime.utcnow(),
     })
 
-    # Categories
-    for category in Category.query.all():
+    categories = Category.query.order_by(Category.id).all()
+
+    for category in categories:
         pages.append({
-            "loc": url_for("public.category", slug=category.slug, _external=True),
-            "lastmod": datetime.utcnow()
+            "loc": url_for(
+                "public.category",
+                slug=category.slug,
+                _external=True,
+            ),
+            "lastmod": datetime.utcnow(),
         })
 
-    # Posts
-    posts = Post.query.filter(
-        Post.is_published == True,
-    ).order_by(Post.created_at.desc()).all()
-
-    pages = []
+    posts = (
+        Post.query
+        .filter(
+            Post.is_published.is_(True),
+            Post.status == "published",
+        )
+        .order_by(Post.created_at.desc())
+        .limit(45000)
+        .all()
+    )
 
     for post in posts:
         pages.append({
-            "loc": url_for("public.post_detail", slug=post.slug, _external=True),
-            "lastmod": safe_date(post.updated_at or post.created_at),
-            "title": post.title
+            "loc": url_for(
+                "public.post_detail",
+                slug=post.slug,
+                _external=True,
+            ),
+            "lastmod": safe_date(
+                post.updated_at or post.created_at
+            ),
+            "title": post.title,
         })
 
-    return make_response(
-        render_template("sitemap.xml", pages=pages),
+    response = make_response(
+        render_template(
+            "sitemap.xml",
+            pages=pages,
+        ),
         200,
-        {"Content-Type": "application/xml"}
     )
+
+    response.headers["Content-Type"] = "application/xml; charset=utf-8"
+
+    return response

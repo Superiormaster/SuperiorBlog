@@ -128,12 +128,30 @@ class XPostMetrics(db.Model):
     engagement_score = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-
 class PageView(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
-    session_id = db.Column(db.String(100), index=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=True,
+    )
+    session_id = db.Column(
+        db.String(100),
+        index=True,
+    )
     path = db.Column(db.String(255))
     read_time = db.Column(db.Float, default=0)
     ip_address = db.Column(db.String(45))
-    created_at = db.Column(db.DateTime, default=datetime.now(UTC))
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        db.Index(
+            "ix_pageview_path_session_created",
+            "path",
+            "session_id",
+            "created_at",
+        ),
+    )
