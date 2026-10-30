@@ -862,6 +862,51 @@ def campaign_failed(id):
         failed=failed
     )
 
+@admin_bp.route(
+    "/admin/campaign/<int:id>/refresh",
+    methods=["POST"]
+)
+@login_required
+@csrf.exempt
+def refresh_campaign_route(id):
+
+    if not current_user.is_admin:
+        flash("Access denied.", "danger")
+        return redirect(url_for("public.user_login"))
+
+    success, message = refresh_campaign_content(id)
+
+    flash(
+        message,
+        "success" if success else "danger"
+    )
+
+    return redirect(
+        url_for("admin.campaign_details", id=id)
+    )
+
+
+@admin_bp.route(
+    "/admin/campaign/<int:id>/delete",
+    methods=["POST"]
+)
+@login_required
+@csrf.exempt
+def delete_campaign_route(id):
+
+    if not current_user.is_admin:
+        flash("Access denied.", "danger")
+        return redirect(url_for("public.user_login"))
+
+    success, message = delete_campaign(id)
+
+    flash(
+        message,
+        "success" if success else "danger"
+    )
+
+    return redirect(url_for("admin.list_campaigns"))
+
 @admin_bp.route('/email-logs')
 @login_required
 def email_logs():

@@ -299,27 +299,46 @@
 
                         </td>
 
-                        <td class="px-5 py-5 space-y-2 flex items-center flex-col text-right space-x-2">
+                        <td class="px-5 py-5 space-y-2 flex items-center flex-col text-right">
 
-                            <a href="{{ url_for('admin.campaign_details', id=campaign.id) }}"
-                               class="px-3 py-2 bg-blue-600 text-white rounded-lg">
-                                View
-                            </a>
-                        
-                            <a href="{{ url_for('admin.campaign_batch',
-                                                id=campaign.id,
-                                                number=1) }}"
-                               class="px-3 py-2 bg-green-600 text-white rounded-lg">
-                                Batches
-                            </a>
-                        
-                            <a href="{{ url_for('admin.campaign_failed',
-                                                id=campaign.id) }}"
-                               class="px-3 py-2 bg-red-600 text-white rounded-lg">
-                                Failed
-                            </a>
-                        
-                        </td>
+                          <a
+                              href="{{ url_for('admin.campaign_details', id=campaign.id) }}"
+                              class="px-3 py-2 bg-blue-600 text-white rounded-lg">
+                              View
+                          </a>
+                      
+                          <a
+                              href="{{ url_for('admin.campaign_batch',
+                                               id=campaign.id,
+                                               number=1) }}"
+                              class="px-3 py-2 bg-green-600 text-white rounded-lg">
+                              Batches
+                          </a>
+                      
+                          <a
+                              href="{{ url_for('admin.campaign_failed',
+                                               id=campaign.id) }}"
+                              class="px-3 py-2 bg-orange-600 text-white rounded-lg">
+                              Failed
+                          </a>
+                      
+                          <form
+                              method="POST"
+                              action="{{ url_for('admin.delete_campaign_route', id=campaign.id) }}"
+                              onsubmit="return confirm('Permanently delete this campaign? Email logs will be preserved.');"
+                          >
+                      
+                              <button
+                                  type="submit"
+                                  class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                      
+                                  Delete
+                      
+                              </button>
+                      
+                          </form>
+                      
+                      </td>
           
           </tr>
           

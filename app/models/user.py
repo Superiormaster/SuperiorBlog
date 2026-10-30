@@ -51,6 +51,16 @@ class User(db.Model, UserMixin):
     daily_limit = db.Column(db.Integer, default=5)
     _is_active = db.Column("is_active", db.Boolean, default=True)
     is_blocked = db.Column(db.Boolean, default=False)
+    email_verified = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+        server_default=db.true()
+    )
+    email_verified_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
     is_subscribed = db.Column(db.Boolean, default=True)
     posts = db.relationship("Post", back_populates="author", lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.now(UTC))
@@ -77,6 +87,41 @@ class User(db.Model, UserMixin):
     @property
     def is_active(self):
         return True
+
+    def generate_verification_token(self):
+        s = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+    
+        return s.dumps(
+            {
+                "user_id": self.id,
+                "email": self.email
+            },
+            salt="email-verification"
+        )
+
+    @staticmethod
+    def verify_email_token(token, expires_sec=86400):
+        s = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+    
+        try:
+            data = s.loads(
+                token,
+                salt="email-verification",
+                max_age=expires_sec
+            )
+        except Exception:
+            return None
+    
+        user = User.query.get(data.get("user_id"))
+    
+        if not user:
+            return None
+    
+        # Invalidate tokens generated before an email change.
+        if user.email != data.get("email"):
+            return None
+    
+        return user
 
     @is_active.setter
     def is_active(self, value):

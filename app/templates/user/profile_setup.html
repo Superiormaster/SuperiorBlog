@@ -1,86 +1,109 @@
 {% extends "user/base.html" %}
 {% block content %}
 
-<form method="POST" class="mt-8 px-4 py-3 space-y-4">
-  {{ form.csrf_token }}
-  <div class="text-center text-3xl font-bold rounded text-gray-100 dark:text-gray-500 bg-yellow-600">Create Profile</div>
-  
-  <div>
-    <label class="block text-sm text-gray-900 dark:text-gray-100">Username</label>
-    {{ form.username(class="w-full rounded bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-700 px-3 py-2") }}
-    {% for error in form.username.errors %}
-      <p class="text-red-500 text-sm">{{ error }}</p>
-    {% endfor %}
-  </div>
+<div class="max-w-2xl mx-auto px-4 py-8"><div class="mb-7 text-center">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+        Create Your Profile
+    </h1>
 
-  <div>
-    <label class="block text-sm text-gray-900 dark:text-gray-100">Description</label>
-    {{ form.description(class="w-full rounded bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100  border border-gray-700 px-3 py-2") }}
-    {% for error in form.description.errors %}
-      <p class="text-red-500 text-sm">{{ error }}</p>
-    {% endfor %}
-  </div>
+    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        Introduce yourself to the Superior News community.
+    </p>
+</div>
 
-  <div>
-    <label class="block text-sm text-gray-900 dark:text-gray-100">Category</label>
-    {{ form.category(class="w-full rounded bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100  border border-gray-700 px-3 py-2") }}
-    {% for error in form.category.errors %}
-      <p class="text-red-500 text-sm">{{ error }}</p>
-    {% endfor %}
-  </div>
+<form method="POST"
+      class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
 
-  <div>
-    <label class="block text-sm text-gray-900 dark:text-gray-100">Full Name</label>
-    {{ form.full_name(class="w-full rounded bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100  border border-gray-700 px-3 py-2") }}
-    {% for error in form.full_name.errors %}
-      <p class="text-red-500 text-sm">{{ error }}</p>
-    {% endfor %}
-  </div>
+    {{ form.hidden_tag() }}
 
-  <div>
-    <label class="block text-sm text-gray-900 dark:text-gray-100">Location</label>
-    {{ form.location(class="w-full rounded bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-700 px-3 py-2") }}
-    {% for error in form.location.errors %}
-      <p class="text-red-500 text-sm">{{ error }}</p>
-    {% endfor %}
-  </div>
+    <div>
+        <label class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+            Username <span class="text-red-500">*</span>
+        </label>
 
- <!-- <div>
-    <label class="block text-sm">ID Type</label>
-    {{ form.id_type(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
-    {% for error in form.id_type.errors %}
-      <p class="text-red-500 text-sm">{{ error }}</p>
-    {% endfor %}
-  </div>
-  
-  <div>
-    <label class="block text-sm">ID Number</label>
-    {{ form.id_number(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
-    {% for error in form.id_number.errors %}
-      <p class="text-red-500 text-sm">{{ error }}</p>
-    {% endfor %}
-  </div>-->
+        {{ form.username(
+            class="w-full rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 px-4 py-3",
+            placeholder="e.g. chidera_writer"
+        ) }}
 
-  <div>
-    <label class="block text-sm text-gray-900 dark:text-gray-100">Phone Number</label>
-    {{ form.phone(class="w-full rounded  border bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100  border-gray-700 px-3 py-2") }}
-    {% for error in form.phone.errors %}
-      <p class="text-red-500 text-sm">{{ error }}</p>
-    {% endfor %}
-  </div>
+        <p class="text-xs text-gray-500 mt-2">
+            Your unique identity on Superior News.
+        </p>
 
-  <!--<div>
-    <label class="block text-sm">Bank Account</label>
-    {{ form.bank_account(class="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2") }}
-    {% for error in form.bank_account.errors %}
-      <p class="text-red-500 text-sm">{{ error }}</p>
-    {% endfor %}
-  </div>-->
+        {% for error in form.username.errors %}
+            <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
+    </div>
 
-  <button
-    class="bg-blue-600 text-gray-900 dark:text-gray-200 px-4 py-2 rounded hover:bg-blue-700">
-    Save Profile
-  </button>
+    <div>
+        <label class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+            Full Name <span class="text-red-500">*</span>
+        </label>
+
+        {{ form.full_name(
+            class="w-full rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 px-4 py-3",
+            placeholder="Your name"
+        ) }}
+
+        {% for error in form.full_name.errors %}
+            <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
+    </div>
+
+    <div>
+        <label class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+            Profile Type <span class="text-red-500">*</span> 
+        </label>
+
+        {{ form.category(
+            class="w-full rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 px-4 py-3"
+        ) }}
+
+        {% for error in form.category.errors %}
+            <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
+    </div>
+
+    <div>
+        <label class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+            About You <span class="text-gray-400">(Optional)</span>
+        </label>
+
+        {{ form.description(
+            rows="4",
+            class="w-full rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 px-4 py-3",
+            placeholder="Tell the community a little about yourself..."
+        ) }}
+
+        {% for error in form.description.errors %}
+            <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
+    </div>
+
+    <div>
+        <label class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+            Location <span class="text-gray-400">(Optional)</span>
+        </label>
+
+        {{ form.location(
+            class="w-full rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 px-4 py-3",
+            placeholder="e.g. Lagos, Nigeria"
+        ) }}
+
+        <p class="text-xs text-gray-500 mt-2">
+            Your city and country are enough.
+        </p>
+
+        {% for error in form.location.errors %}
+            <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
+    </div>
+
+    <button type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-5 py-3 transition">
+        Save and Continue
+    </button>
+
 </form>
 
-{% endblock %}
+</div>{% endblock %}

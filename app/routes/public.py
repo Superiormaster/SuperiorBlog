@@ -9,8 +9,10 @@ import traceback
 import uuid
 
 import requests
+from urllib.parse import urljoin, urlparse
 from requests.exceptions import ConnectionError
 from bs4 import BeautifulSoup
+from app.utils.email_verification import send_verification_email
 
 from flask import (
     Blueprint,
@@ -145,6 +147,37 @@ def clear_public_content_cache(category_id=None):
                 category_id,
             )
 
+def generate_google_username(name):
+    base = re.sub(
+        r"[^a-zA-Z0-9_]",
+        "",
+        (name or "").replace(" ", "_")
+    ).strip("_").lower()
+
+    base = base[:20] or "user"
+
+    username = base
+
+    while User.query.filter_by(username=username).first():
+        username = f"{base[:20]}_{uuid.uuid4().hex[:6]}"
+
+    return username
+
+def has_generic_username(username):
+    return bool(
+        re.fullmatch(r"user[_-]?\d+", username or "", re.IGNORECASE)
+    )
+
+def require_custom_username():
+    if has_generic_username(current_user.username):
+        flash(
+            "Please update your temporary username before creating or publishing posts. "
+            "Visit your profile and choose a unique username to continue.",
+            "warning"
+        )
+        return False
+
+    return True
 
 def get_cached_value(key, timeout, loader):
     """
@@ -198,114 +231,309 @@ def test_session():
 
 @public_bp.route('/register', methods=['GET', 'POST'])
 def user_register():
+
     if current_user.is_authenticated:
         return redirect(url_for('public.index'))
+
     form = UserRegisterForm()
+
     if form.validate_on_submit():
+
+        username = form.username.data.strip()
+        email = form.email.data.strip().lower()
+
         existing_user = User.query.filter(
-            (User.username == form.username.data) |
-            (User.email == form.email.data)
+            (User.username == username) |
+            (User.email == email)
         ).first()
+
         if existing_user:
-            flash("Username or email already exists. Please choose another.", "danger")
+            flash(
+                "Username or email already exists. Please choose another.",
+                "danger"
+            )
             return redirect(url_for('public.user_register'))
 
-        user = User(username=form.username.data.strip(), email=form.email.data.strip().lower())
+        user = User(
+            username=username,
+            email=email,
+            email_verified=False
+        )
+
         user.set_password(form.password.data)
+
         db.session.add(user)
         db.session.flush()
 
-        existing_subscriber = Subscriber.query.filter_by(email=user.email).first()
-        if not existing_subscriber:
-          subscriber = Subscriber(email=user.email, user_id=user.id, is_active=True)
-          db.session.add(subscriber)
-        elif not existing_subscriber.is_active:
-            existing_subscriber.is_active = True
-            db.session.add(existing_subscriber)
-
         if not safe_commit():
-          print("Failed to register user")
-          flash("Error creating account. Try again.", "danger")
-          return redirect(url_for('public.user_register'))
+            flash(
+                "Error creating account. Please try again.",
+                "danger"
+            )
+            return redirect(url_for('public.user_register'))
 
-        flash("Account created successfully! Please log in.", "success")
-        return redirect(url_for('public.user_login'))
-    return render_template('user/register.html', form=form)
+        email_sent = send_verification_email(user)
+
+        if email_sent:
+            flash(
+                "Account created! Check your email and click the verification link before logging in.",
+                "success"
+            )
+        else:
+            flash(
+                "Your account was created, but we could not send the verification email. Please request another verification email.",
+                "warning"
+            )
+
+        return redirect(url_for('public.verification_pending'))
+
+    return render_template(
+        'user/register.html',
+        form=form
+    )
+
+@public_bp.route("/verify-email/<token>")
+def verify_email(token):
+
+    user = User.verify_email_token(token)
+
+    if not user:
+        flash(
+            "This verification link is invalid or has expired. Please request another one.",
+            "danger"
+        )
+        return redirect(
+            url_for("public.resend_verification")
+        )
+
+    if user.email_verified:
+        flash(
+            "Your email has already been verified. You can log in.",
+            "info"
+        )
+        return redirect(url_for("public.user_login"))
+
+    user.email_verified = True
+    user.email_verified_at = datetime.now(UTC)
+
+    if not safe_commit():
+        flash(
+            "We could not verify your email. Please try again.",
+            "danger"
+        )
+        return redirect(url_for("public.user_login"))
+
+    flash(
+        "Your email has been successfully verified. You can now log in.",
+        "success"
+    )
+
+    return redirect(url_for("public.user_login"))
+
+@public_bp.route("/resend-verification", methods=["GET", "POST"])
+def resend_verification():
+
+    if current_user.is_authenticated:
+        return redirect(url_for("public.user_dashboard"))
+
+    if request.method == "POST":
+
+        email = request.form.get("email", "").strip().lower()
+
+        if email:
+            user = User.query.filter_by(email=email).first()
+
+            if user and not user.email_verified:
+
+                email_sent = send_verification_email(user)
+
+                if email_sent:
+                    flash(
+                        "If your account requires verification, a new link has been sent.",
+                        "success"
+                    )
+                else:
+                    flash(
+                        "We could not send the email. Please try again later.",
+                        "warning"
+                    )
+            else:
+                flash(
+                    "If your account requires verification, a new link has been sent.",
+                    "success"
+                )
+
+        else:
+            flash("Please enter your email address.", "danger")
+
+        return redirect(url_for("public.resend_verification"))
+
+    return render_template("user/resend_verification.html")
+
+@public_bp.route("/verification-pending")
+def verification_pending():
+    return render_template("user/verification_pending.html")
 
 @public_bp.route('/login', methods=['GET', 'POST'])
 def user_login():
+
+    is_ajax = (
+        request.is_json or
+        request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    )
+
     if current_user.is_authenticated:
-        next_page = request.args.get('next') or url_for('public.user_dashboard')
-        return redirect(next_page)
+        if is_ajax:
+            return jsonify({
+                "success": True,
+                "redirect_url": url_for("public.user_dashboard")
+            })
+
+        return redirect(url_for("public.user_dashboard"))
 
     form = UserLoginForm()
-    next_page = request.args.get('next', url_for('public.user_dashboard'))
+
+    next_page = request.args.get(
+        'next',
+        url_for('public.user_dashboard')
+    )
 
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
 
-        # User exists and password is correct
-        if user and user.check_password(form.password.data) and not user.is_admin:
-            login_user(user, remember=form.remember_me.data)
-            track_login(user)
+        email = form.email.data.strip().lower()
 
-            # AJAX modal login
-            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                # If user is completely new (first-time login) in modal, tell them to sign up
-                if not user.profile_completed:  # assuming you have a boolean column profile_completed
-                    return jsonify({
-                        "success": False,
-                        "message": "Please sign up first to complete your profile."
-                    })
-                return jsonify({"success": True})
+        user = User.query.filter_by(email=email).first()
 
-            # Normal page login
-            flash("Logged in successfully!", "success")
-            if not user.profile_completed:
-                # Redirect first-time login users to profile setup
-                return redirect(url_for('public.profile_setup'))
-            return redirect(next_page)
+        # Validate credentials
+        if not user or not user.check_password(form.password.data) or user.is_admin:
 
-        # Invalid login
-        else:
-            msg = "No account found. Please sign up." if not user else "Incorrect password. Please check your password"
-            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({"success": False, "message": msg})
+            msg = (
+                "No account found. Please sign up."
+                if not user
+                else "Incorrect email or password."
+            )
+
+            if is_ajax:
+                return jsonify({
+                    "success": False,
+                    "message": msg
+                }), 401
+
             flash(msg, "error")
-            return redirect(url_for('public.user_login', next=next_page))
+
+            return redirect(
+                url_for('public.user_login', next=next_page)
+            )
+
+        # Require email verification
+        if not user.email_verified:
+
+            if is_ajax:
+                return jsonify({
+                    "success": False,
+                    "message": "Please verify your email before logging in.",
+                    "verification_required": True,
+                    "redirect_url": url_for("public.verification_pending")
+                }), 403
+
+            flash(
+                "Please verify your email before logging in. Check your inbox.",
+                "warning"
+            )
+
+            return redirect(
+                url_for("public.verification_pending")
+            )
+
+        # Authenticate user
+        login_user(
+            user,
+            remember=form.remember_me.data
+        )
+
+        track_login(user)
+
+        # AJAX / modal login response
+        if is_ajax:
+            return jsonify({
+                "success": True,
+                "message": "Login successful!",
+                "redirect_url": url_for("public.user_dashboard")
+            })
+
+        # Normal browser login
+        flash("Logged in successfully!", "success")
+
+        return redirect(url_for("public.user_dashboard"))
 
     # Form validation failed
-    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({"success": False, "message": "Form validation failed."})
+    if is_ajax:
+        return jsonify({
+            "success": False,
+            "message": "Please enter valid login details."
+        }), 400
 
-    # GET request → show login page
-    return render_template('user/login.html', form=form, GOOGLE_CLIENT_ID=current_app.config["GOOGLE_CLIENT_ID"]
+    return render_template(
+        'user/login.html',
+        form=form,
+        GOOGLE_CLIENT_ID=current_app.config["GOOGLE_CLIENT_ID"]
     )
 
 @public_bp.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
-    form = ForgotPasswordForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if not form.email.data:
-          flash("Please enter your email", "error")
 
+    form = ForgotPasswordForm()
+
+    if form.validate_on_submit():
+
+        email = form.email.data.strip().lower()
+
+        user = User.query.filter_by(email=email).first()
+
+        # Use the same response regardless of whether the email exists.
         if user:
-            # Generate a token (you can use itsdangerous)
+
             token = user.generate_reset_token()
-            reset_url = url_for("public.reset_password", token=token, _external=True)
-            success = send_email(user.email, "Reset Your Password", f"Click here to reset: {reset_url}")
-            if success:
-              flash("Check your email for reset instructions.", "info")
-            else:
-              flash(
-                  "Reset link saved, but email could not be sent. Please check your internet connection.",
-                  "warning"
-              )
-        else:
-            flash("If that email is registered, you will receive a reset link.", "info")
+
+            reset_url = url_for(
+                "public.reset_password",
+                token=token,
+                _external=True
+            )
+
+            html_content = render_template(
+                "emails/reset_password.html",
+                reset_url=reset_url,
+                expiry_hours=1
+            )
+
+            result = send_email(
+                to=user.email,
+                subject="Reset Your Superior News Password",
+                html_content=html_content,
+                text_content=(
+                    "Reset your Superior News password using this link: "
+                    f"{reset_url}"
+                )
+            )
+
+            if not isinstance(result, dict) or not result.get("success"):
+                current_app.logger.error(
+                    "Password reset email failed for %s",
+                    user.id
+                )
+
+        flash(
+            "If that email is registered, you will receive password reset instructions.",
+            "info"
+        )
+
         return redirect(url_for("public.user_login"))
-    return render_template("user/forgot_password.html", form=form)
+
+    return render_template(
+        "user/forgot_password.html",
+        form=form
+    )
 
 @public_bp.route("/reset-password/<token>", methods=["GET", "POST"])
 def reset_password(token):
@@ -341,27 +569,80 @@ def user_change_password():
             return redirect(url_for('public.user_dashboard'))
     return render_template('user/change_password.html', form=form)
 
+def is_safe_next_url(target):
+  if not target:
+    return False
+  
+  ref_url = urlparse(request.host_url)
+  test_url = urlparse(urljoin(request.host_url, target))
+  
+  return (
+      test_url.scheme in ("http", "https")
+      and ref_url.netloc == test_url.netloc
+  )
+
 @public_bp.route("/profile/setup", methods=["GET", "POST"])
 @login_required
 def profile_setup():
-    next_page = request.args.get('next', url_for('public.user_dashboard'))
 
+    next_page = request.args.get(
+        "next",
+        url_for("public.user_dashboard")
+    )
+    
+    if not is_safe_next_url(next_page):
+        next_page = url_for("public.user_dashboard")
+    
     if current_user.profile_completed:
         return redirect(next_page)
-
+    
     form = ProfileForm(obj=current_user)
-
+    
     if form.validate_on_submit():
+    
+        username = form.username.data.strip()
+    
+        # Prevent generic usernames such as user1352.
+        if has_generic_username(username):
+            flash(
+                "Please choose a personal username instead of your temporary username.",
+                "warning"
+            )
+            return render_template(
+                "user/profile_setup.html",
+                form=form,
+                user=current_user
+            )
+    
+        existing_user = User.query.filter(
+            User.username.ilike(username),
+            User.id != current_user.id
+        ).first()
+    
+        if existing_user:
+            flash("This username is already taken.", "danger")
+            return render_template(
+                "user/profile_setup.html",
+                form=form,
+                user=current_user
+            )
+    
         form.populate_obj(current_user)
+    
+        current_user.username = username
         current_user.profile_completed = True
+    
         if not safe_commit():
-          print("Failed to setup profile")
-
-        flash("Profile completed successfully", "success")
-        next_page = request.args.get('next', url_for('caption.caption_page'))
-
+            flash(
+                "Unable to save your profile. Please try again.",
+                "danger"
+            )
+            return redirect(url_for("public.profile_setup"))
+    
+        flash("Your profile has been created successfully!", "success")
+    
         return redirect(next_page)
-
+    
     return render_template(
         "user/profile_setup.html",
         form=form,
@@ -410,24 +691,54 @@ def user_profile(username):
 @public_bp.route("/profile/edit", methods=["GET", "POST"])
 @login_required
 def edit_profile():
+
     form = ProfileForm(obj=current_user)
-
+    
     if form.validate_on_submit():
-        if form.username.data != current_user.username:
-            exists = User.query.filter_by(username=form.username.data).first()
-            if exists:
-                flash("Username already taken.", "error")
-                return redirect(url_for("public.edit_profile"))
-
+    
+        username = form.username.data.strip()
+    
+        if has_generic_username(username):
+            flash(
+                "Please choose a personal username instead of a temporary username.",
+                "warning"
+            )
+            return render_template(
+                "user/edit_profile.html",
+                form=form
+            )
+    
+        existing_user = User.query.filter(
+            User.username.ilike(username),
+            User.id != current_user.id
+        ).first()
+    
+        if existing_user:
+            flash("This username is already taken.", "danger")
+            return render_template(
+                "user/edit_profile.html",
+                form=form
+            )
+    
         form.populate_obj(current_user)
+        current_user.username = username
+    
         if not safe_commit():
-          print("Failed to edit profile")
-
-        flash("Profile updated successfully.", "success")
+            flash(
+                "Unable to update your profile. Please try again.",
+                "danger"
+            )
+            return redirect(url_for("public.edit_profile"))
+    
+        flash("Your profile has been updated successfully!", "success")
+    
         return redirect(
-            url_for("public.user_profile", username=current_user.username)
+            url_for(
+                "public.user_profile",
+                username=current_user.username
+            )
         )
-
+    
     return render_template(
         "user/edit_profile.html",
         form=form
@@ -803,6 +1114,14 @@ def user_edit(id):
     return user_create_or_edit(id)
 
 def user_create_or_edit(id=None):
+    if not require_custom_username():
+        return redirect(
+            url_for(
+                "public.user_profile",
+                username=current_user.username
+            )
+        )
+
     post = Post.query.get(id) if id else None
     form = PostForm(obj=post or None)
 
@@ -985,6 +1304,19 @@ def save_draft():
     - tags
     - Tribe conversation fields
     """
+
+    if not require_custom_username():
+        return jsonify({
+            "status": "username_required",
+            "message": (
+                "Please visit your profile and choose a unique username "
+                "before saving drafts."
+            ),
+            "redirect_url": url_for(
+                "public.user_profile",
+                username=current_user.username
+            )
+        }), 403
 
     content_html = request.form.get("content", "").strip()
 
@@ -1226,6 +1558,14 @@ def save_draft():
 def submit_user_post(id):
     post = Post.query.get_or_404(id)
 
+    if not require_custom_username():
+        return redirect(
+            url_for(
+                "public.user_profile",
+                username=current_user.username
+            )
+        )
+
     # Ownership check
     if post.user_id != current_user.id:
         flash("You cannot submit this post.", "danger")
@@ -1457,9 +1797,13 @@ def google_callback():
     )
 
     # idinfo contains user info
-    user_email = idinfo["email"]
-    user_name = idinfo["name"]
-    oauth_id = idinfo["sub"]
+    user_email = (idinfo.get("email") or "").strip().lower()
+    user_name = idinfo.get("name") or ""
+    oauth_id = idinfo.get("sub")
+    
+    if not user_email or not oauth_id or not idinfo.get("email_verified"):
+        flash("A verified Google email is required.", "danger")
+        return redirect(url_for("public.user_login"))
 
     # Save or get user from DB
     user = User.query.filter((User.email==user_email) | (User.oauth_id == oauth_id)).first()
@@ -1468,7 +1812,7 @@ def google_callback():
         user.last_login = datetime.utcnow()
         user.login_count = (user.login_count or 0) + 1
     else:
-        user = User(email=user_email, username=f"user_{uuid.uuid4().hex[:8]}", oauth_provider="google", oauth_id=oauth_id, is_active=1, created_at=datetime.utcnow(), last_login=datetime.utcnow(), login_count=1,)
+        user = User(email=user_email, username=generate_google_username(user_name), oauth_provider="google", oauth_id=oauth_id, is_active=1, email_verified=True, email_verified_at=datetime.now(UTC), created_at=datetime.utcnow(), last_login=datetime.utcnow(),)
         db.session.add(user)
         db.session.flush()
 
@@ -1488,9 +1832,7 @@ def google_callback():
     track_login(user)
     flash("Logged in successfully", "success")
 
-    if user.profile_completed:
-        return redirect(next_page)
-    return redirect(url_for("public.profile_setup"))
+    return redirect(url_for("public.user_dashboard"))
 
 @public_bp.route("/auth/google/onetap", methods=["POST"])
 def google_one_tap():
@@ -1572,17 +1914,14 @@ def google_one_tap():
 
             if picture and not user.avatar:
                 user.avatar = picture
+  
+            user.email_verified = True
+
+            if not user.email_verified_at:
+                user.email_verified_at = datetime.now(UTC)
 
         else:
-            base_username = re.sub(
-                r"[^a-zA-Z0-9_]",
-                "",
-                name.replace(" ", "_"),
-            ).strip("_").lower()
-
-            base_username = base_username[:20] or "user"
-
-            username = f"{base_username}_{uuid.uuid4().hex[:8]}"
+            username=generate_google_username(name)
 
             user = User(
                 email=email,
@@ -1590,6 +1929,8 @@ def google_one_tap():
                 oauth_provider="google",
                 oauth_id=oauth_id,
                 avatar=picture,
+                email_verified=True,
+                email_verified_at=datetime.now(UTC),
             )
 
             db.session.add(user)
@@ -1607,12 +1948,7 @@ def google_one_tap():
 
         return jsonify({
             "success": True,
-            "profile_completed": bool(user.profile_completed),
-            "redirect_url": (
-                url_for("public.user_dashboard")
-                if user.profile_completed
-                else url_for("public.profile_setup")
-            ),
+            "redirect_url": url_for("public.user_dashboard"),
         })
 
     except Exception:

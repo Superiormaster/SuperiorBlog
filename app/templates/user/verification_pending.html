@@ -1,0 +1,41 @@
+{% extends "user/base.html" %}
+
+{% block title %}Verify Your Email{% endblock %}
+
+{% block content %}
+
+<div class="max-w-md mx-auto mt-16 p-6 rounded-xl shadow-md bg-white dark:bg-gray-900 text-center">
+
+    <div class="text-5xl mb-4">📧</div>
+
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+        Check Your Email
+    </h2>
+
+    <p class="text-gray-600 dark:text-gray-300 mb-6">
+        We've sent you an email verification link.
+        Open your inbox and click the link to activate your Superior News account.
+    </p>
+
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+        If you cannot find the email, check your spam or junk folder.
+    </p>
+
+    <a
+        href="{{ url_for('public.resend_verification') }}"
+        class="block w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold">
+        Resend Verification Email
+    </a>
+
+    <p class="mt-5 text-sm text-gray-500">
+        Already verified?
+
+        <a href="{{ url_for('public.user_login') }}"
+           class="text-blue-500 hover:underline">
+            Login
+        </a>
+    </p>
+
+</div>
+
+{% endblock %}

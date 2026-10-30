@@ -2,7 +2,7 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<div class="mt-8 w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+<div class="mt-8 w-full shadow-lg rounded-lg overflow-hidden">
   <aside id="sidebar"
     class="fixed top-0 bottom-0 left-0 w-64 h-screen
            bg-white dark:bg-gray-900 text-white
@@ -31,6 +31,7 @@
       <a href="{{ url_for('admin.list_campaigns') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Campaigns</a>
       <a href="{{ url_for('admin.create_draft') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Create Drafts</a>
       <a href="{{ url_for('admin.list_drafts') }}" class="block px-4 py-2 rounded hover:bg-gray-800">View All Drafts</a>
+      <a href="{{ url_for('admin.email_logs') }}" class="block px-4 py-2 rounded hover:bg-gray-800">All email logs</a>
       <a href="{{ url_for('admin.tags') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Tags Used</a>
       <a href="{{ url_for('admin.users') }}" class="block px-4 py-2 rounded hover:bg-gray-700">Users</a>
       <a href="{{ url_for('admin.ad_form') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Create Ads</a>

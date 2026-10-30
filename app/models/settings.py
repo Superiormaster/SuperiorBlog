@@ -108,6 +108,7 @@ class EmailCampaign(db.Model):
     # draft
     # welcome
     # breaking
+    # user_announcement
 
     status = db.Column(db.String(20), default="pending")
     # pending
@@ -155,6 +156,19 @@ class CampaignRecipient(db.Model):
         db.Integer,
         db.ForeignKey("subscriber.id")
     )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=True,
+        index=True
+    )
+
+    user = db.relationship(
+        "User",
+        backref="campaign_recipients"
+    )
+
     updated_at = db.Column(
         db.DateTime,
         default=datetime.utcnow,

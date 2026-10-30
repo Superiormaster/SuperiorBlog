@@ -40,7 +40,7 @@ def init_payment(plan):
 
     try:
         secret_key = current_app.config["PAYSTACK_SECRET_KEY"]
-        base_url = current_app.config["PAYSTACK_BASE_URL"]
+        base_url = current_app.config["PAYSTACK_BASE_URL"].rstrip("/")
 
         reference = str(uuid.uuid4())
         amount = PLANS[plan]["amount"]
@@ -54,36 +54,63 @@ def init_payment(plan):
             "email": current_user.email,
             "amount": amount,
             "reference": reference,
-            "callback_url": url_for("billings.payment_success", _external=True)
+            "callback_url": url_for(
+                "billings.payment_success",
+                _external=True
+            )
         }
 
         response = requests.post(
             f"{base_url}/transaction/initialize",
             json=data,
             headers=headers,
-            timeout=20
-        ).json()
+            timeout=(10, 30)
+        )
 
-        if response.get("status"):
+        response.raise_for_status()
+        result = response.json()
 
-            payment = Payment(
-                reference=reference,
-                email=current_user.email,
-                amount=amount,
-                plan=plan,
-                status="pending"
+        if not result.get("status"):
+            current_app.logger.error(
+                "Paystack initialization rejected: %s",
+                result
             )
+            flash("Payment initialization failed.", "danger")
+            return redirect(url_for("public.pricing"))
 
-            db.session.add(payment)
-            safe_commit()
+        payment = Payment(
+            reference=reference,
+            email=current_user.email,
+            amount=amount,
+            plan=plan,
+            status="pending"
+        )
 
-            return redirect(response["data"]["authorization_url"])
+        db.session.add(payment)
+        safe_commit()
 
-        flash("Payment initialization failed.", "danger")
+        authorization_url = result["data"]["authorization_url"]
+
+        return redirect(authorization_url)
+
+    except requests.exceptions.RequestException:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Paystack connection error during initialization"
+        )
+
+        flash(
+            "Unable to connect to Paystack. Please try again.",
+            "danger"
+        )
         return redirect(url_for("public.pricing"))
 
-    except Exception as e:
-        print("Paystack init error:", e)
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Unexpected payment initialization error"
+        )
+
         flash("Something went wrong. Try again.", "danger")
         return redirect(url_for("public.pricing"))
 

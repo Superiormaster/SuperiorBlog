@@ -1,104 +1,78 @@
 {% extends "user/base.html" %}
 {% block content %}
 
-  <div class="container mx-auto py-12">
-    <div class="bg-white dark:bg-gray-700 shadow-md rounded-lg overflow-hidden">
-    <!-- Header -->
-    <div class="px-6 py-4 mt-4 border-b border-gray-200">
-      <h2 class="text-lg text-center rounded bg-yellow-600 font-semibold text-gray-800">
-        {{ user.full_name or user.username }} Profile
-      </h2>
+<div class="max-w-4xl mx-auto px-4 py-8"><div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+
+    <div class="bg-blue-700 px-6 py-10 text-center">
+
+        <div class="w-20 h-20 mx-auto rounded-full bg-white text-blue-700 flex items-center justify-center text-3xl font-bold">
+            {{ (user.full_name or user.username)[0]|upper }}
+        </div>
+
+        <h1 class="text-2xl font-bold text-white mt-4">
+            {{ user.full_name or user.username }}
+        </h1>
+
+        <p class="text-blue-100 mt-1">
+            @{{ user.username }}
+        </p>
+
+        {% if user.category %}
+            <span class="inline-block mt-3 px-3 py-1 rounded-full bg-white/20 text-white text-sm">
+                {{ user.category.replace("_", " ")|title }}
+            </span>
+        {% endif %}
+
     </div>
 
-    <div class="p-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="p-6 space-y-6">
 
-        <!-- Personal Info -->
         <div>
-          <h3 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-4">Personal Info</h3>
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                About
+            </h2>
 
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm dark:text-gray-400 text-gray-600">PROFILE NAME</label>
-              <p class="dark:text-gray-100 text-gray-800 font-medium">{{ user.username }}</p>
-            </div>
+            <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+                {{ user.description or "This member hasn't added a biography yet." }}
+            </p>
+        </div>
 
-            <div>
-              <label class="block text-sm dark:text-gray-400 text-gray-600">CATEGORY</label>
-              <p class="dark:text-gray-100 text-gray-800">{{ user.category or "—" }}</p>
-            </div>
+        {% if user.location %}
+        <div>
+            <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                LOCATION
+            </h2>
 
-            <div>
-              <label class="block text-sm dark:text-gray-400 text-gray-600">DESCRIPTION</label>
-              <p class="dark:text-gray-100 text-gray-800">
-                {{ user.description or "No description provided." }}
-              </p>
-            </div>
+            <p class="text-gray-800 dark:text-gray-200 mt-1">
+                {{ user.location }}
+            </p>
+        </div>
+        {% endif %}
 
-            {% if user.referral_link %}
-            <div>
-              <label class="block text-sm dark:text-gray-200 text-gray-600">REFER-A-FRIEND</label>
-              <a href="{{ user.referral_link }}" class="text-blue-500 underline">
+        {% if user.referral_link %}
+        <div>
+            <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                REFER A FRIEND
+            </h2>
+
+            <a href="{{ user.referral_link }}"
+               class="text-blue-600 hover:underline break-all">
                 {{ user.referral_link }}
-              </a>
-            </div>
-            {% endif %}
-          </div>
+            </a>
         </div>
+        {% endif %}
 
-        <!-- Contact Info -->
-        <div>
-          <h3 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-4">Contact Info</h3>
-
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm dark:text-gray-400 text-gray-600">FULL NAME</label>
-              <p class="dark:text-gray-100 text-gray-800">1{{ user.full_name }}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm dark:text-gray-400 text-gray-600">LOCATION</label>
-              <p class="dark:text-gray-100 text-gray-800">{{ user.location or "—" }}</p>
-            </div>
-
-           <!-- <div>
-              <label class="block text-sm text-gray-600">ID TYPE</label>
-              <p class="text-gray-800">{{ user.id_type or "—" }}</p>
-            </div>
-
-             <div>
-              <label class="block text-sm text-gray-600">ID NUMBER</label>
-              <p class="text-gray-800">{{ user.id_number or "—" }}</p>
-            </div>-->
-
-            <div>
-              <label class="block text-sm dark:text-gray-400 text-gray-600">EMAIL</label>
-              <p class="dark:text-gray-100 text-gray-800">{{ user.email }}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm dark:text-gray-400 text-gray-600">PHONE NUMBER</label>
-              <p class="dark:text-gray-100 text-gray-800">{{ user.phone or "—" }}</p>
-            </div>
-
-            <!--<div>
-              <label class="block text-sm text-gray-600">BANK ACCOUNT</label>
-              <p class="text-gray-800">{{ user.bank_account or "—" }}</p>
-            </div>-->
-          </div>
+        {% if is_owner %}
+        <div class="pt-5 border-t border-gray-200 dark:border-gray-700">
+            <a href="{{ url_for('public.edit_profile') }}"
+               class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3 rounded-lg transition">
+                Edit Profile
+            </a>
         </div>
+        {% endif %}
 
-      </div>
     </div>
-    <div class="text-center my-3">
-      {% if is_owner %}
-        <a href="{{ url_for('public.edit_profile') }}"
-           class="inline-block text-center  mt-4 bg-blue-600 px-4 py-2 rounded text-gray-900 dark:text-gray-200">
-           Edit Profile
-        </a>
-      {% endif %}
-    </div>
-  </div>
+
 </div>
 
-{% endblock %}
+</div>{% endblock %}

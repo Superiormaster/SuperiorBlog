@@ -120,91 +120,58 @@ class UserLoginForm(FlaskForm):
 
 class ProfileForm(FlaskForm):
     username = StringField(
-        "Username",
-        validators=[
-            DataRequired(message="Username is required."),
-            Length(min=3, max=80)
-        ]
+      "Username",
+      validators=[
+        DataRequired(message="Please choose a username."),
+        Length(min=3, max=30),
+      ]
     )
-
+    
     full_name = StringField(
         "Full Name",
         validators=[
-          DataRequired(message="Full name is required."),
-          Length(min=5, max=120),
-          validate_full_name
+            DataRequired(message="Please enter your full name."),
+            Length(max=250),
+            validate_full_name,
         ]
     )
-
+    
     description = TextAreaField(
-        "Description",
-        validators=[
-          DataRequired(message="Profile description is required."),
-          Length(
-            min=20,
-            max=1000,
-            message="Description must be at least 20 characters."
-          )
-        ]
-    )
-
-    category = SelectField(
-        "Category",
-        choices=[("", " Select category "), ("blogger", "Blogger"), ("writer", "Writer")],
+        "About",
         validators=[
             Optional(),
-            Length(max=80)
+            Length(max=1000)
         ]
     )
-
+    
+    category = SelectField(
+        "Profile Type",
+        choices=[
+            ("", "Select profile type"),
+            ("reader", "Reader"),
+            ("writer", "Writer"),
+            ("journalist", "Journalist"),
+            ("blogger", "Blogger"),
+            ("content_creator", "Content Creator"),
+            ("analyst", "Analyst"),
+            ("other", "Other")
+        ],
+        validators=[DataRequired(message="Please choose a profile type.")]
+    )
+    
     location = StringField(
         "Location",
         validators=[
-          DataRequired(message="Location is required."),
-          Regexp(
-            r'^[A-Za-z\s,.-]{2,50}$',
-            message="Enter a valid location."
-          ),
-          Length(max=50)
-        ]
-    )
-
-    id_type = SelectField(
-        "ID Type",
-        choices=[("nin", "NIN"), ("passport", "Passport")],
-        validators=[
             Optional(),
-            Length(max=50)
+            Length(max=100),
+            Regexp(
+                r"^[A-Za-z0-9\s,.'-]*$",
+                message="Enter a valid location."
+            )
         ]
     )
-  
-    id_number = StringField(
-        "Id Number",
-        validators=[
-            Optional(),
-            Length(max=30)
-        ]
-    )
-
-    phone = StringField(
-        "Phone Number",
-        validators=[
-          DataRequired(message="Phone number is required."),
-          Regexp(
-            r'^\+?[0-9]{10,15}$',
-            message="Enter a valid phone number (digits only)."
-          ),
-          Length(max=30)
-        ]
-    )
-
-    bank_account = StringField(
-        "Bank Account",
-        validators=[
-            Optional(),
-            Length(max=50)
-        ]
-    )
+    
+    submit = SubmitField("Save Profile")
 
 class DeletePostForm(FlaskForm):
     submit = SubmitField("Delete")

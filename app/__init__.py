@@ -175,6 +175,8 @@ def create_app():
     
       allowed_endpoints = {
         "public.profile_setup",
+        "public.user_dashboard",
+        "caption.caption",
         "public.logout",
         "public.user_login",
         "public.google_one_tap",

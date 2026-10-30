@@ -85,10 +85,21 @@ style="background:#1F2937;border-radius:8px;padding:12px;">
                 color:#888888;
             ">
 
+            {% if email_audience == "registered_user" %}
+
+            <p>
+                You are receiving this email because you have a registered
+                account with <strong>Superior News</strong>.
+            </p>
+            
+            {% else %}
+            
             <p>
                 You are receiving this email because you subscribed to
                 <strong>Superior News</strong>.
             </p>
+            
+            {% endif %}
 
             {% if subscriber %}
             <p>
@@ -102,7 +113,7 @@ style="background:#1F2937;border-radius:8px;padding:12px;">
             </p>
             {% endif %}
 
-            <p>© {{ now.year }} Superior News</p>
+            <p>© {{ year }} Superior News</p>
 
             <p>Superior News Team</p>
 

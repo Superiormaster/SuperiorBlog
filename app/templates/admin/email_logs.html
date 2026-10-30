@@ -1,86 +1,175 @@
 {% extends "base.html" %}
+
 {% block content %}
 
-<h2>Email History</h2>
+<div class="max-w-7xl mx-auto px-4 py-8"><div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+    <div>
+        <h2 class="text-2xl font-bold dark:text-white">Email History</h2>
+        <p class="text-sm text-gray-500 mt-1">
+            View, search and filter emails sent by Superior News.
+        </p>
+    </div>
 
-<table>
-    <thead>
-        <tr>
-            <th>Email</th>
-            <th>Subject</th>
-            <th>Status</th>
-            <th>Sent At</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for log in logs %}
-        <tr>
-            <td>{{ log.email }}</td>
-            <td>{{ log.subject }}</td>
-            <td>
-                {% if log.success %}
-                    ✅ Success
-                {% else %}
-                    ❌ Failed
-                {% endif %}
-            </td>
-            <td>{{ log.timestamp }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<h2>Email History</h2>
-
-<form method="GET">
-    <input type="text" name="subject" placeholder="Filter by subject" value="{{ subject }}">
-    <input type="text" name="email" placeholder="Search by email" value="{{ email_search }}">
-    <input type="date" name="start_date" value="{{ start_date }}">
-    <input type="date" name="end_date" value="{{ end_date }}">
-    <button type="submit">Filter</button>
-</form>
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Subject</th>
-            <th>Status</th>
-            <th>Sent At</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for log in logs.items %}
-        <tr>
-            <td>
-                {{ log.subscriber.name if log.subscriber else "N/A" }}
-            </td>
-            <td>{{ log.email }}</td>
-            <td>{{ log.subject }}</td>
-            <td>
-                {% if log.success %}
-                    ✅ Success
-                {% else %}
-                    ❌ Failed
-                {% endif %}
-            </td>
-            <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<div>
-    {% if logs.has_prev %}
-        <a href="?page={{ logs.prev_num }}">Previous</a>
-    {% endif %}
-
-    Page {{ logs.page }} of {{ logs.pages }}
-
-    {% if logs.has_next %}
-        <a href="?page={{ logs.next_num }}">Next</a>
-    {% endif %}
+    <div class="text-sm text-gray-500">
+        Total records: {{ logs.total }}
+    </div>
 </div>
 
-{% endblock %}
+<!-- Search and Filters -->
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6">
+
+    <form method="GET" action="{{ url_for('admin.email_logs') }}"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+
+        <input
+            type="text"
+            name="email"
+            placeholder="Search recipient email"
+            value="{{ email_search }}"
+            class="border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        >
+
+        <input
+            type="text"
+            name="subject"
+            placeholder="Search subject"
+            value="{{ subject }}"
+            class="border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        >
+
+        <input
+            type="date"
+            name="start_date"
+            value="{{ start_date }}"
+            class="border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        >
+
+        <input
+            type="date"
+            name="end_date"
+            value="{{ end_date }}"
+            class="border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        >
+
+        <div class="flex gap-2">
+            <button
+                type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 flex-1">
+                Search
+            </button>
+
+            <a
+                href="{{ url_for('admin.email_logs') }}"
+                class="bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg px-4 py-2 text-center">
+                Clear
+            </a>
+        </div>
+
+    </form>
+</div>
+
+<!-- Email History Table -->
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-x-auto">
+
+    <table class="min-w-full text-sm">
+
+        <thead class="bg-gray-100 dark:bg-gray-700">
+            <tr>
+                <th class="text-left px-4 py-3">Recipient</th>
+                <th class="text-left px-4 py-3">Email</th>
+                <th class="text-left px-4 py-3">Subject</th>
+                <th class="text-left px-4 py-3">Status</th>
+                <th class="text-left px-4 py-3">Sent At</th>
+            </tr>
+        </thead>
+
+        <tbody class="divide-y dark:divide-gray-700">
+
+            {% for log in logs.items %}
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+
+                <td class="px-4 py-3 dark:text-white">
+                    {{ log.subscriber.name if log.subscriber else "Registered user / General recipient" }}
+                </td>
+
+                <td class="px-4 py-3 dark:text-gray-300">
+                    {{ log.email }}
+                </td>
+
+                <td class="px-4 py-3 dark:text-gray-300">
+                    {{ log.subject }}
+                </td>
+
+                <td class="px-4 py-3">
+                    {% if log.status in ['success', 'sent', 'successful'] %}
+                        <span class="inline-block px-3 py-1 rounded-full bg-green-100 text-green-700">
+                            ✓ Success
+                        </span>
+                    {% else %}
+                        <span class="inline-block px-3 py-1 rounded-full bg-red-100 text-red-700">
+                            ✕ Failed
+                        </span>
+                    {% endif %}
+                </td>
+
+                <td class="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    {{ log.created_at.strftime('%Y-%m-%d %H:%M') if log.created_at else 'N/A' }}
+                </td>
+
+            </tr>
+
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center px-4 py-10 text-gray-500">
+                    No email records found.
+                </td>
+            </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
+
+</div>
+
+<!-- Pagination -->
+{% if logs.pages > 1 %}
+<div class="flex flex-wrap items-center justify-between gap-3 mt-6">
+
+    <div class="text-sm text-gray-500">
+        Page {{ logs.page }} of {{ logs.pages }}
+        — {{ logs.total }} email records
+    </div>
+
+    <div class="flex gap-2">
+
+        {% if logs.has_prev %}
+        <a
+            href="{{ url_for('admin.email_logs',
+                page=logs.prev_num,
+                email=email_search,
+                subject=subject,
+                start_date=start_date,
+                end_date=end_date) }}"
+            class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800">
+            Previous
+        </a>
+        {% endif %}
+
+        {% if logs.has_next %}
+        <a
+            href="{{ url_for('admin.email_logs',
+                page=logs.next_num,
+                email=email_search,
+                subject=subject,
+                start_date=start_date,
+                end_date=end_date) }}"
+            class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+            Next
+        </a>
+        {% endif %}
+
+    </div>
+</div>
+{% endif %}
+
+</div>{% endblock %}

@@ -308,6 +308,45 @@
             </form>
 
             {% endif %}
+            
+            <!-- Refresh Daily / Weekly News -->
+            {% if campaign.campaign_type in ["daily", "weekly"] %}
+            
+            <form
+                method="POST"
+                action="{{ url_for('admin.refresh_campaign_route', id=campaign.id) }}"
+                onsubmit="return confirm('Refresh this campaign with the latest published news? Pending recipients will receive the updated content.');"
+            >
+            
+                <button
+                    type="submit"
+                    class="px-5 py-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
+            
+                    ↻ Refresh News Content
+            
+                </button>
+            
+            </form>
+            
+            {% endif %}
+            
+            
+            <!-- Delete Campaign -->
+            <form
+                method="POST"
+                action="{{ url_for('admin.delete_campaign_route', id=campaign.id) }}"
+                onsubmit="return confirm('Are you sure you want to permanently delete this campaign and its recipient records? Email logs will be preserved.');"
+            >
+            
+                <button
+                    type="submit"
+                    class="px-5 py-3 rounded-lg bg-red-600 text-white hover:bg-red-700">
+            
+                    Delete Campaign
+            
+                </button>
+            
+            </form>
 
         </div>
 
@@ -379,7 +418,7 @@
                         </td>
 
                         <td class="p-3">
-                            {{ batch.recipient_count }}
+                            {{ batch.total }}
                         </td>
 
                         <td class="p-3 text-green-600 font-semibold">

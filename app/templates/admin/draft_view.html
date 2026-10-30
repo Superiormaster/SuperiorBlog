@@ -15,19 +15,29 @@
           <span class="font-semibold text-gray-500">Audience:</span>
   
           {% if draft.audience == "superior_news" %}
-              <span class="text-green-600 dark:text-green-400">
-                  Superior News Newsletter
-              </span>
-  
+      
+          <span class="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs">
+              Superior News Newsletter
+          </span>
+      
+          {% elif draft.audience == "registered_users" %}
+      
+          <span class="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs">
+              Registered Users
+          </span>
+      
           {% elif draft.audience == "tribe" %}
-              <span class="text-purple-600 dark:text-purple-400">
-                  Tribe Newsletter
-              </span>
-  
+      
+          <span class="px-2 py-1 rounded-full bg-purple-100 text-purple-700 text-xs">
+              Tribe
+          </span>
+      
           {% else %}
-              <span class="text-blue-600 dark:text-blue-400">
-                  Single Email
-              </span>
+      
+          <span class="px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs">
+              Single Email
+          </span>
+      
           {% endif %}
       </p>
   
