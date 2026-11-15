@@ -33,25 +33,26 @@ def ad_log(message):
 
 def normalize_tracking_url(url):
     """
-    Normalize tracking URLs from the central Superior Ads API.
+    Normalize tracking URLs supplied by Superior Ads.
 
-    HTTPS is required in production. HTTP is allowed only for
-    localhost during Flask debug mode.
+    Absolute tracking URLs must retain their original host.
+    Relative URLs resolve against the central Ads service.
     """
+
     if not isinstance(url, str) or not url.strip():
         return None
 
-    base_url = (
+    ads_base_url = (
         current_app.config.get("SUPERIOR_ADS_PUBLIC_URL")
         or current_app.config.get("SUPERIOR_ADS_BASE_URL")
         or ""
     ).strip().rstrip("/")
 
-    if not base_url:
+    if not ads_base_url:
         return None
 
     normalized = urljoin(
-        f"{base_url}/",
+        f"{ads_base_url}/",
         url.strip(),
     )
 

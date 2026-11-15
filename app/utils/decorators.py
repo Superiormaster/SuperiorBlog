@@ -3,24 +3,40 @@ from flask import redirect, url_for, flash
 from flask_login import current_user
 
 def generate_unique_slug(title):
-    import re, unicodedata
+
+    import re
+    import unicodedata
+
     from app.models import Post
-    """
-    Generate a unique slug for a post based on the title.
-    """
-    # Convert title to ASCII, lowercase, replace spaces with dashes
-    slug = re.sub(r'[^a-z0-9]+', '-', unicodedata.normalize('NFKD', title).encode('ascii', 'ignore').decode('ascii').lower()).strip('-')
-    
-    # Check if slug already exists
-    existing = Post.query.filter_by(slug=slug).first()
+
+    slug = re.sub(
+        r"[^a-z0-9]+",
+        "-",
+        unicodedata.normalize(
+            "NFKD",
+            title
+        ).encode("ascii", "ignore").decode("ascii").lower()
+    ).strip("-")
+
+    if not slug:
+        slug = "post"
+
+    existing_slugs = {
+        row[0]
+        for row in db.session.query(Post.slug)
+        .filter(Post.slug.like(f"{slug}%"))
+        .all()
+    }
+
+    if slug not in existing_slugs:
+        return slug
+
     counter = 1
-    new_slug = slug
-    while existing:
-        new_slug = f"{slug}-{counter}"
-        existing = Post.query.filter_by(slug=new_slug).first()
+
+    while f"{slug}-{counter}" in existing_slugs:
         counter += 1
 
-    return new_slug
+    return f"{slug}-{counter}"
 
 def admin_required(view_func):
     @wraps(view_func)

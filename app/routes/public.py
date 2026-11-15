@@ -42,6 +42,7 @@ from sqlalchemy import (
     func,
     or_,
 )
+from sqlalchemy.orm import load_only, joinedload, selectinload
 
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -1070,30 +1071,80 @@ def share_post(post_id):
             "message": "Unable to record share.",
         }), 500
 
-@public_bp.route('/dashboard')
+@public_bp.route("/dashboard")
 @login_required
 def user_dashboard():
     delete_form = DeletePostForm()
     submit_form = SubmitPostForm()
 
     page = request.args.get("page", 1, type=int)
-    q = request.args.get("q", "")
+    q = request.args.get("q", "").strip()
     status = request.args.get("status", "all")
-    per_page=15
+    per_page = 15
 
-    query = Post.query.filter_by(user_id=current_user.id)
+    # Only retrieve the Post fields used by the dashboard.
+    query = (
+        Post.query
+        .options(
+            load_only(
+                Post.id,
+                Post.title,
+                Post.status,
+                Post.created_at,
+                Post.rejection_reason,
+                Post.resubmission_count,
+                Post.category_id,
+            ),
 
+            # Load category names without additional queries.
+            joinedload(Post.category).load_only(
+                Category.id,
+                Category.name,
+            ),
+
+            # Load labels efficiently for the mobile dashboard.
+            selectinload(Post.labels).load_only(
+                Label.id,
+                Label.name,
+            ),
+        )
+        .filter(
+            Post.user_id == current_user.id
+        )
+    )
+
+    # ---------------------------
+    # SEARCH
+    # ---------------------------
     if q:
-        query = query.filter(Post.title.ilike(f"%{q}%"))
+        query = query.filter(
+            Post.title.ilike(f"%{q}%")
+        )
 
+    # ---------------------------
+    # STATUS FILTER
+    # ---------------------------
     if status == "draft":
         query = query.filter(Post.status == "draft")
+
     elif status == "rejected":
         query = query.filter(Post.status == "rejected")
+
     elif status == "published":
         query = query.filter(Post.status == "published")
 
-    posts = query.order_by(Post.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    # ---------------------------
+    # PAGINATION
+    # ---------------------------
+    posts = (
+        query
+        .order_by(Post.created_at.desc())
+        .paginate(
+            page=max(page, 1),
+            per_page=per_page,
+            error_out=False,
+        )
+    )
 
     return render_template(
         "user/dashboard.html",
@@ -1101,19 +1152,31 @@ def user_dashboard():
         q=q,
         status=status,
         delete_form=delete_form,
-        submit_form=submit_form
+        submit_form=submit_form,
     )
 
-@public_bp.route("/post/create", methods=["GET", "POST"], endpoint='create_post')
+@public_bp.route(
+    "/post/create",
+    methods=["GET", "POST"],
+    endpoint="create_post"
+)
 @login_required
 def user_create():
     return user_create_or_edit()
-@public_bp.route("/post/<int:id>/edit", methods=["GET", "POST"], endpoint='edit_post')
+
+
+@public_bp.route(
+    "/post/<int:id>/edit",
+    methods=["GET", "POST"],
+    endpoint="edit_post"
+)
 @login_required
 def user_edit(id):
     return user_create_or_edit(id)
 
+
 def user_create_or_edit(id=None):
+
     if not require_custom_username():
         return redirect(
             url_for(
@@ -1122,188 +1185,394 @@ def user_create_or_edit(id=None):
             )
         )
 
-    post = Post.query.get(id) if id else None
-    form = PostForm(obj=post or None)
+    post = None
 
-    status = None
-    reason = None
+    if id is not None:
+        post = (
+            Post.query
+            .options(
+                load_only(
+                    Post.id,
+                    Post.user_id,
+                    Post.title,
+                    Post.content,
+                    Post.slug,
+                    Post.status,
+                    Post.category_id,
+                    Post.featured_image,
+                    Post.resubmission_count,
+                    Post.tribe_url,
+                    Post.tribe_title,
+                    Post.tribe_description,
+                    Post.tribe_button_text,
+                ),
+                joinedload(Post.category).load_only(
+                    Category.id,
+                    Category.name,
+                ),
+                selectinload(Post.labels).load_only(
+                    Label.id,
+                    Label.name,
+                ),
+                selectinload(Post.tags).load_only(
+                    Tag.id,
+                    Tag.name,
+                ),
+            )
+            .filter(
+                Post.id == id,
+                Post.user_id == current_user.id,
+            )
+            .first()
+        )
 
-    # ---- Moderation / category rules (SAFE & CLEAN) ----
+        if not post:
+            # Check whether the post exists but belongs to someone else.
+            exists = db.session.query(
+                Post.id
+            ).filter(
+                Post.id == id
+            ).first()
+
+            if exists:
+                flash(
+                    "You are not allowed to edit this post.",
+                    "danger"
+                )
+            else:
+                flash("Post not found.", "danger")
+
+            return redirect(
+                url_for("public.user_dashboard")
+            )
+
+    form = PostForm(obj=post)
+
+    # Moderation / category rules
     rules = {
         "min_words": 150,
         "good_grammar_score": 60,
         "avoid_words": []
     }
-    
+
     if post and post.category:
         category_key = post.category.name.lower()
         category_rules = CATEGORY_RULES.get(category_key, {})
-    
+
         rules.update({
-            "min_words": category_rules.get("min_words", 150),
-            "avoid_words": category_rules.get("avoid_words", [])
+            "min_words": category_rules.get(
+                "min_words", 150
+            ),
+            "avoid_words": category_rules.get(
+                "avoid_words", []
+            )
         })
 
-    if id and not post:
-        flash("Post not found.", "danger")
-        return redirect(url_for("public.user_dashboard"))
-
-    # 🔐 Ownership check for editing
-    if post and post.id and post.user_id != current_user.id:
-        flash("You are not allowed to edit this post.", "danger")
-        return redirect(url_for("public.user_dashboard"))
-
-    # Block editing if published
+    # Block editing published posts
     if post and post.status == "published":
-        flash("Published posts cannot be edited.", "warning")
-        return redirect(url_for("public.user_dashboard"))
+        flash(
+            "Published posts cannot be edited.",
+            "warning"
+        )
+        return redirect(
+            url_for("public.user_dashboard")
+        )
 
+    # Block rejected posts after maximum resubmissions
+    if (
+        post
+        and post.status == "rejected"
+        and (post.resubmission_count or 0) >= 2
+    ):
+        flash(
+            "Maximum resubmissions reached.",
+            "danger"
+        )
+        return redirect(
+            url_for("public.user_dashboard")
+        )
 
-    # Block if rejected but max resubmissions reached
-    if post and post.status == "rejected" and (post.resubmission_count or 0) >= 2:
-        flash("Maximum resubmissions reached.", "danger")
-        return redirect(url_for("public.user_dashboard"))
+    # Fetch only the fields needed for form choices
+    categories = (
+        Category.query
+        .options(
+            load_only(
+                Category.id,
+                Category.name,
+            )
+        )
+        .order_by(Category.name.asc())
+        .all()
+    )
 
-    # Set choices for category and labels
-    form.category.choices = [(c.id, c.name) for c in Category.query.all()]
-    form.labels.choices = [(l.id, l.name) for l in Label.query.all()]
+    labels = (
+        Label.query
+        .options(
+            load_only(
+                Label.id,
+                Label.name,
+            )
+        )
+        .order_by(Label.name.asc())
+        .all()
+    )
 
-    # Pre-fill form on GET
+    form.category.choices = [
+        (category.id, category.name)
+        for category in categories
+    ]
+
+    form.labels.choices = [
+        (label.id, label.name)
+        for label in labels
+    ]
+
+    # Pre-fill editor on GET
     if request.method == "GET" and post:
-      form.category.data = post.category_id
-      form.labels.data = [l.id for l in post.labels]
-    
-      form.tribe_url.data = post.tribe_url or ""
-      form.tribe_title.data = post.tribe_title or ""
-      form.tribe_description.data = post.tribe_description or ""
-      form.tribe_button_text.data = post.tribe_button_text or ""
+        form.category.data = post.category_id
 
-    guidelines = rules
+        form.labels.data = [
+            label.id for label in post.labels
+        ]
+
+        form.tribe_url.data = post.tribe_url or ""
+        form.tribe_title.data = post.tribe_title or ""
+        form.tribe_description.data = (
+            post.tribe_description or ""
+        )
+        form.tribe_button_text.data = (
+            post.tribe_button_text or ""
+        )
 
     if form.validate_on_submit():
-        is_new = False
-  
-        featured_image = request.form.get("featured_image")
-        content_html = request.form.get("content", "")
-        soup = BeautifulSoup(content_html, "html.parser")
-        text = soup.get_text(separator=" ").strip()
+
+        content_html = request.form.get(
+            "content", ""
+        )
+
+        soup = BeautifulSoup(
+            content_html,
+            "html.parser"
+        )
+
+        text = soup.get_text(
+            separator=" "
+        ).strip()
+
         if not text:
-            flash("Post content cannot be empty.", "danger")
-            return render_template("user/create.html", form=form, rules=rules, post=post)
+            flash(
+                "Post content cannot be empty.",
+                "danger"
+            )
 
-        # Remove extra whitespace
-        text = re.sub(r'\s+', ' ', text)
+            return render_template(
+                "user/create.html",
+                form=form,
+                rules=rules,
+                post=post
+            )
+
+        text = re.sub(r"\s+", " ", text)
         word_count = len(text.split())
-        
-        if word_count < rules.get("min_words", 150):
-            flash(f"Post must have at least {rules['min_words']} words", "danger")
-            return render_template("user/create.html", form=form, rules=rules, post=post)
 
+        if word_count < rules["min_words"]:
+            flash(
+                f"Post must have at least "
+                f"{rules['min_words']} words",
+                "danger"
+            )
+
+            return render_template(
+                "user/create.html",
+                form=form,
+                rules=rules,
+                post=post
+            )
+
+        featured_image = request.form.get(
+            "featured_image"
+        )
+
+        # Create a new post
         if not post:
-            is_new = True
-            # Check if title is empty
-            if not form.title.data or not form.title.data.strip():
-                flash("Please enter a title before saving.", "error")
+
+            if (
+                not form.title.data
+                or not form.title.data.strip()
+            ):
+                flash(
+                    "Please enter a title before saving.",
+                    "error"
+                )
                 return redirect(request.referrer)
 
-            # Creating new post
             post = Post(
                 user_id=current_user.id,
                 title=form.title.data,
                 content=content_html.strip(),
                 featured_image=featured_image,
-                slug=generate_unique_slug(form.title.data),
-                content_hash=hash_content(content_html),
+                slug=generate_unique_slug(
+                    form.title.data
+                ),
+                content_hash=hash_content(
+                    content_html
+                ),
                 resubmission_count=0,
                 status="draft",
                 is_published=False,
-                tribe_url=form.tribe_url.data.strip() if form.tribe_url.data else None,
-                tribe_title=form.tribe_title.data.strip() if form.tribe_title.data else None,
-                tribe_description=form.tribe_description.data.strip() if form.tribe_description.data else None,
-                tribe_button_text=form.tribe_button_text.data.strip() if form.tribe_button_text.data else None,
+                tribe_url=(
+                    form.tribe_url.data.strip()
+                    if form.tribe_url.data
+                    else None
+                ),
+                tribe_title=(
+                    form.tribe_title.data.strip()
+                    if form.tribe_title.data
+                    else None
+                ),
+                tribe_description=(
+                    form.tribe_description.data.strip()
+                    if form.tribe_description.data
+                    else None
+                ),
+                tribe_button_text=(
+                    form.tribe_button_text.data.strip()
+                    if form.tribe_button_text.data
+                    else None
+                ),
             )
+
             db.session.add(post)
+
+        # Update existing post
         else:
-            # Editing existing post
+
             post.title = form.title.data
             post.content = content_html.strip()
-            post.featured_image = request.form.get("featured_image")
-            post.content_hash = hash_content(content_html)
+            post.featured_image = featured_image
+
+            post.content_hash = hash_content(
+                content_html
+            )
+
             post.tribe_url = (
                 form.tribe_url.data.strip()
                 if form.tribe_url.data
                 else None
             )
-            
+
             post.tribe_title = (
                 form.tribe_title.data.strip()
                 if form.tribe_title.data
                 else None
             )
-            
+
             post.tribe_description = (
                 form.tribe_description.data.strip()
                 if form.tribe_description.data
                 else None
             )
-            
+
             post.tribe_button_text = (
                 form.tribe_button_text.data.strip()
                 if form.tribe_button_text.data
                 else None
             )
-            # Only increment resubmission count if rejected
+
             if post.status == "rejected":
-                post.resubmission_count = (post.resubmission_count or 0) + 1
+                post.resubmission_count = (
+                    post.resubmission_count or 0
+                ) + 1
+
                 post.status = "draft"
                 post.is_published = False
 
         # Assign category
-        category = Category.query.get(form.category.data)
+        category = (
+            Category.query
+            .options(
+                load_only(
+                    Category.id,
+                    Category.name,
+                )
+            )
+            .filter(
+                Category.id == form.category.data
+            )
+            .first()
+        )
+
         if not category:
-            flash("Invalid category selected", "danger")
+            flash(
+                "Invalid category selected",
+                "danger"
+            )
             return redirect(request.url)
+
         post.category = category
 
-        # Assign labels
-        form.labels.choices = [(label.id, label.name) for label in Label.query.all()]
-        post.labels = Label.query.filter(Label.id.in_(form.labels.data)).all()
+        # Assign selected labels
+        selected_label_ids = [
+            int(label_id)
+            for label_id in (form.labels.data or [])
+            if str(label_id).isdigit()
+        ]
+
+        post.labels = (
+            Label.query
+            .options(
+                load_only(
+                    Label.id,
+                    Label.name,
+                )
+            )
+            .filter(
+                Label.id.in_(selected_label_ids)
+            )
+            .all()
+            if selected_label_ids
+            else []
+        )
 
         # Assign tags
-        raw_tags = request.form.get("tags", "")
+        raw_tags = request.form.get(
+            "tags", ""
+        )
+
         post.tags = process_tags(raw_tags)
-        print("Draft content size (bytes):", len(request.form.get("content", "").encode("utf-8")))
 
         if not safe_commit():
             flash(
                 "Unable to save the draft. Please try again.",
-                "danger",
+                "danger"
             )
-            return redirect(url_for("public.user_dashboard"))
-        
-        clear_public_content_cache()
-        
-        flash("Draft saved successfully.", "success")
-        return redirect(url_for("public.user_dashboard"))
 
-    return render_template("user/create.html", form=form, post=post, rules=rules)
+            return redirect(
+                url_for("public.user_dashboard")
+            )
+
+        clear_public_content_cache()
+
+        flash(
+            "Draft saved successfully.",
+            "success"
+        )
+
+        return redirect(
+            url_for("public.user_dashboard")
+        )
+
+    return render_template(
+        "user/create.html",
+        form=form,
+        post=post,
+        rules=rules
+    )
 
 @public_bp.route("/post/draft", methods=["POST"])
 @csrf.exempt
 @login_required
 def save_draft():
-    """
-    Save or update a draft.
-
-    Handles:
-    - title
-    - content
-    - featured image
-    - category
-    - labels
-    - tags
-    - Tribe conversation fields
-    """
 
     if not require_custom_username():
         return jsonify({
@@ -1320,6 +1589,11 @@ def save_draft():
 
     content_html = request.form.get("content", "").strip()
 
+    if not content_html:
+        return jsonify({
+            "status": "ignored"
+        })
+
     title = (
         request.form.get("title", "").strip()
         or "Untitled Draft"
@@ -1331,232 +1605,206 @@ def save_draft():
     )
 
     category_id = request.form.get("category")
-
     label_ids = request.form.getlist("labels")
-
     raw_tags = request.form.get("tags", "")
-
     post_id = request.form.get("post_id")
 
-    tribe_url = (
-        request.form.get("tribe_url", "").strip()
-        or None
-    )
-
-    tribe_title = (
-        request.form.get("tribe_title", "").strip()
-        or None
-    )
-
+    tribe_url = request.form.get("tribe_url", "").strip() or None
+    tribe_title = request.form.get("tribe_title", "").strip() or None
     tribe_description = (
-        request.form.get("tribe_description", "").strip()
-        or None
+        request.form.get("tribe_description", "").strip() or None
     )
-
     tribe_button_text = (
-        request.form.get("tribe_button_text", "").strip()
-        or None
+        request.form.get("tribe_button_text", "").strip() or None
     )
 
-    if not content_html:
-        return jsonify({
-            "status": "ignored"
-        })
+    # --------------------------------------------------
+    # 1. VALIDATE AND LOAD EXISTING POST
+    # --------------------------------------------------
+    try:
+        if post_id:
 
-    if post_id:
+            try:
+                post_id = int(post_id)
+            except (ValueError, TypeError):
+                return jsonify({
+                    "status": "not_found"
+                }), 404
 
-        post = Post.query.get(post_id)
+            post = (
+                Post.query
+                .options(
+                    load_only(
+                        Post.id,
+                        Post.user_id,
+                        Post.slug,
+                    )
+                )
+                .filter(
+                    Post.id == post_id,
+                    Post.user_id == current_user.id,
+                )
+                .first()
+            )
 
-        if not post:
-            return jsonify({
-                "status": "not_found"
-            }), 404
+            if not post:
+                return jsonify({
+                    "status": "not_found"
+                }), 404
 
-        if post.user_id != current_user.id:
-            return jsonify({
-                "status": "forbidden"
-            }), 403
+            is_new = False
 
-        is_new = False
+            if not post.slug:
+                post.slug = (
+                    generate_unique_slug(title)
+                    or f"draft-{int(time.time())}"
+                )
 
-        if not post.slug:
-            post.slug = (
+        else:
+
+            slug = (
                 generate_unique_slug(title)
                 or f"draft-{int(time.time())}"
             )
 
-    else:
-
-        slug = (
-            generate_unique_slug(title)
-            or f"draft-{int(time.time())}"
-        )
-
-        post = Post(
-            user_id=current_user.id,
-            title=title,
-            slug=slug,
-            status="draft",
-            is_published=False,
-            content=content_html,
-            featured_image=featured_image,
-            content_hash=hash_content(content_html),
-        )
-
-        # Safe to add now because slug already exists.
-        db.session.add(post)
-
-        is_new = True
-
-    post.title = title
-    post.content = content_html
-    post.featured_image = featured_image
-
-    post.status = "draft"
-    post.is_published = False
-
-    post.content_hash = hash_content(content_html)
-
-    post.tribe_url = tribe_url
-    post.tribe_title = tribe_title
-    post.tribe_description = tribe_description
-    post.tribe_button_text = tribe_button_text
-
-    if not post.featured_image and content_html:
-
-        soup = BeautifulSoup(
-            content_html,
-            "html.parser"
-        )
-
-        first_img = soup.find("img")
-
-        if first_img:
-            post.featured_image = first_img.get("src")
-
-    try:
-
-        with db.session.no_autoflush:
-
-            if category_id:
-
-                category = Category.query.get(
-                    category_id
-                )
-
-                if category:
-                    post.category = category
-
-            try:
-
-                label_ids = [
-                    int(label_id)
-                    for label_id in label_ids
-                    if str(label_id).isdigit()
-                ]
-
-            except (ValueError, TypeError):
-
-                label_ids = []
-
-            post.labels = (
-                Label.query
-                .filter(
-                    Label.id.in_(label_ids)
-                )
-                .all()
-                if label_ids
-                else []
+            post = Post(
+                user_id=current_user.id,
+                title=title,
+                slug=slug,
+                status="draft",
+                is_published=False,
+                content_hash=hash_content(content_html),
             )
 
+            db.session.add(post)
+            is_new = True
+
+        # --------------------------------------------------
+        # 2. UPDATE POST FIELDS
+        # --------------------------------------------------
+        post.title = title
+        post.content = content_html
+        post.featured_image = featured_image
+
+        post.status = "draft"
+        post.is_published = False
+
+        post.content_hash = hash_content(content_html)
+
+        post.tribe_url = tribe_url
+        post.tribe_title = tribe_title
+        post.tribe_description = tribe_description
+        post.tribe_button_text = tribe_button_text
+
+        # --------------------------------------------------
+        # 3. EXTRACT FEATURED IMAGE IF MISSING
+        # --------------------------------------------------
+        if not post.featured_image:
+
+            soup = BeautifulSoup(
+                content_html,
+                "html.parser"
+            )
+
+            first_img = soup.find("img")
+
+            if first_img:
+                post.featured_image = first_img.get("src")
+
+        # --------------------------------------------------
+        # 4. CATEGORY
+        # --------------------------------------------------
+        if category_id:
+
+            try:
+                category_id = int(category_id)
+            except (ValueError, TypeError):
+                category_id = None
+
+            if category_id is not None:
+
+                category_exists = (
+                    db.session.query(Category.id)
+                    .filter(Category.id == category_id)
+                    .first()
+                )
+
+                if category_exists:
+                    post.category_id = category_id
+
+        # --------------------------------------------------
+        # 5. LABELS
+        # --------------------------------------------------
+        valid_label_ids = []
+
+        for label_id in label_ids:
+            try:
+                valid_label_ids.append(int(label_id))
+            except (ValueError, TypeError):
+                continue
+
+        post.labels = (
+            Label.query
+            .filter(Label.id.in_(valid_label_ids))
+            .all()
+            if valid_label_ids
+            else []
+        )
+
+        # --------------------------------------------------
+        # 6. TAGS
+        # --------------------------------------------------
         post.tags = process_tags(raw_tags)
 
+        # --------------------------------------------------
+        # 7. SAVE
+        # --------------------------------------------------
+        # New posts need a flush before their ID is available.
+        db.session.flush()
+
+        saved_post_id = post.id
+
         if not safe_commit():
+
             db.session.rollback()
-        
+
             current_app.logger.error(
                 "Draft save transaction failed for user %s",
                 current_user.id,
             )
-        
+
             return jsonify({
                 "status": "error",
                 "message": "Failed to save draft.",
             }), 500
-        
+
         clear_public_content_cache()
 
-    except Exception as e:
+        return jsonify({
+            "status": "saved",
+            "post_id": saved_post_id,
+        })
+
+    except Exception:
 
         db.session.rollback()
 
-        print(
-            "========== DRAFT SAVE ERROR =========="
-        )
-
-        print(
-            "Error:",
-            str(e)
+        current_app.logger.exception(
+            "Unexpected error while saving draft for user %s",
+            current_user.id,
         )
 
         return jsonify({
             "status": "error",
-            "message": "Failed to save draft."
+            "message": "Failed to save draft.",
         }), 500
 
-    print(
-        "========== DRAFT SAVED =========="
-    )
-
-    print(
-        "Post ID:",
-        post.id
-    )
-
-    print(
-        "Category:",
-        post.category_id
-    )
-
-    print(
-        "Labels:",
-        [label.id for label in post.labels]
-    )
-
-    print(
-        "Tribe URL:",
-        post.tribe_url
-    )
-
-    print(
-        "Tribe Title:",
-        post.tribe_title
-    )
-
-    print(
-        "Tribe Description:",
-        post.tribe_description
-    )
-
-    print(
-        "Tribe Button:",
-        post.tribe_button_text
-    )
-
-    print(
-        "Slug:",
-        post.slug
-    )
-
-    return jsonify({
-        "status": "saved",
-        "post_id": post.id
-    })
-
-@public_bp.route("/post/user/<int:id>/submit", methods=["POST"])
+@public_bp.route(
+    "/post/user/<int:id>/submit",
+    methods=["POST"]
+)
 @login_required
 def submit_user_post(id):
-    post = Post.query.get_or_404(id)
 
     if not require_custom_username():
         return redirect(
@@ -1566,123 +1814,234 @@ def submit_user_post(id):
             )
         )
 
-    # Ownership check
-    if post.user_id != current_user.id:
-        flash("You cannot submit this post.", "danger")
-        return redirect(url_for("public.user_dashboard"))
+    # Fetch the post and category together.
+    post = (
+        Post.query
+        .options(
+            load_only(
+                Post.id,
+                Post.user_id,
+                Post.title,
+                Post.content,
+                Post.category_id,
+                Post.status,
+                Post.resubmission_count,
+                Post.featured_image,
+                Post.is_published,
+                Post.rejection_reason,
+            ),
+            joinedload(Post.category).load_only(
+                Category.id,
+                Category.name,
+            )
+        )
+        .filter(
+            Post.id == id,
+            Post.user_id == current_user.id,
+        )
+        .first()
+    )
 
-    # Only draft or rejected can be submitted
-    if post.status not in ["draft", "rejected"]:
-        flash("This post cannot be submitted.", "warning")
-        return redirect(url_for("public.user_dashboard"))
+    if not post:
+        flash(
+            "Post not found or you cannot access it.",
+            "danger"
+        )
 
-    # Resubmission limit
-    if post.status == "rejected" and (post.resubmission_count or 0) >= 2:
-        flash("Maximum resubmissions reached.", "danger")
-        return redirect(url_for("public.user_dashboard"))
+        return redirect(
+            url_for("public.user_dashboard")
+        )
 
-    # Content validation
-    soup = BeautifulSoup(post.content, "html.parser")
-    text = soup.get_text(" ")
+    # Only drafts and rejected posts can be submitted.
+    if post.status not in ("draft", "rejected"):
+        flash(
+            "This post cannot be submitted.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("public.user_dashboard")
+        )
+
+    # Resubmission limit.
+    if (
+        post.status == "rejected"
+        and (post.resubmission_count or 0) >= 2
+    ):
+        flash(
+            "Maximum resubmissions reached.",
+            "danger"
+        )
+
+        return redirect(
+            url_for("public.user_dashboard")
+        )
+
+    # Validate content.
+    content = post.content or ""
+
+    if not content.strip():
+        flash(
+            "Post content cannot be empty.",
+            "danger"
+        )
+
+        return redirect(
+            url_for("public.user_dashboard")
+        )
+
+    soup = BeautifulSoup(
+        content,
+        "html.parser"
+    )
+
+    text = re.sub(
+        r"\s+",
+        " ",
+        soup.get_text(" ")
+    ).strip()
+
     word_count = len(text.split())
 
-    if not post.content or word_count < 150:
-        flash("Post content must be at least 150 words.", "danger")
-        return redirect(url_for("public.user_dashboard"))
+    # Category-specific minimum words.
+    category_name = (
+        post.category.name.lower()
+        if post.category
+        else "uncategorized"
+    )
+
+    category_rules = CATEGORY_RULES.get(
+        category_name,
+        {"min_words": 150}
+    )
+
+    min_words = category_rules.get(
+        "min_words",
+        150
+    )
+
+    if word_count < min_words:
+        flash(
+            f"Post content must contain at least "
+            f"{min_words} words.",
+            "danger"
+        )
+
+        return redirect(
+            url_for("public.user_dashboard")
+        )
 
     try:
-        was_rejected = post.status == "rejected"
 
-        result = auto_moderate(post, current_user)
+        # Run moderation.
+        result = auto_moderate(
+            post,
+            current_user
+        )
 
-        status = result.get("status", "pending_review")
+        status = result.get(
+            "status",
+            "pending_review"
+        )
+
         reason = result.get("reason")
+
+        allowed_statuses = {
+            "rejected",
+            "pending_review",
+            "approved",
+        }
+
+        if status not in allowed_statuses:
+            current_app.logger.warning(
+                "Unexpected moderation status '%s' for post %s",
+                status,
+                post.id,
+            )
+
+            status = "pending_review"
+
+            reason = (
+                "Post requires manual editorial review."
+            )
 
         post.status = status
         post.rejection_reason = reason
         post.is_published = False
 
-        # Increment resubmission count if previously rejected
-        if was_rejected and status == "rejected":
-            post.resubmission_count = (post.resubmission_count or 0) + 1
+        # Extract featured image if missing.
+        if not post.featured_image:
 
-        # FEATURED IMAGE (ALWAYS)
-        if not post.featured_image and post.content:
-          soup = BeautifulSoup(post.content, "html.parser")
-          first_img = soup.find("img")
-          if first_img:
-            post.featured_image = first_img.get("src")
+            first_img = soup.find("img")
 
-        safe_commit()
+            if first_img:
+                post.featured_image = first_img.get("src")
 
-        # Flash messages
+        # Commit changes.
+        if not safe_commit():
+            flash(
+                "Unable to submit your post. Please try again.",
+                "danger"
+            )
+
+            return redirect(
+                url_for("public.user_dashboard")
+            )
+
+        clear_public_content_cache()
+
         if status == "rejected":
-            flash(f"Post rejected: {reason}", "danger")
+
+            flash(
+                f"Post rejected: {reason}",
+                "danger"
+            )
 
         elif status == "pending_review":
-            flash("Post submitted for editorial review.", "warning")
+
+            flash(
+                "Post submitted for editorial review.",
+                "warning"
+            )
 
         elif status == "approved":
-            flash("Post approved and awaiting publication.", "success")
 
-        else:
-            flash(f"Moderation result: {status}", "info")
+            flash(
+                "Post approved and awaiting publication.",
+                "success"
+            )
 
     except ConnectionError:
+
         db.session.rollback()
-        post.status = "draft"
-        post.is_published = False
-        safe_commit()
+
+        current_app.logger.exception(
+            "Moderation connection failed for post %s",
+            id
+        )
 
         flash(
-            "Moderation service unavailable. Post saved as draft.",
+            "Moderation service unavailable. Please try again.",
             "danger"
         )
 
-    except Exception as e:
+    except Exception:
+
         db.session.rollback()
-        print("Moderation Exception:", str(e))
-        flash("Moderation error. Try again.", "danger")
 
-    return redirect(url_for("public.user_dashboard"))
+        current_app.logger.exception(
+            "Moderation failed for post %s",
+            id
+        )
 
-@public_bp.route("/post/<int:id>/schedule", methods=["POST"])
-@login_required
-def schedule_post(id):
-    post = Post.query.get_or_404(id)
+        flash(
+            "Moderation error. Please try again.",
+            "danger"
+        )
 
-    if post.user_id != current_user.id:
-        flash("Unauthorized.", "danger")
-        return redirect(url_for("public.user_dashboard"))
-
-    if post.status != "approved":
-        flash("Only approved posts can be scheduled.", "warning")
-        return redirect(url_for("public.user_dashboard"))
-
-    scheduled_date = request.form.get("scheduled_at")
-
-    if not scheduled_date:
-        flash("Please select a valid date.", "danger")
-        return redirect(url_for("public.user_dashboard"))
-
-    try:
-        parsed_date = datetime.fromisoformat(scheduled_date)
-    except ValueError:
-        flash("Invalid date format.", "danger")
-        return redirect(url_for("public.user_dashboard"))
-
-    if parsed_date <= datetime.utcnow():
-        flash("Scheduled date must be in the future.", "danger")
-        return redirect(url_for("public.user_dashboard"))
-
-    post.status = "scheduled"
-    post.scheduled_at = parsed_date
-    post.is_published = False
-
-    safe_commit()
-
-    flash("Post scheduled successfully.", "success")
-    return redirect(url_for("public.user_dashboard"))
+    return redirect(
+        url_for("public.user_dashboard")
+    )
 
 @csrf.exempt
 @public_bp.route("/upload-image", methods=["POST"])
@@ -1979,13 +2338,30 @@ def index():
     six_hours_ago = now - timedelta(hours=6)
 
     # --------------------------------------------------
+    # REUSABLE ARTICLE FILTER
+    # --------------------------------------------------
+    published_filter = (
+        Post.is_published.is_(True),
+        Post.status == "published",
+    )
+
+    # --------------------------------------------------
     # 1. LATEST POSTS
+    # Only retrieve fields needed by homepage cards.
     # --------------------------------------------------
     latest_posts = (
         Post.query
+        .options(
+            load_only(
+                Post.id,
+                Post.title,
+                Post.slug,
+                Post.featured_image,
+                Post.created_at,
+            )
+        )
         .filter(
-            Post.is_published.is_(True),
-            Post.status == "published",
+            *published_filter,
             Post.created_at >= one_day_ago,
         )
         .order_by(Post.created_at.desc())
@@ -1997,13 +2373,12 @@ def index():
 
     # --------------------------------------------------
     # 2. POPULAR POSTS
-    # Aggregate comments only for eligible recent posts.
+    # Aggregate comments inside PostgreSQL.
     # --------------------------------------------------
     eligible_posts = (
         db.session.query(Post.id)
         .filter(
-            Post.is_published.is_(True),
-            Post.status == "published",
+            *published_filter,
             Post.created_at >= one_day_ago,
         )
         .subquery()
@@ -2034,9 +2409,19 @@ def index():
             comment_counts,
             Post.id == comment_counts.c.post_id,
         )
+        .options(
+            load_only(
+                Post.id,
+                Post.title,
+                Post.slug,
+                Post.featured_image,
+                Post.created_at,
+                Post.views,
+                Post.like_count,
+            )
+        )
         .filter(
-            Post.is_published.is_(True),
-            Post.status == "published",
+            *published_filter,
             Post.created_at >= one_day_ago,
         )
     )
@@ -2060,14 +2445,47 @@ def index():
 
     # --------------------------------------------------
     # 3. OTHER RECENT POSTS
+    # Retrieve only fields used by the More News section.
+    #
+    # Eager-load labels, tags and authors to prevent
+    # unnecessary individual relationship queries.
     # --------------------------------------------------
-    posts_query = Post.query.filter(
-        Post.is_published.is_(True),
-        Post.status == "published",
-        Post.created_at >= fourteen_days_ago,
-    )
-
     excluded_ids = latest_ids + popular_ids
+
+    posts_query = (
+        Post.query
+        .options(
+            load_only(
+                Post.id,
+                Post.title,
+                Post.slug,
+                Post.featured_image,
+                Post.created_at,
+                Post.read_time,
+                Post.user_id,
+            ),
+
+            joinedload(Post.author).load_only(
+                User.id,
+                User.username,
+            ),
+
+            selectinload(Post.labels).load_only(
+                Label.id,
+                Label.name,
+            ),
+
+            selectinload(Post.tags).load_only(
+                Tag.id,
+                Tag.name,
+                Tag.slug,
+            ),
+        )
+        .filter(
+            *published_filter,
+            Post.created_at >= fourteen_days_ago,
+        )
+    )
 
     if excluded_ids:
         posts_query = posts_query.filter(
@@ -2083,23 +2501,65 @@ def index():
 
     # --------------------------------------------------
     # 4. CATEGORY SECTIONS
-    # Fetch recent posts once instead of querying every
-    # category separately.
+    #
+    # Use ROW_NUMBER() to retrieve only the latest
+    # three articles per category inside PostgreSQL.
+    #
+    # Previously, Python retrieved every recent article
+    # and discarded everything beyond three per category.
     # --------------------------------------------------
     def load_homepage_categories():
+
         categories = (
             Category.query
+            .options(
+                load_only(
+                    Category.id,
+                    Category.name,
+                    Category.slug,
+                )
+            )
             .order_by(Category.name)
             .all()
         )
 
-        recent_category_posts = (
-            Post.query
+        ranked_posts = (
+            db.session.query(
+                Post.id.label("post_id"),
+                Post.category_id.label("category_id"),
+                func.row_number()
+                .over(
+                    partition_by=Post.category_id,
+                    order_by=Post.created_at.desc(),
+                )
+                .label("row_number"),
+            )
             .filter(
-                Post.is_published.is_(True),
-                Post.status == "published",
+                *published_filter,
                 Post.created_at >= one_day_ago,
                 Post.category_id.isnot(None),
+            )
+            .subquery()
+        )
+
+        recent_category_posts = (
+            Post.query
+            .join(
+                ranked_posts,
+                ranked_posts.c.post_id == Post.id,
+            )
+            .options(
+                load_only(
+                    Post.id,
+                    Post.category_id,
+                    Post.title,
+                    Post.slug,
+                    Post.featured_image,
+                    Post.created_at,
+                )
+            )
+            .filter(
+                ranked_posts.c.row_number <= 3
             )
             .order_by(
                 Post.category_id,
@@ -2111,10 +2571,7 @@ def index():
         grouped = defaultdict(list)
 
         for post in recent_category_posts:
-            category_id = post.category_id
-
-            if len(grouped[category_id]) < 3:
-                grouped[category_id].append(post)
+            grouped[post.category_id].append(post)
 
         result = OrderedDict()
 
@@ -2134,14 +2591,21 @@ def index():
 
     # --------------------------------------------------
     # 5. BREAKING NEWS
+    # Only retrieve fields displayed in the ticker.
     # --------------------------------------------------
     breaking_posts = (
         Post.query
         .join(Post.labels)
+        .options(
+            load_only(
+                Post.id,
+                Post.title,
+                Post.slug,
+            )
+        )
         .filter(
             Label.name.ilike("%breaking%"),
-            Post.is_published.is_(True),
-            Post.status == "published",
+            *published_filter,
             Post.published_at >= six_hours_ago,
         )
         .order_by(Post.published_at.desc())
@@ -2151,18 +2615,32 @@ def index():
 
     # --------------------------------------------------
     # 6. POPULAR TAGS
+    # Only retrieve tag information needed by templates.
     # --------------------------------------------------
     def load_popular_tags():
+
         return (
             db.session.query(
                 Tag,
                 func.count(Post.id).label("post_count"),
             )
-            .join(post_tags, post_tags.c.tag_id == Tag.id)
-            .join(Post, Post.id == post_tags.c.post_id)
+            .join(
+                post_tags,
+                post_tags.c.tag_id == Tag.id,
+            )
+            .join(
+                Post,
+                Post.id == post_tags.c.post_id,
+            )
+            .options(
+                load_only(
+                    Tag.id,
+                    Tag.name,
+                    Tag.slug,
+                )
+            )
             .filter(
-                Post.is_published.is_(True),
-                Post.status == "published",
+                *published_filter,
             )
             .group_by(Tag.id)
             .order_by(
@@ -2179,7 +2657,6 @@ def index():
         loader=load_popular_tags,
     )
 
-    # Keep popular_tags as a list of Tag objects for the template.
     popular_tags = [
         tag
         for tag, post_count in popular_tag_rows
@@ -2187,7 +2664,7 @@ def index():
 
     # --------------------------------------------------
     # 7. SUPERIOR ADS
-    # Keep ad selection and tracking context request-specific.
+    # Keep existing request-specific ad tracking.
     # --------------------------------------------------
     homepage_banner_ad = get_superior_ad(
         placement="homepage_banner",
@@ -2233,8 +2710,12 @@ def index():
         form=form,
     )
 
-@public_bp.route("/post/<slug>", endpoint='post_detail')
+@public_bp.route("/post/<slug>", endpoint="post_detail")
 def post_detail(slug):
+
+    # ---------------------------
+    # VALIDATE SLUG
+    # ---------------------------
     if not slug or slug.lower() in {"none", "null", "undefined"}:
         current_app.logger.warning(
             "Invalid article slug requested: %r | Referer: %r",
@@ -2243,26 +2724,100 @@ def post_detail(slug):
         )
         abort(404)
 
-    two_days_ago = datetime.utcnow() - timedelta(days=2)
+    now = datetime.utcnow()
+    two_days_ago = now - timedelta(days=2)
+
     form = SubscribeForm()
-    post = Post.query.filter(
-        Post.slug == slug,
-        Post.is_published.is_(True),
-        Post.status == "published",
-    ).first_or_404()
-  
+
     # ---------------------------
-    # VIEW COUNT (SAFE)
+    # LOAD MAIN ARTICLE
+    # ---------------------------
+    post = (
+        Post.query
+        .options(
+            load_only(
+                Post.id,
+                Post.title,
+                Post.slug,
+                Post.content,
+                Post.user_id,
+                Post.category_id,
+                Post.views,
+                Post.featured_image,
+                Post.created_at,
+                Post.tribe_url,
+                Post.tribe_title,
+                Post.tribe_description,
+                Post.tribe_button_text,
+            ),
+
+            # Author name
+            joinedload(Post.author).load_only(
+                User.id,
+                User.username,
+            ),
+
+            # Category name
+            joinedload(Post.category).load_only(
+                Category.id,
+                Category.name,
+            ),
+
+            # Article tags
+            selectinload(Post.tags).load_only(
+                Tag.id,
+                Tag.name,
+            ),
+
+            # Comments, comment users, replies and reply users
+            selectinload(Post.comments).options(
+                load_only(
+                    Comment.id,
+                    Comment.user_id,
+                    Comment.content,
+                    Comment.created_at,
+                ),
+            
+                joinedload(Comment.user).load_only(
+                    User.id,
+                    User.username,
+                ),
+            
+                selectinload(Comment.replies).options(
+                    load_only(
+                        Reply.id,
+                        Reply.user_id,
+                        Reply.comment_id,
+                        Reply.content,
+                        Reply.created_at,
+                    ),
+            
+                    joinedload(Reply.user).load_only(
+                        User.id,
+                        User.username,
+                    ),
+                ),
+            ),
+        )
+        .filter(
+            Post.slug == slug,
+            Post.is_published.is_(True),
+            Post.status == "published",
+        )
+        .first_or_404()
+    )
+
+    # ---------------------------
+    # VIEW COUNT
     # ---------------------------
     session_id = session.get("session_id")
+
     if not session_id:
         session_id = str(uuid.uuid4())
         session["session_id"] = session_id
 
-    # Get user IP (simple way)
     ip_address = request.remote_addr
 
-    # Check if this session/user/IP has already viewed this post
     view_cutoff = datetime.now(UTC) - timedelta(hours=24)
 
     already_viewed = (
@@ -2274,24 +2829,38 @@ def post_detail(slug):
         )
         .first()
     )
-  
+
     if not already_viewed:
-        # Increment post view count
+
         post.views = (post.views or 0) + 1
-        db.session.add(PageView(
-            user_id=getattr(current_user, "id", None),
-            session_id=session_id,
-            path=f"/post/{slug}",
-            ip_address=ip_address,
-            created_at=datetime.now(UTC)
-        ))
+
+        db.session.add(
+            PageView(
+                user_id=getattr(current_user, "id", None),
+                session_id=session_id,
+                path=f"/post/{slug}",
+                ip_address=ip_address,
+                created_at=datetime.now(UTC),
+            )
+        )
+
         safe_commit()
 
     # ---------------------------
-    # CATEGORY-BASED RELATED + TRENDING
+    # RELATED + TRENDING STORIES
     # ---------------------------
     related_posts = (
         Post.query
+        .options(
+            load_only(
+                Post.id,
+                Post.title,
+                Post.slug,
+                Post.featured_image,
+                Post.created_at,
+                Post.views,
+            )
+        )
         .filter(
             Post.is_published.is_(True),
             Post.status == "published",
@@ -2311,19 +2880,34 @@ def post_detail(slug):
         .limit(5)
         .all()
     )
-    
-    # Dynamic title
-    if related_posts and related_posts[0].views >= 1000:
+
+    # ---------------------------
+    # RELATED SECTION TITLE
+    # ---------------------------
+    if related_posts and (related_posts[0].views or 0) >= 1000:
         section_title = "Trending in This Category"
     else:
         section_title = "Related Stories"
-  
+
+    # ---------------------------
+    # ARTICLE CONTENT
+    # ---------------------------
     content_html = inject_inpost_content(
         post.content,
         category=post.category.name if post.category else None,
     )
-  
-    return render_template("post.html", post=post, content_html=content_html, related_posts=related_posts, form=form, section_title=section_title)
+
+    # ---------------------------
+    # RENDER
+    # ---------------------------
+    return render_template(
+        "post.html",
+        post=post,
+        content_html=content_html,
+        related_posts=related_posts,
+        form=form,
+        section_title=section_title,
+    )
 
 @public_bp.route("/track-related-click", methods=["POST"])
 def track_related_click():
@@ -2378,8 +2962,7 @@ def add_reply(comment_id):
 def search():
     query = request.args.get("q", "").strip()[:150]
 
-    page = request.args.get("page", 1, type=int)
-    page = max(page, 1)
+    page = max(request.args.get("page", 1, type=int), 1)
 
     results = None
 
@@ -2391,6 +2974,22 @@ def search():
 
         results = (
             Post.query
+            .options(
+                load_only(
+                    Post.id,
+                    Post.slug,
+                    Post.title,
+                    Post.featured_image,
+                    Post.created_at,
+                    Post.read_time,
+                    Post.category_id,
+                ),
+                joinedload(Post.category).load_only(
+                    Category.id,
+                    Category.slug,
+                    Category.name,
+                ),
+            )
             .filter(
                 Post.is_published.is_(True),
                 Post.status == "published",
@@ -2575,6 +3174,31 @@ def category(slug):
     # --------------------------------------------------
     posts = (
         Post.query
+        .options(
+            load_only(
+                Post.id,
+                Post.slug,
+                Post.title,
+                Post.category_id,
+                Post.user_id,
+                Post.featured_image,
+                Post.created_at,
+                Post.read_time,
+            ),
+            joinedload(Post.author).load_only(
+                User.id,
+                User.username,
+            ),
+            selectinload(Post.tags).load_only(
+                Tag.id,
+                Tag.name,
+                Tag.slug,
+            ),
+            selectinload(Post.labels).load_only(
+                Label.id,
+                Label.name,
+            ),
+        )
         .filter(
             Post.category_id == category.id,
             Post.is_published.is_(True),
@@ -2620,8 +3244,7 @@ def category(slug):
     )
 
     # --------------------------------------------------
-    # 3. TRENDING POSTS
-    # First identify articles with at least five comments.
+    # 3. TRENDING POST IDS
     # --------------------------------------------------
     def load_trending_post_ids():
         comment_counts = (
@@ -2629,7 +3252,10 @@ def category(slug):
                 Comment.post_id.label("post_id"),
                 func.count(Comment.id).label("comment_count"),
             )
-            .join(Post, Post.id == Comment.post_id)
+            .join(
+                Post,
+                Post.id == Comment.post_id,
+            )
             .filter(
                 Post.category_id == category.id,
                 Post.is_published.is_(True),
@@ -2677,10 +3303,22 @@ def category(slug):
         loader=load_trending_post_ids,
     )
 
-    # Retrieve the records in the same ranking order.
+    # --------------------------------------------------
+    # 4. LOAD ONLY TRENDING POST FIELDS
+    # --------------------------------------------------
+    trending_posts = []
+
     if trending_ids:
         trending_records = (
             Post.query
+            .options(
+                load_only(
+                    Post.id,
+                    Post.slug,
+                    Post.title,
+                    Post.featured_image,
+                )
+            )
             .filter(
                 Post.id.in_(trending_ids),
                 Post.category_id == category.id,
@@ -2695,16 +3333,39 @@ def category(slug):
             for post in trending_records
         }
 
+        # Preserve the cached popularity ranking.
         trending_posts = [
             trending_by_id[post_id]
             for post_id in trending_ids
             if post_id in trending_by_id
         ]
-    else:
-        trending_posts = []
+
+        # Get comment counts without loading comment records.
+        comment_count_rows = (
+            db.session.query(
+                Comment.post_id,
+                func.count(Comment.id).label("comment_count"),
+            )
+            .filter(
+                Comment.post_id.in_(trending_ids)
+            )
+            .group_by(Comment.post_id)
+            .all()
+        )
+
+        comment_counts_by_post = {
+            row.post_id: row.comment_count
+            for row in comment_count_rows
+        }
+
+        for post in trending_posts:
+            post.comment_count = comment_counts_by_post.get(
+                post.id,
+                0,
+            )
 
     # --------------------------------------------------
-    # 4. CATEGORY VIEW COUNT
+    # 5. CATEGORY VIEW COUNT
     # --------------------------------------------------
     category.views = (category.views or 0) + 1
 
@@ -2715,7 +3376,7 @@ def category(slug):
         )
 
     # --------------------------------------------------
-    # 5. RENDER CATEGORY PAGE
+    # 6. RENDER CATEGORY PAGE
     # --------------------------------------------------
     return render_template(
         "category.html",
@@ -2729,38 +3390,83 @@ def category(slug):
         trending_posts=trending_posts,
     )
 
-@csrf.exempt
 @public_bp.route("/post/<int:id>/like", methods=["POST"])
+@csrf.exempt
 def like_post(id):
-    post = Post.query.get_or_404(id)
+
+    # Only retrieve the ID to verify that the post exists.
+    post_exists = (
+        db.session.query(Post.id)
+        .filter(Post.id == id)
+        .first()
+    )
+
+    if not post_exists:
+        return jsonify({
+            "error": "Post not found"
+        }), 404
 
     if "sid" not in session:
         session["sid"] = os.urandom(16).hex()
 
-    existing = Like.query.filter_by(
-        post_id=id,
-        session_id=session["sid"]
-    ).first()
+    session_id = session["sid"]
+
+    # Check whether this session has already liked the post.
+    existing = (
+        db.session.query(Like.id)
+        .filter(
+            Like.post_id == id,
+            Like.session_id == session_id,
+        )
+        .first()
+    )
 
     if existing:
+
+        count = (
+            db.session.query(func.count(Like.id))
+            .filter(Like.post_id == id)
+            .scalar()
+        )
+
         return jsonify({
             "liked": False,
-            "count": Like.query.filter_by(post_id=id).count()
+            "count": count,
         })
 
-    like = Like(
-        post_id=id,
-        session_id=session["sid"]
-    )
-    db.session.add(like)
-    db.session.commit()
+    try:
 
-    count = Like.query.filter_by(post_id=id).count()
+        like = Like(
+            post_id=id,
+            session_id=session_id,
+        )
 
-    return jsonify({
-        "liked": True,
-        "count": count
-    })
+        db.session.add(like)
+        db.session.commit()
+
+        count = (
+            db.session.query(func.count(Like.id))
+            .filter(Like.post_id == id)
+            .scalar()
+        )
+
+        return jsonify({
+            "liked": True,
+            "count": count,
+        })
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Failed to like post %s",
+            id,
+        )
+
+        return jsonify({
+            "error": "Unable to process like."
+        }), 500
 
 # ----- CONTACT US -----
 @public_bp.route("/contact", methods=["GET", "POST"])

@@ -12,7 +12,8 @@ from sqlalchemy import or_, func, cast, Integer
 from app.utils.db_helpers import safe_commit
 from app.utils.cloudinary_helper import upload_image_file, allowed_file
 from app.utils.email import send_email
-from app.models import Post, AppSettings, User, ContactMessage, Repost, Subscriber, DigestDraft, Ad, XPost, BreakingNews, Tag, Comment, PageView, EmailCampaign, CampaignRecipient
+from app.models import Post, AppSettings, User, ContactMessage, Repost, Subscriber, DigestDraft, Ad, XPost, BreakingNews, Tag, Comment, PageView, EmailCampaign, Category, CampaignRecipient
+from sqlalchemy.orm import load_only, joinedload
 from app.extensions import db, csrf
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.utils.admin_analytics_cache import get_admin_analytics
@@ -85,30 +86,57 @@ def change_password():
 @admin_bp.route("/dashboard")
 @login_required
 def dashboard():
+
     if not current_user.is_admin:
         flash("Access denied", "danger")
         return redirect(url_for("public.user_login"))
 
     page = max(request.args.get("page", 1, type=int), 1)
+
     query_text = request.args.get("q", "").strip()[:150]
+
     status = request.args.get("status", "all").lower()
 
-    query = Post.query
+    # Retrieve only columns used by the dashboard template.
+    query = (
+        Post.query
+        .options(
+            load_only(
+                Post.id,
+                Post.title,
+                Post.status,
+                Post.created_at,
+                Post.rejection_reason,
+                Post.category_id,
+            ),
 
+            joinedload(Post.category).load_only(
+                Category.id,
+                Category.name,
+            ),
+        )
+    )
+
+    # Search by title.
     if query_text:
         query = query.filter(
             Post.title.ilike(f"%{query_text}%")
         )
 
+    # Supported post statuses.
     allowed_statuses = {
         "published",
         "draft",
         "pending",
+        "pending_review",
         "rejected",
+        "scheduled",
     }
 
     if status in allowed_statuses:
-        query = query.filter(Post.status == status)
+        query = query.filter(
+            Post.status == status
+        )
     else:
         status = "all"
 
@@ -137,7 +165,30 @@ def view_post(id):
         flash("Access denied", "danger")
         return redirect(url_for("public.user_login"))
 
-    post = Post.query.get_or_404(id)
+    post = (
+        Post.query
+        .options(
+            load_only(
+                Post.id,
+                Post.title,
+                Post.user_id,
+                Post.content,
+                Post.status,
+                Post.created_at,
+                Post.tribe_url,
+                Post.tribe_title,
+                Post.tribe_description,
+                Post.tribe_button_text,
+            ),
+
+            joinedload(Post.author).load_only(
+                User.id,
+                User.username,
+            ),
+        )
+        .filter(Post.id == id)
+        .first_or_404()
+    )
 
     tribe_form = AdminTribeForm(
         data={
@@ -154,7 +205,7 @@ def view_post(id):
         "admin/pending.html",
         post=post,
         tribe_form=tribe_form,
-        remove_tribe_form=remove_tribe_form
+        remove_tribe_form=remove_tribe_form,
     )
 
 @admin_bp.route("/admin/post/<int:id>/tribe/remove", methods=["POST"])

@@ -10,26 +10,64 @@ from app.extensions import db
 MAX_TAGS = 5
 
 def process_tags(raw_tags):
+
     if not raw_tags:
         return []
 
-    tag_names = [t.strip() for t in raw_tags.split(",") if t.strip()]
+    tag_names = [
+        name.strip()
+        for name in raw_tags.split(",")
+        if name.strip()
+    ]
+
     if len(tag_names) > MAX_TAGS:
-        flash(f"You can only add up to {MAX_TAGS} tags.", "error")
+        flash(
+            f"You can only add up to {MAX_TAGS} tags.",
+            "error"
+        )
         return []
 
-    tags = []
+    normalized_tags = {}
 
     for name in tag_names:
         clean_name = name.lower().replace(".", "").strip()
         slug = slugify(clean_name)
-        if not name:
-          continue
-        tag = Tag.query.filter_by(slug=slug).first()
+
+        if slug:
+            normalized_tags[slug] = name
+
+    if not normalized_tags:
+        return []
+
+    existing_tags = (
+        Tag.query
+        .filter(
+            Tag.slug.in_(list(normalized_tags.keys()))
+        )
+        .all()
+    )
+
+    tags_by_slug = {
+        tag.slug: tag
+        for tag in existing_tags
+    }
+
+    tags = []
+
+    for slug, name in normalized_tags.items():
+
+        tag = tags_by_slug.get(slug)
+
         if not tag:
-            tag = Tag(name=name.title(), slug=slug)
+            tag = Tag(
+                name=name.title(),
+                slug=slug
+            )
+
             db.session.add(tag)
+
         tags.append(tag)
+
     return tags
 
 def make_slug(title):

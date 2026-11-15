@@ -18,6 +18,16 @@ post_labels = db.Table(
 
 
 class Post(db.Model):
+    __tablename__ = "post"
+
+    __table_args__ = (
+        db.Index(
+            "ix_post_category_id_id",
+            "category_id",
+            "id"
+        ),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))

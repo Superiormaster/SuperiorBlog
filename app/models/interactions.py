@@ -41,6 +41,18 @@ class CommentReaction(db.Model):
 
 
 class Like(db.Model):
+    __table_args__ = (
+        db.Index(
+            "ix_like_post_session",
+            "post_id",
+            "session_id",
+        ),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey("post.id"), nullable=False)
+    post_id = db.Column(
+        db.Integer,
+        db.ForeignKey("post.id"),
+        nullable=False,
+    )
     session_id = db.Column(db.String(100), nullable=False)

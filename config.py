@@ -51,7 +51,7 @@ class Config:
     ).rstrip("/")
     SUPERIOR_ADS_PUBLIC_URL = os.getenv(
         "SUPERIOR_ADS_PUBLIC_URL",
-        "http://localhost:5173",
+        "http://127.0.0.1:5001",
     ).rstrip("/")
     
     SUPERIOR_ADS_ENABLED = (
