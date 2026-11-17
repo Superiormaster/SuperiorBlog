@@ -8,6 +8,7 @@ def generate_unique_slug(title):
     import unicodedata
 
     from app.models import Post
+    from app.extensions import db
 
     slug = re.sub(
         r"[^a-z0-9]+",
